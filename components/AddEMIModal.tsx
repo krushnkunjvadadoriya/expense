@@ -113,7 +113,7 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
           </TouchableOpacity>
           <Text style={styles.title}>Add EMI</Text>
           <TouchableOpacity onPress={handleSubmit} style={styles.saveButton}>
-            <Check size={24} color="#3B82F6" />
+            <Check size={24} color="#4facfe" />
           </TouchableOpacity>
         </View>
 
@@ -185,7 +185,7 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
           {monthlyAmount > 0 && (
             <View style={styles.calculatorCard}>
               <View style={styles.calculatorHeader}>
-                <Calculator size={20} color="#3B82F6" />
+                <Calculator size={20} color="#4facfe" />
                 <Text style={styles.calculatorTitle}>EMI Calculation</Text>
               </View>
               <View style={styles.calculatorRow}>

@@ -21,7 +21,7 @@ export default function LineChart({ data }: LineChartProps) {
     backgroundGradientFrom: '#ffffff',
     backgroundGradientTo: '#ffffff',
     decimalPlaces: 0,
-    color: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`,
+    color: (opacity = 1) => `rgba(79, 172, 254, ${opacity})`,
     labelColor: (opacity = 1) => `rgba(107, 114, 128, ${opacity})`,
     style: {
       borderRadius: 16,
@@ -29,7 +29,7 @@ export default function LineChart({ data }: LineChartProps) {
     propsForDots: {
       r: '6',
       strokeWidth: '2',
-      stroke: '#3B82F6',
+      stroke: '#4facfe',
     },
   };
 

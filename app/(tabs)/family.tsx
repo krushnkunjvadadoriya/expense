@@ -35,10 +35,10 @@ export default function Family() {
       spent: 3250,
       categories: [
         { name: 'Food & Dining', budget: 1200, spent: 850, color: '#EF4444' },
-        { name: 'Transportation', budget: 800, spent: 650, color: '#3B82F6' },
+        { name: 'Transportation', budget: 800, spent: 650, color: '#4facfe' },
         { name: 'Shopping', budget: 600, spent: 420, color: '#8B5CF6' },
         { name: 'Entertainment', budget: 400, spent: 280, color: '#F59E0B' },
-        { name: 'Bills & Utilities', budget: 1000, spent: 1050, color: '#3B82F6' },
+        { name: 'Bills & Utilities', budget: 1000, spent: 1050, color: '#4facfe' },
       ]
     }
   });
@@ -125,7 +125,7 @@ export default function Family() {
           
           <View style={styles.budgetStats}>
             <View style={styles.budgetStatItem}>
-              <DollarSign size={24} color="#3B82F6" />
+              <DollarSign size={24} color="#4facfe" />
               <Text style={styles.budgetStatValue}>{formatCurrency(familyGroup.budget.monthly)}</Text>
               <Text style={styles.budgetStatLabel}>Total Budget</Text>
             </View>
@@ -135,7 +135,7 @@ export default function Family() {
               <Text style={styles.budgetStatLabel}>Spent</Text>
             </View>
             <View style={styles.budgetStatItem}>
-              <TrendingUp size={24} color="#3B82F6" />
+              <TrendingUp size={24} color="#4facfe" />
               <Text style={styles.budgetStatValue}>
                 {formatCurrency(familyGroup.budget.monthly - familyGroup.budget.spent)}
               </Text>
@@ -155,7 +155,7 @@ export default function Family() {
                   styles.progressFill, 
                   { 
                     width: `${Math.min(getBudgetUsedPercentage(), 100)}%`,
-                    backgroundColor: getBudgetUsedPercentage() > 80 ? '#EF4444' : '#3B82F6'
+                    backgroundColor: getBudgetUsedPercentage() > 80 ? '#EF4444' : '#4facfe'
                   }
                 ]} 
               />
@@ -210,7 +210,7 @@ export default function Family() {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Family Members</Text>
             <TouchableOpacity onPress={handleInviteMember} style={styles.inviteButton}>
-              <UserPlus size={16} color="#3B82F6" />
+              <UserPlus size={16} color="#4facfe" />
               <Text style={styles.inviteButtonText}>Invite</Text>
             </TouchableOpacity>
           </View>
@@ -243,14 +243,14 @@ export default function Family() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Recent Activity</Text>
           <View style={styles.activityCard}>
-            <Calendar size={20} color="#3B82F6" />
+            <Calendar size={20} color="#4facfe" />
             <View style={styles.activityDetails}>
               <Text style={styles.activityText}>Jane added $45.50 expense for "Grocery Shopping"</Text>
               <Text style={styles.activityTime}>2 hours ago</Text>
             </View>
           </View>
           <View style={styles.activityCard}>
-            <Calendar size={20} color="#3B82F6" />
+            <Calendar size={20} color="#4facfe" />
             <View style={styles.activityDetails}>
               <Text style={styles.activityText}>Alex updated the Entertainment budget to $400</Text>
               <Text style={styles.activityTime}>1 day ago</Text>
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
   },
   manageBudgetText: {
     fontSize: 16,
-    color: '#3B82F6',
+    color: '#4facfe',
     fontWeight: '600',
   },
   budgetStats: {
@@ -425,7 +425,7 @@ const styles = StyleSheet.create({
   inviteButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#3B82F6',
+    color: '#4facfe',
   },
   categoryCard: {
     backgroundColor: '#FFFFFF',
@@ -582,7 +582,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   createButton: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#4facfe',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 12,

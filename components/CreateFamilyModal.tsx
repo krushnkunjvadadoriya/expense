@@ -57,14 +57,14 @@ export default function CreateFamilyModal({ visible, onClose }: CreateFamilyModa
           </TouchableOpacity>
           <Text style={styles.title}>Create Family Group</Text>
           <TouchableOpacity onPress={handleSubmit} style={styles.saveButton}>
-            <Check size={24} color="#3B82F6" />
+            <Check size={24} color="#4facfe" />
           </TouchableOpacity>
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {/* Icon */}
           <View style={styles.iconContainer}>
-            <Users size={48} color="#3B82F6" />
+            <Users size={48} color="#4facfe" />
           </View>
 
           {/* Family Name */}

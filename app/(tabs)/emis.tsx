@@ -81,7 +81,7 @@ export default function EMIs() {
       {/* Summary Cards */}
       <View style={styles.summaryContainer}>
         <View style={styles.summaryCard}>
-          <DollarSign size={24} color="#3B82F6" />
+          <DollarSign size={24} color="#4facfe" />
           <Text style={styles.summaryValue}>{formatCurrency(totalMonthlyEMI)}</Text>
           <Text style={styles.summaryLabel}>Monthly EMI</Text>
         </View>
@@ -118,7 +118,7 @@ export default function EMIs() {
                     <TouchableOpacity
                       style={[
                         styles.payButton,
-                        { backgroundColor: isOverdue ? '#EF4444' : '#3B82F6' }
+                        { backgroundColor: isOverdue ? '#EF4444' : '#4facfe' }
                       ]}
                       onPress={() => handlePayEMI(emi)}
                     >
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#4facfe',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
   progressPercentage: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#3B82F6',
+    color: '#4facfe',
   },
   progressBar: {
     height: 8,
@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#4facfe',
     borderRadius: 4,
   },
   emptyState: {
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   emptyStateButton: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#4facfe',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 12,

@@ -67,7 +67,7 @@ export default function AddTransactionModal({ visible, onClose }: AddTransaction
           </TouchableOpacity>
           <Text style={styles.title}>Add Transaction</Text>
           <TouchableOpacity onPress={handleSubmit} style={styles.saveButton}>
-            <Check size={24} color="#3B82F6" />
+            <Check size={24} color="#4facfe" />
           </TouchableOpacity>
         </View>
 
@@ -215,8 +215,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   typeButtonActive: {
-    borderColor: '#3B82F6',
-    backgroundColor: '#3B82F6',
+    borderColor: '#4facfe',
+    backgroundColor: '#4facfe',
   },
   typeButtonText: {
     fontSize: 16,

@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#4facfe',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6',
   },
   filterTabActive: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#4facfe',
   },
   filterTabText: {
     fontSize: 14,
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
   dayIncome: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#3B82F6',
+    color: '#4facfe',
   },
   dayExpenses: {
     fontSize: 14,

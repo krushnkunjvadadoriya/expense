@@ -45,13 +45,13 @@ const initialState: AppState = {
 
 const defaultCategories: Category[] = [
   { id: '1', name: 'Food & Dining', type: 'expense', color: '#EF4444', icon: 'utensils' },
-  { id: '2', name: 'Transportation', type: 'expense', color: '#3B82F6', icon: 'car' },
+  { id: '2', name: 'Transportation', type: 'expense', color: '#4facfe', icon: 'car' },
   { id: '3', name: 'Shopping', type: 'expense', color: '#8B5CF6', icon: 'shopping-bag' },
   { id: '4', name: 'Entertainment', type: 'expense', color: '#F59E0B', icon: 'tv' },
-  { id: '5', name: 'Bills & Utilities', type: 'expense', color: '#3B82F6', icon: 'receipt' },
+  { id: '5', name: 'Bills & Utilities', type: 'expense', color: '#4facfe', icon: 'receipt' },
   { id: '6', name: 'Healthcare', type: 'expense', color: '#EF4444', icon: 'heart' },
   { id: '7', name: 'Education', type: 'expense', color: '#6366F1', icon: 'book' },
-  { id: '8', name: 'Salary', type: 'income', color: '#3B82F6', icon: 'briefcase' },
+  { id: '8', name: 'Salary', type: 'income', color: '#4facfe', icon: 'briefcase' },
   { id: '9', name: 'Freelance', type: 'income', color: '#2563EB', icon: 'laptop' },
   { id: '10', name: 'Investment', type: 'income', color: '#1D4ED8', icon: 'trending-up' },
 ];

@@ -77,7 +77,7 @@ export default function Dashboard() {
             value={formatCurrency(state.monthlyStats.netSavings)}
             subtitle="This month"
             icon={DollarSign}
-            color="#ace0f9"
+            color="#4facfe"
           />
           
           <View style={styles.statsRow}>
@@ -86,7 +86,7 @@ export default function Dashboard() {
                 title="Income"
                 value={formatCurrency(state.monthlyStats.totalIncome)}
                 icon={TrendingUp}
-                color="#ace0f9"
+                color="#4facfe"
               />
             </View>
             <View style={styles.statCardHalf}>
@@ -104,7 +104,7 @@ export default function Dashboard() {
             value={`${state.monthlyStats.budgetUsed.toFixed(1)}%`}
             subtitle={`${formatCurrency(state.monthlyStats.totalExpenses)} of ${formatCurrency(state.user?.monthlyBudget || 0)}`}
             icon={PiggyBank}
-            color={state.monthlyStats.budgetUsed > 80 ? '#EF4444' : '#ace0f9'}
+            color={state.monthlyStats.budgetUsed > 80 ? '#EF4444' : '#4facfe'}
           />
         </View>
 
@@ -152,7 +152,7 @@ export default function Dashboard() {
               return (
                 <View key={emi.id} style={styles.emiCard}>
                   <View style={styles.emiHeader}>
-                    <Calendar size={20} color="#ace0f9" />
+                    <Calendar size={20} color="#4facfe" />
                     <Text style={styles.emiName}>{emi.name}</Text>
                   </View>
                   <View style={styles.emiDetails}>
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
   },
   seeAll: {
     fontSize: 16,
-    color: '#ace0f9',
+    color: '#4facfe',
     fontWeight: '600',
   },
   emptyState: {
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
   emiAmount: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#ace0f9',
+    color: '#4facfe',
   },
   emiDue: {
     fontSize: 14,
@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#ace0f9',
+    backgroundColor: '#4facfe',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',

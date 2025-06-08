@@ -110,7 +110,7 @@ export default function Profile() {
         {/* User Info Card */}
         <View style={styles.userCard}>
           <View style={styles.avatar}>
-            <User size={32} color="#3B82F6" />
+            <User size={32} color="#4facfe" />
           </View>
           <View style={styles.userInfo}>
             <Text style={styles.userName}>{authState.user?.name || 'User'}</Text>
@@ -147,7 +147,7 @@ export default function Profile() {
               <Text style={styles.statLabel}>Categories</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={[styles.statValue, { color: state.monthlyStats.netSavings >= 0 ? '#3B82F6' : '#EF4444' }]}>
+              <Text style={[styles.statValue, { color: state.monthlyStats.netSavings >= 0 ? '#4facfe' : '#EF4444' }]}>
                 {formatCurrency(Math.abs(state.monthlyStats.netSavings))}
               </Text>
               <Text style={styles.statLabel}>
@@ -185,7 +185,7 @@ export default function Profile() {
                     <X size={16} color="#EF4444" />
                   </TouchableOpacity>
                   <TouchableOpacity onPress={handleBudgetSave} style={styles.budgetSaveButton}>
-                    <Check size={16} color="#3B82F6" />
+                    <Check size={16} color="#4facfe" />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -202,7 +202,7 @@ export default function Profile() {
                     styles.budgetProgressFill, 
                     { 
                       width: `${Math.min(state.monthlyStats.budgetUsed, 100)}%`,
-                      backgroundColor: state.monthlyStats.budgetUsed > 80 ? '#EF4444' : '#3B82F6'
+                      backgroundColor: state.monthlyStats.budgetUsed > 80 ? '#EF4444' : '#4facfe'
                     }
                   ]} 
                 />
@@ -424,7 +424,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#111827',
     borderBottomWidth: 2,
-    borderBottomColor: '#3B82F6',
+    borderBottomColor: '#4facfe',
     paddingBottom: 4,
   },
   budgetActions: {

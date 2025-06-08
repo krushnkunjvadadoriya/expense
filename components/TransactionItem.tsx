@@ -42,7 +42,7 @@ export default function TransactionItem({
       <View style={styles.rightSection}>
         <Text style={[
           styles.amount,
-          { color: transaction.type === 'income' ? '#3B82F6' : '#EF4444' }
+          { color: transaction.type === 'income' ? '#4facfe' : '#EF4444' }
         ]}>
           {transaction.type === 'income' ? '+' : '-'}${transaction.amount.toFixed(2)}
         </Text>

@@ -84,7 +84,7 @@ export default function FamilyBudgetModal({ visible, onClose, budget }: FamilyBu
           </TouchableOpacity>
           <Text style={styles.title}>Manage Budget</Text>
           <TouchableOpacity onPress={handleSubmit} style={styles.saveButton}>
-            <Check size={24} color="#3B82F6" />
+            <Check size={24} color="#4facfe" />
           </TouchableOpacity>
         </View>
 
@@ -119,7 +119,7 @@ export default function FamilyBudgetModal({ visible, onClose, budget }: FamilyBu
               <Text style={styles.summaryLabel}>Remaining:</Text>
               <Text style={[
                 styles.summaryValue,
-                { color: remainingBudget >= 0 ? '#3B82F6' : '#EF4444' }
+                { color: remainingBudget >= 0 ? '#4facfe' : '#EF4444' }
               ]}>
                 ${remainingBudget.toFixed(2)}
               </Text>
@@ -131,7 +131,7 @@ export default function FamilyBudgetModal({ visible, onClose, budget }: FamilyBu
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Category Budgets</Text>
               <TouchableOpacity onPress={addCategory} style={styles.addButton}>
-                <Plus size={16} color="#3B82F6" />
+                <Plus size={16} color="#4facfe" />
                 <Text style={styles.addButtonText}>Add</Text>
               </TouchableOpacity>
             </View>
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
   addButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#3B82F6',
+    color: '#4facfe',
   },
   budgetInputContainer: {
     flexDirection: 'row',
@@ -347,7 +347,7 @@ const styles = StyleSheet.create({
   },
   categoryRemaining: {
     fontSize: 14,
-    color: '#3B82F6',
+    color: '#4facfe',
     fontWeight: '500',
   },
   tipsCard: {

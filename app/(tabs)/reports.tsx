@@ -102,7 +102,7 @@ export default function Reports() {
       datasets: [
         {
           data: incomeData,
-          color: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`,
+          color: (opacity = 1) => `rgba(79, 172, 254, ${opacity})`,
           strokeWidth: 3,
         },
         {
@@ -147,7 +147,7 @@ export default function Reports() {
       title: 'Average Daily Spending',
       value: `$${avgDaily.toFixed(2)}`,
       amount: `${expenses.length} transactions`,
-      color: '#3B82F6',
+      color: '#4facfe',
     });
 
     return insights;
@@ -215,7 +215,7 @@ export default function Reports() {
           <Text style={styles.chartTitle}>6-Month Trend</Text>
           <View style={styles.legendContainer}>
             <View style={styles.legendItem}>
-              <View style={[styles.legendColor, { backgroundColor: '#3B82F6' }]} />
+              <View style={[styles.legendColor, { backgroundColor: '#4facfe' }]} />
               <Text style={styles.legendText}>Income</Text>
             </View>
             <View style={styles.legendItem}>
@@ -247,7 +247,7 @@ export default function Reports() {
           <View style={styles.summaryGrid}>
             <View style={styles.summaryCard}>
               <Text style={styles.summaryLabel}>Total Income</Text>
-              <Text style={[styles.summaryValue, { color: '#3B82F6' }]}>
+              <Text style={[styles.summaryValue, { color: '#4facfe' }]}>
                 ${state.monthlyStats.totalIncome.toFixed(2)}
               </Text>
             </View>
@@ -261,7 +261,7 @@ export default function Reports() {
               <Text style={styles.summaryLabel}>Net Savings</Text>
               <Text style={[
                 styles.summaryValue,
-                { color: state.monthlyStats.netSavings >= 0 ? '#3B82F6' : '#EF4444' }
+                { color: state.monthlyStats.netSavings >= 0 ? '#4facfe' : '#EF4444' }
               ]}>
                 ${state.monthlyStats.netSavings.toFixed(2)}
               </Text>
@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   periodButtonActive: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#4facfe',
   },
   periodButtonText: {
     fontSize: 14,

@@ -61,14 +61,14 @@ export default function InviteMemberModal({ visible, onClose }: InviteMemberModa
           </TouchableOpacity>
           <Text style={styles.title}>Invite Member</Text>
           <TouchableOpacity onPress={handleSubmit} style={styles.saveButton}>
-            <Check size={24} color="#3B82F6" />
+            <Check size={24} color="#4facfe" />
           </TouchableOpacity>
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {/* Icon */}
           <View style={styles.iconContainer}>
-            <UserPlus size={48} color="#3B82F6" />
+            <UserPlus size={48} color="#4facfe" />
           </View>
 
           {/* Email */}
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   iconContainer: {
-    alignItems: 'center',
+    alignItems:  'center',
     marginBottom: 32,
     marginTop: 20,
   },
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
   },
   roleButtonActive: {
-    borderColor: '#3B82F6',
+    borderColor: '#4facfe',
     backgroundColor: '#DBEAFE',
   },
   roleButtonText: {
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   roleButtonTextActive: {
-    color: '#3B82F6',
+    color: '#4facfe',
   },
   roleDescription: {
     fontSize: 14,
