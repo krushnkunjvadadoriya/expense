@@ -123,7 +123,7 @@ export default function RegistrationForm() {
           {/* Content */}
           <View style={styles.content}>
             <View style={styles.iconContainer}>
-              <User size={48} color="#10B981" />
+              <User size={48} color="#4facfe" />
             </View>
             
             <Text style={styles.title}>Complete Your Profile</Text>
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#10B981',
+    backgroundColor: '#4facfe',
     borderRadius: 2,
   },
   progressText: {
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#D1FAE5',
+    backgroundColor: '#EFF6FF',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   continueButtonActive: {
-    backgroundColor: '#10B981',
+    backgroundColor: '#4facfe',
   },
   continueButtonText: {
     fontSize: 18,

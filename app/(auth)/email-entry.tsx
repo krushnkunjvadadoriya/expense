@@ -147,7 +147,7 @@ export default function EmailEntry() {
                   email && !validateEmail(email) && styles.emailInputInvalid
                 ]}>
                   <View style={styles.inputIconContainer}>
-                    <Mail size={20} color={email && validateEmail(email) ? "#10B981" : "#6B7280"} />
+                    <Mail size={20} color={email && validateEmail(email) ? "#4facfe" : "#6B7280"} />
                   </View>
                   <TextInput
                     style={styles.emailInput}
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
   },
   backgroundGradient: {
     flex: 1,
-    backgroundColor: '#10B981',
+    backgroundColor: '#4facfe',
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
     paddingHorizontal: 20,
@@ -395,8 +395,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   emailInputValid: {
-    borderColor: '#10B981',
-    backgroundColor: '#F0FDF4',
+    borderColor: '#4facfe',
+    backgroundColor: '#EFF6FF',
   },
   emailInputInvalid: {
     borderColor: '#EF4444',
@@ -415,7 +415,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#10B981',
+    backgroundColor: '#4facfe',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -442,7 +442,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   continueButtonActive: {
-    backgroundColor: '#10B981',
+    backgroundColor: '#4facfe',
   },
   continueButtonContent: {
     flexDirection: 'row',
@@ -462,13 +462,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F0FDF4',
+    backgroundColor: '#EFF6FF',
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 16,
     marginBottom: 32,
     borderWidth: 1,
-    borderColor: '#D1FAE5',
+    borderColor: '#DBEAFE',
   },
   securityIcon: {
     marginRight: 8,
@@ -478,7 +478,7 @@ const styles = StyleSheet.create({
   },
   securityText: {
     fontSize: 14,
-    color: '#065F46',
+    color: '#1E40AF',
     fontWeight: '500',
   },
   footer: {
@@ -491,7 +491,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   footerLink: {
-    color: '#10B981',
+    color: '#4facfe',
     fontWeight: '600',
   },
 });

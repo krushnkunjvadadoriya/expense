@@ -166,7 +166,7 @@ export default function ChangePinModal({ visible, onClose }: ChangePinModalProps
         {/* Content */}
         <View style={styles.content}>
           <View style={styles.iconContainer}>
-            <Shield size={48} color="#10B981" />
+            <Shield size={48} color="#4facfe" />
           </View>
           
           <Text style={styles.title}>{getTitle()}</Text>
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#D1FAE5',
+    backgroundColor: '#EFF6FF',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
@@ -314,8 +314,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   pinDotFilled: {
-    backgroundColor: '#10B981',
-    borderColor: '#10B981',
+    backgroundColor: '#4facfe',
+    borderColor: '#4facfe',
   },
   numberPadContainer: {
     flex: 1,
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   continueButtonActive: {
-    backgroundColor: '#10B981',
+    backgroundColor: '#4facfe',
   },
   continueButtonText: {
     fontSize: 18,

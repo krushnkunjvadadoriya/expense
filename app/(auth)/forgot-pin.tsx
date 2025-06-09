@@ -73,7 +73,7 @@ export default function ForgotPin() {
         >
           <View style={styles.successContainer}>
             <View style={styles.successIcon}>
-              <Smartphone size={48} color="#3B82F6" />
+              <Smartphone size={48} color="#4facfe" />
             </View>
             <Text style={styles.successTitle}>Instructions Sent</Text>
             <Text style={styles.successMessage}>
@@ -128,7 +128,7 @@ export default function ForgotPin() {
 
           <View style={styles.form}>
             <View style={styles.iconContainer}>
-              <Shield size={48} color="#3B82F6" />
+              <Shield size={48} color="#4facfe" />
             </View>
             
             <Text style={styles.title}>Reset PIN</Text>
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#EFF6FF',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   resetButtonActive: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#4facfe',
   },
   resetButtonDisabled: {
     opacity: 0.6,
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#EFF6FF',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   resendButton: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#4facfe',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',

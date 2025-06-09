@@ -114,7 +114,7 @@ export default function EmailVerification() {
       <SafeAreaView style={styles.container}>
         <View style={styles.verifiedContainer}>
           <View style={styles.verifiedIcon}>
-            <CheckCircle size={64} color="#10B981" />
+            <CheckCircle size={64} color="#4facfe" />
           </View>
           <Text style={styles.verifiedTitle}>Email Verified!</Text>
           <Text style={styles.verifiedMessage}>
@@ -145,7 +145,7 @@ export default function EmailVerification() {
         {/* Content */}
         <View style={styles.content}>
           <View style={styles.iconContainer}>
-            <Mail size={48} color="#10B981" />
+            <Mail size={48} color="#4facfe" />
           </View>
           
           <Text style={styles.title}>Check Your Email</Text>
@@ -174,7 +174,7 @@ export default function EmailVerification() {
                   onPress={handleResendEmail}
                   disabled={isLoading}
                 >
-                  <RotateCcw size={16} color="#10B981" />
+                  <RotateCcw size={16} color="#4facfe" />
                   <Text style={styles.resendButtonText}>
                     {isLoading ? 'Sending...' : 'Resend Email'}
                   </Text>
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#D1FAE5',
+    backgroundColor: '#EFF6FF',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   primaryButton: {
-    backgroundColor: '#10B981',
+    backgroundColor: '#4facfe',
     borderRadius: 12,
     paddingVertical: 18,
     alignItems: 'center',
@@ -296,12 +296,12 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 12,
     paddingHorizontal: 20,
-    backgroundColor: '#D1FAE5',
+    backgroundColor: '#EFF6FF',
     borderRadius: 12,
   },
   resendButtonText: {
     fontSize: 16,
-    color: '#10B981',
+    color: '#4facfe',
     fontWeight: '600',
   },
   timerText: {

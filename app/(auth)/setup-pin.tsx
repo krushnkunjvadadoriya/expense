@@ -107,7 +107,7 @@ export default function SetupPin() {
       {/* Content */}
       <View style={styles.content}>
         <View style={styles.iconContainer}>
-          <Shield size={48} color="#3B82F6" />
+          <Shield size={48} color="#4facfe" />
         </View>
         
         <Text style={styles.title}>
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#4facfe',
     borderRadius: 2,
   },
   progressText: {
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#EFF6FF',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
@@ -280,8 +280,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   pinDotFilled: {
-    backgroundColor: '#3B82F6',
-    borderColor: '#3B82F6',
+    backgroundColor: '#4facfe',
+    borderColor: '#4facfe',
   },
   numberPadContainer: {
     flex: 1,
@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   continueButtonActive: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#4facfe',
   },
   continueButtonText: {
     fontSize: 18,
