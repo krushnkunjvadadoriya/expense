@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Shield, Check, ArrowLeft } from 'lucide-react-native';
+import { Shield, Check, ArrowLeft, Sparkles } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function SetupPin() {
@@ -85,6 +85,22 @@ export default function SetupPin() {
   const currentPin = step === 'create' ? pin : confirmPin;
   const isComplete = currentPin.length === 4;
 
+  const getTitle = () => {
+    switch (step) {
+      case 'create': return 'Create Your PIN';
+      case 'confirm': return 'Confirm Your PIN';
+      default: return '';
+    }
+  };
+
+  const getSubtitle = () => {
+    switch (step) {
+      case 'create': return 'Choose a secure 4-digit PIN to protect your account';
+      case 'confirm': return 'Enter your PIN again to confirm';
+      default: return '';
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -95,92 +111,77 @@ export default function SetupPin() {
         >
           <ArrowLeft size={24} color="#6B7280" />
         </TouchableOpacity>
-        
-        <View style={styles.progressContainer}>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: '100%' }]} />
+      </View>
+
+      {/* Hero Section */}
+      <View style={styles.heroSection}>
+        <View style={styles.iconContainer}>
+          <Shield size={48} color="#4facfe" />
+          <View style={styles.sparkleIcon}>
+            <Sparkles size={20} color="#4facfe" />
           </View>
-          <Text style={styles.progressText}>Final Step</Text>
+        </View>
+        
+        <Text style={styles.title}>{getTitle()}</Text>
+        <Text style={styles.subtitle}>{getSubtitle()}</Text>
+
+        {/* PIN Display - Modern circular dots */}
+        <View style={styles.pinContainer}>
+          {[0, 1, 2, 3].map(index => (
+            <View
+              key={index}
+              style={[
+                styles.pinDot,
+                currentPin.length > index && styles.pinDotFilled,
+              ]}
+            >
+              {currentPin.length > index && (
+                <View style={styles.pinDotInner} />
+              )}
+            </View>
+          ))}
         </View>
       </View>
 
-      {/* Content */}
-      <View style={styles.content}>
-        <View style={styles.iconContainer}>
-          <Shield size={48} color="#4facfe" />
-        </View>
-        
-        <Text style={styles.title}>
-          {step === 'create' ? 'Create Your PIN' : 'Confirm Your PIN'}
-        </Text>
-        <Text style={styles.subtitle}>
-          {step === 'create' 
-            ? 'Choose a 4-digit PIN to secure your account'
-            : 'Enter your PIN again to confirm'
-          }
-        </Text>
-
-        {/* PIN Display - 3 dots per row */}
-        <View style={styles.pinContainer}>
-          <View style={styles.pinRow}>
-            {[0, 1, 2].map(index => (
-              <View
-                key={index}
-                style={[
-                  styles.pinDot,
-                  currentPin.length > index && styles.pinDotFilled,
-                ]}
-              />
-            ))}
-          </View>
-          <View style={styles.pinRow}>
-            <View
-              style={[
-                styles.pinDot,
-                currentPin.length > 3 && styles.pinDotFilled,
-              ]}
-            />
-          </View>
-        </View>
-
-        {/* Number Pad */}
-        <View style={styles.numberPadContainer}>
-          <View style={styles.numberPad}>
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(number => (
-              <TouchableOpacity
-                key={number}
-                style={styles.numberButton}
-                onPress={() => handleNumberPress(number.toString())}
-                disabled={currentPin.length >= 4}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.numberText}>{number}</Text>
-              </TouchableOpacity>
-            ))}
-            
-            <View style={styles.emptyButton} />
-            
+      {/* Number Pad */}
+      <View style={styles.numberPadContainer}>
+        <View style={styles.numberPad}>
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(number => (
             <TouchableOpacity
+              key={number}
               style={styles.numberButton}
-              onPress={() => handleNumberPress('0')}
+              onPress={() => handleNumberPress(number.toString())}
               disabled={currentPin.length >= 4}
               activeOpacity={0.7}
             >
-              <Text style={styles.numberText}>0</Text>
+              <Text style={styles.numberText}>{number}</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={handleDelete}
-              disabled={currentPin.length === 0}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.deleteText}>⌫</Text>
-            </TouchableOpacity>
-          </View>
+          ))}
+          
+          <View style={styles.emptyButton} />
+          
+          <TouchableOpacity
+            style={styles.numberButton}
+            onPress={() => handleNumberPress('0')}
+            disabled={currentPin.length >= 4}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.numberText}>0</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={handleDelete}
+            disabled={currentPin.length === 0}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.deleteText}>⌫</Text>
+          </TouchableOpacity>
         </View>
+      </View>
 
-        {/* Continue Button */}
+      {/* Continue Button */}
+      <View style={styles.bottomSection}>
         <TouchableOpacity
           style={[styles.continueButton, isComplete && styles.continueButtonActive]}
           onPress={handleContinue}
@@ -195,6 +196,13 @@ export default function SetupPin() {
             </Text>
           )}
         </TouchableOpacity>
+
+        {/* Security Note */}
+        <View style={styles.securityNote}>
+          <Text style={styles.securityText}>
+            🔒 Your PIN is encrypted and stored securely
+          </Text>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -206,12 +214,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: 20,
-    gap: 16,
+    paddingBottom: 10,
   },
   backButton: {
     width: 40,
@@ -226,42 +231,44 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  progressContainer: {
-    flex: 1,
-  },
-  progressBar: {
-    height: 4,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 2,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#4facfe',
-    borderRadius: 2,
-  },
-  progressText: {
-    fontSize: 12,
-    color: '#6B7280',
-    fontWeight: '500',
-  },
-  content: {
-    flex: 1,
+  heroSection: {
     alignItems: 'center',
     paddingHorizontal: 20,
+    paddingVertical: 40,
   },
   iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     backgroundColor: '#EFF6FF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 32,
+    position: 'relative',
+    shadowColor: '#4facfe',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  sparkleIcon: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: '700',
     color: '#111827',
     marginBottom: 12,
@@ -273,35 +280,38 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 40,
+    paddingHorizontal: 20,
   },
   pinContainer: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  pinRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 16,
-    marginBottom: 16,
+    gap: 20,
   },
   pinDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     borderWidth: 2,
-    borderColor: '#D1D5DB',
-    backgroundColor: 'transparent',
+    borderColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   pinDotFilled: {
-    backgroundColor: '#4facfe',
     borderColor: '#4facfe',
+    backgroundColor: '#EFF6FF',
+  },
+  pinDotInner: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#4facfe',
   },
   numberPadContainer: {
     flex: 1,
     justifyContent: 'center',
-    minHeight: 300,
-    maxHeight: 400,
+    paddingHorizontal: 20,
   },
   numberPad: {
     flexDirection: 'row',
@@ -309,53 +319,60 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 20,
-    maxWidth: 280,
+    maxWidth: 300,
     alignSelf: 'center',
   },
   numberButton: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 4,
   },
   emptyButton: {
-    width: 72,
-    height: 72,
+    width: 80,
+    height: 80,
   },
   deleteButton: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
   },
   numberText: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '600',
     color: '#111827',
   },
   deleteText: {
-    fontSize: 24,
+    fontSize: 28,
     color: '#6B7280',
   },
+  bottomSection: {
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+  },
   continueButton: {
-    width: '100%',
     backgroundColor: '#E5E7EB',
     borderRadius: 16,
     paddingVertical: 18,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 56,
-    marginBottom: 30,
-    marginTop: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
   },
   continueButtonActive: {
     backgroundColor: '#4facfe',
@@ -367,5 +384,13 @@ const styles = StyleSheet.create({
   },
   continueButtonTextActive: {
     color: '#FFFFFF',
+  },
+  securityNote: {
+    alignItems: 'center',
+  },
+  securityText: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
   },
 });

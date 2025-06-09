@@ -9,7 +9,7 @@ import {
   Vibration,
   Platform,
 } from 'react-native';
-import { X, Shield, Check } from 'lucide-react-native';
+import { X, Shield, Check, Sparkles } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface ChangePinModalProps {
@@ -130,7 +130,7 @@ export default function ChangePinModal({ visible, onClose }: ChangePinModalProps
   const getTitle = () => {
     switch (step) {
       case 'current': return 'Enter Current PIN';
-      case 'new': return 'Enter New PIN';
+      case 'new': return 'Create New PIN';
       case 'confirm': return 'Confirm New PIN';
       default: return '';
     }
@@ -138,8 +138,8 @@ export default function ChangePinModal({ visible, onClose }: ChangePinModalProps
 
   const getSubtitle = () => {
     switch (step) {
-      case 'current': return 'Enter your current 4-digit PIN';
-      case 'new': return 'Choose a new 4-digit PIN';
+      case 'current': return 'Enter your current 4-digit PIN to continue';
+      case 'new': return 'Choose a new secure 4-digit PIN';
       case 'confirm': return 'Enter your new PIN again to confirm';
       default: return '';
     }
@@ -163,14 +163,31 @@ export default function ChangePinModal({ visible, onClose }: ChangePinModalProps
           <View style={styles.placeholder} />
         </View>
 
-        {/* Content */}
-        <View style={styles.content}>
+        {/* Hero Section */}
+        <View style={styles.heroSection}>
           <View style={styles.iconContainer}>
             <Shield size={48} color="#4facfe" />
+            <View style={styles.sparkleIcon}>
+              <Sparkles size={16} color="#4facfe" />
+            </View>
           </View>
           
           <Text style={styles.title}>{getTitle()}</Text>
           <Text style={styles.subtitle}>{getSubtitle()}</Text>
+
+          {/* Step Indicator */}
+          <View style={styles.stepIndicator}>
+            {['current', 'new', 'confirm'].map((stepName, index) => (
+              <View
+                key={stepName}
+                style={[
+                  styles.stepDot,
+                  step === stepName && styles.stepDotActive,
+                  ['current', 'new', 'confirm'].indexOf(step) > index && styles.stepDotCompleted
+                ]}
+              />
+            ))}
+          </View>
 
           {/* PIN Display */}
           <View style={styles.pinContainer}>
@@ -181,48 +198,54 @@ export default function ChangePinModal({ visible, onClose }: ChangePinModalProps
                   styles.pinDot,
                   currentPinValue.length > index && styles.pinDotFilled,
                 ]}
-              />
+              >
+                {currentPinValue.length > index && (
+                  <View style={styles.pinDotInner} />
+                )}
+              </View>
             ))}
           </View>
+        </View>
 
-          {/* Number Pad */}
-          <View style={styles.numberPadContainer}>
-            <View style={styles.numberPad}>
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(number => (
-                <TouchableOpacity
-                  key={number}
-                  style={styles.numberButton}
-                  onPress={() => handleNumberPress(number.toString())}
-                  disabled={currentPinValue.length >= 4}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.numberText}>{number}</Text>
-                </TouchableOpacity>
-              ))}
-              
-              <View style={styles.emptyButton} />
-              
+        {/* Number Pad */}
+        <View style={styles.numberPadContainer}>
+          <View style={styles.numberPad}>
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(number => (
               <TouchableOpacity
+                key={number}
                 style={styles.numberButton}
-                onPress={() => handleNumberPress('0')}
+                onPress={() => handleNumberPress(number.toString())}
                 disabled={currentPinValue.length >= 4}
                 activeOpacity={0.7}
               >
-                <Text style={styles.numberText}>0</Text>
+                <Text style={styles.numberText}>{number}</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={handleDelete}
-                disabled={currentPinValue.length === 0}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.deleteText}>⌫</Text>
-              </TouchableOpacity>
-            </View>
+            ))}
+            
+            <View style={styles.emptyButton} />
+            
+            <TouchableOpacity
+              style={styles.numberButton}
+              onPress={() => handleNumberPress('0')}
+              disabled={currentPinValue.length >= 4}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.numberText}>0</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={handleDelete}
+              disabled={currentPinValue.length === 0}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.deleteText}>⌫</Text>
+            </TouchableOpacity>
           </View>
+        </View>
 
-          {/* Continue Button */}
+        {/* Continue Button */}
+        <View style={styles.bottomSection}>
           <TouchableOpacity
             style={[styles.continueButton, isComplete && styles.continueButtonActive]}
             onPress={handleContinue}
@@ -269,23 +292,44 @@ const styles = StyleSheet.create({
   placeholder: {
     width: 40,
   },
-  content: {
-    flex: 1,
+  heroSection: {
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 40,
+    paddingVertical: 40,
   },
   iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     backgroundColor: '#EFF6FF',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
+    position: 'relative',
+    shadowColor: '#4facfe',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  sparkleIcon: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '700',
     color: '#111827',
     marginBottom: 8,
@@ -296,31 +340,56 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     textAlign: 'center',
     lineHeight: 22,
-    marginBottom: 40,
+    marginBottom: 32,
+    paddingHorizontal: 20,
+  },
+  stepIndicator: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 32,
+  },
+  stepDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#E5E7EB',
+  },
+  stepDotActive: {
+    backgroundColor: '#4facfe',
+  },
+  stepDotCompleted: {
+    backgroundColor: '#4facfe',
   },
   pinContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 16,
-    marginBottom: 40,
+    gap: 20,
   },
   pinDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     borderWidth: 2,
-    borderColor: '#D1D5DB',
-    backgroundColor: 'transparent',
+    borderColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   pinDotFilled: {
-    backgroundColor: '#4facfe',
     borderColor: '#4facfe',
+    backgroundColor: '#EFF6FF',
+  },
+  pinDotInner: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#4facfe',
   },
   numberPadContainer: {
     flex: 1,
     justifyContent: 'center',
-    minHeight: 300,
+    paddingHorizontal: 20,
   },
   numberPad: {
     flexDirection: 'row',
@@ -365,15 +434,22 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: '#6B7280',
   },
+  bottomSection: {
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+  },
   continueButton: {
-    width: '100%',
     backgroundColor: '#E5E7EB',
     borderRadius: 16,
     paddingVertical: 18,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 56,
-    marginBottom: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
   },
   continueButtonActive: {
     backgroundColor: '#4facfe',
