@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Mail, ArrowRight, Sparkles, Apple } from 'lucide-react-native';
+import { Mail, ArrowRight, Sparkles } from 'lucide-react-native';
 
 export default function EmailEntry() {
   const [email, setEmail] = useState('');
@@ -92,49 +92,8 @@ export default function EmailEntry() {
             <View style={styles.welcomeSection}>
               <Text style={styles.welcomeTitle}>Welcome Back!</Text>
               <Text style={styles.welcomeSubtitle}>
-                Choose your preferred way to sign in
+                Enter your email to get started
               </Text>
-            </View>
-
-            {/* Social Sign In Buttons */}
-            <View style={styles.socialContainer}>
-              <TouchableOpacity 
-                style={styles.socialButton}
-                onPress={handleGoogleSignIn}
-                activeOpacity={0.8}
-              >
-                <View style={styles.socialIconContainer}>
-                  <Image 
-                    source={{ uri: 'https://images.pexels.com/photos/270404/pexels-photo-270404.jpeg?auto=compress&cs=tinysrgb&w=50&h=50&fit=crop' }}
-                    style={styles.googleIcon}
-                  />
-                </View>
-                <Text style={styles.socialButtonText}>Continue with Google</Text>
-                <ArrowRight size={16} color="#6B7280" />
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={styles.socialButton}
-                onPress={handleAppleSignIn}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.socialIconContainer, styles.appleIconContainer]}>
-                  <Apple size={18} color="#FFFFFF" />
-                </View>
-                <Text style={styles.socialButtonText}>Continue with Apple</Text>
-                <ArrowRight size={16} color="#6B7280" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Divider */}
-            <View style={styles.dividerContainer}>
-              <View style={styles.divider}>
-                <View style={styles.dividerLine} />
-                <View style={styles.dividerTextContainer}>
-                  <Text style={styles.dividerText}>or continue with email</Text>
-                </View>
-                <View style={styles.dividerLine} />
-              </View>
             </View>
 
             {/* Email Form */}
@@ -191,6 +150,45 @@ export default function EmailEntry() {
                     <ArrowRight size={20} color="#FFFFFF" />
                   )}
                 </View>
+              </TouchableOpacity>
+            </View>
+
+            {/* Divider */}
+            <View style={styles.dividerContainer}>
+              <View style={styles.divider}>
+                <View style={styles.dividerLine} />
+                <View style={styles.dividerTextContainer}>
+                  <Text style={styles.dividerText}>or</Text>
+                </View>
+                <View style={styles.dividerLine} />
+              </View>
+            </View>
+
+            {/* Social Sign In Buttons */}
+            <View style={styles.socialContainer}>
+              <TouchableOpacity 
+                style={styles.socialButton}
+                onPress={handleGoogleSignIn}
+                activeOpacity={0.8}
+              >
+                <Image 
+                  source={{ uri: 'https://images.pexels.com/photos/270404/pexels-photo-270404.jpeg?auto=compress&cs=tinysrgb&w=24&h=24&fit=crop' }}
+                  style={styles.socialIcon}
+                />
+                <Text style={styles.socialButtonText}>Sign in with Google</Text>
+                <ArrowRight size={16} color="#6B7280" />
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.socialButton}
+                onPress={handleAppleSignIn}
+                activeOpacity={0.8}
+              >
+                <View style={styles.appleIconContainer}>
+                  <Text style={styles.appleIcon}>🍎</Text>
+                </View>
+                <Text style={styles.socialButtonText}>Sign in with Apple</Text>
+                <ArrowRight size={16} color="#6B7280" />
               </TouchableOpacity>
             </View>
 
@@ -304,69 +302,6 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     textAlign: 'center',
   },
-  socialContainer: {
-    marginBottom: 32,
-    gap: 16,
-  },
-  socialButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  socialIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  googleIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-  },
-  appleIconContainer: {
-    backgroundColor: '#000000',
-  },
-  socialButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#374151',
-    flex: 1,
-  },
-  dividerContainer: {
-    marginBottom: 32,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#E5E7EB',
-  },
-  dividerTextContainer: {
-    backgroundColor: '#F9FAFB',
-    paddingHorizontal: 16,
-  },
-  dividerText: {
-    fontSize: 14,
-    color: '#9CA3AF',
-    fontWeight: '500',
-  },
   emailSection: {
     marginBottom: 32,
   },
@@ -457,6 +392,69 @@ const styles = StyleSheet.create({
   },
   continueButtonTextActive: {
     color: '#FFFFFF',
+  },
+  dividerContainer: {
+    marginBottom: 32,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E5E7EB',
+  },
+  dividerTextContainer: {
+    backgroundColor: '#F9FAFB',
+    paddingHorizontal: 16,
+  },
+  dividerText: {
+    fontSize: 14,
+    color: '#9CA3AF',
+    fontWeight: '500',
+  },
+  socialContainer: {
+    marginBottom: 32,
+    gap: 16,
+  },
+  socialButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  socialIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    marginRight: 16,
+  },
+  appleIconContainer: {
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  appleIcon: {
+    fontSize: 18,
+  },
+  socialButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151',
+    flex: 1,
   },
   securityBadge: {
     flexDirection: 'row',
