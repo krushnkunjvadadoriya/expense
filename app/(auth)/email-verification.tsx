@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ export default function EmailVerification() {
   const [resendTimer, setResendTimer] = useState(60);
   const [canResend, setCanResend] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
+  const inputRefs = useRef<(TextInput | null)[]>([]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -45,13 +46,18 @@ export default function EmailVerification() {
 
     // Auto-focus next input
     if (value && index < 5) {
-      const nextInput = document.querySelector(`input[data-index="${index + 1}"]`) as HTMLInputElement;
-      nextInput?.focus();
+      inputRefs.current[index + 1]?.focus();
     }
 
     // Auto-verify when all digits are entered
     if (newOtp.every(digit => digit !== '') && newOtp.join('').length === 6) {
       handleVerifyOtp(newOtp.join(''));
+    }
+  };
+
+  const handleKeyPress = (key: string, index: number) => {
+    if (key === 'Backspace' && !otp[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
     }
   };
 
@@ -79,6 +85,7 @@ export default function EmailVerification() {
     } catch (error) {
       Alert.alert('Invalid OTP', 'Please check the code and try again.');
       setOtp(['', '', '', '', '', '']);
+      inputRefs.current[0]?.focus();
     } finally {
       setIsLoading(false);
     }
@@ -94,6 +101,8 @@ export default function EmailVerification() {
       
       setResendTimer(60);
       setCanResend(false);
+      setOtp(['', '', '', '', '', '']);
+      inputRefs.current[0]?.focus();
       
       Alert.alert('Email Sent', 'A new verification code has been sent to your inbox.');
     } catch (error) {
@@ -160,6 +169,7 @@ export default function EmailVerification() {
             {otp.map((digit, index) => (
               <TextInput
                 key={index}
+                ref={ref => inputRefs.current[index] = ref}
                 style={[
                   styles.otpInput,
                   digit && styles.otpInputFilled,
@@ -167,11 +177,11 @@ export default function EmailVerification() {
                 ]}
                 value={digit}
                 onChangeText={(value) => handleOtpChange(value, index)}
+                onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, index)}
                 keyboardType="numeric"
                 maxLength={1}
                 selectTextOnFocus
                 editable={!isLoading}
-                data-index={index}
               />
             ))}
           </View>
