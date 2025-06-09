@@ -100,7 +100,7 @@ export default function SetupPin() {
           <View style={styles.progressBar}>
             <View style={[styles.progressFill, { width: '100%' }]} />
           </View>
-          <Text style={styles.progressText}>Step 3 of 3</Text>
+          <Text style={styles.progressText}>Final Step</Text>
         </View>
       </View>
 
@@ -120,17 +120,27 @@ export default function SetupPin() {
           }
         </Text>
 
-        {/* PIN Display */}
+        {/* PIN Display - 3 dots per row */}
         <View style={styles.pinContainer}>
-          {[0, 1, 2, 3].map(index => (
+          <View style={styles.pinRow}>
+            {[0, 1, 2].map(index => (
+              <View
+                key={index}
+                style={[
+                  styles.pinDot,
+                  currentPin.length > index && styles.pinDotFilled,
+                ]}
+              />
+            ))}
+          </View>
+          <View style={styles.pinRow}>
             <View
-              key={index}
               style={[
                 styles.pinDot,
-                currentPin.length > index && styles.pinDotFilled,
+                currentPin.length > 3 && styles.pinDotFilled,
               ]}
             />
-          ))}
+          </View>
         </View>
 
         {/* Number Pad */}
@@ -265,11 +275,15 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   pinContainer: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  pinRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 16,
-    marginBottom: 40,
+    marginBottom: 16,
   },
   pinDot: {
     width: 16,
@@ -287,6 +301,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     minHeight: 300,
+    maxHeight: 400,
   },
   numberPad: {
     flexDirection: 'row',
@@ -340,6 +355,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: 56,
     marginBottom: 30,
+    marginTop: 20,
   },
   continueButtonActive: {
     backgroundColor: '#4facfe',

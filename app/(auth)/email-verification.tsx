@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Alert,
   ScrollView,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -13,6 +14,7 @@ import { Mail, ArrowLeft, RotateCcw, CircleCheck as CheckCircle } from 'lucide-r
 
 export default function EmailVerification() {
   const { email } = useLocalSearchParams<{ email: string }>();
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(60);
   const [canResend, setCanResend] = useState(false);
@@ -34,38 +36,51 @@ export default function EmailVerification() {
     return () => clearInterval(interval);
   }, [resendTimer]);
 
-  // Simulate email verification check
-  useEffect(() => {
-    const checkVerification = setInterval(() => {
-      // In a real app, you'd poll your backend or use websockets
-      // For demo, randomly verify after some time
-      if (Math.random() > 0.95) {
-        setIsVerified(true);
-        clearInterval(checkVerification);
-        
-        // Auto-navigate after verification
-        setTimeout(() => {
-          handleVerificationComplete();
-        }, 2000);
-      }
-    }, 2000);
-
-    return () => clearInterval(checkVerification);
-  }, []);
-
-  const handleVerificationComplete = () => {
-    // Check if user exists (mock check)
-    const userExists = Math.random() > 0.5; // 50% chance for demo
+  const handleOtpChange = (value: string, index: number) => {
+    if (value.length > 1) return; // Prevent multiple characters
     
-    if (userExists) {
-      // Existing user - go to PIN entry
-      router.replace('/(auth)/enter-pin');
-    } else {
-      // New user - go to registration form
-      router.push({
-        pathname: '/(auth)/registration-form',
-        params: { email: email || '' }
-      });
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
+
+    // Auto-focus next input
+    if (value && index < 5) {
+      const nextInput = document.querySelector(`input[data-index="${index + 1}"]`) as HTMLInputElement;
+      nextInput?.focus();
+    }
+
+    // Auto-verify when all digits are entered
+    if (newOtp.every(digit => digit !== '') && newOtp.join('').length === 6) {
+      handleVerifyOtp(newOtp.join(''));
+    }
+  };
+
+  const handleVerifyOtp = async (otpCode: string) => {
+    setIsLoading(true);
+
+    try {
+      // Mock OTP verification
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // For demo, accept any 6-digit OTP
+      if (otpCode.length === 6) {
+        setIsVerified(true);
+        
+        // Auto-navigate after verification to profile setup
+        setTimeout(() => {
+          router.push({
+            pathname: '/(auth)/registration-form',
+            params: { email: email || '' }
+          });
+        }, 2000);
+      } else {
+        throw new Error('Invalid OTP');
+      }
+    } catch (error) {
+      Alert.alert('Invalid OTP', 'Please check the code and try again.');
+      setOtp(['', '', '', '', '', '']);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -80,26 +95,12 @@ export default function EmailVerification() {
       setResendTimer(60);
       setCanResend(false);
       
-      Alert.alert('Email Sent', 'A new verification email has been sent to your inbox.');
+      Alert.alert('Email Sent', 'A new verification code has been sent to your inbox.');
     } catch (error) {
       Alert.alert('Error', 'Failed to resend email. Please try again.');
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleManualVerification = () => {
-    Alert.alert(
-      'Manual Verification',
-      'Click the verification link in your email to continue. The link will automatically redirect you back to the app.',
-      [
-        { text: 'OK' },
-        { 
-          text: 'I clicked the link', 
-          onPress: handleVerificationComplete 
-        }
-      ]
-    );
   };
 
   const formatEmail = (email: string) => {
@@ -118,7 +119,7 @@ export default function EmailVerification() {
           </View>
           <Text style={styles.verifiedTitle}>Email Verified!</Text>
           <Text style={styles.verifiedMessage}>
-            Your email has been successfully verified. Redirecting you now...
+            Your email has been successfully verified. Setting up your profile...
           </Text>
         </View>
       </SafeAreaView>
@@ -150,53 +151,71 @@ export default function EmailVerification() {
           
           <Text style={styles.title}>Check Your Email</Text>
           <Text style={styles.subtitle}>
-            We've sent a verification link to{'\n'}
+            We've sent a 6-digit verification code to{'\n'}
             <Text style={styles.emailText}>{formatEmail(email || '')}</Text>
           </Text>
-          <Text style={styles.description}>
-            Click the link in the email to verify your account. The verification will happen automatically.
-          </Text>
 
-          {/* Action Buttons */}
-          <View style={styles.actionContainer}>
-            <TouchableOpacity
-              style={styles.primaryButton}
-              onPress={handleManualVerification}
-            >
-              <Text style={styles.primaryButtonText}>I clicked the link</Text>
-            </TouchableOpacity>
-
-            {/* Resend Section */}
-            <View style={styles.resendContainer}>
-              {canResend ? (
-                <TouchableOpacity 
-                  style={styles.resendButton}
-                  onPress={handleResendEmail}
-                  disabled={isLoading}
-                >
-                  <RotateCcw size={16} color="#4facfe" />
-                  <Text style={styles.resendButtonText}>
-                    {isLoading ? 'Sending...' : 'Resend Email'}
-                  </Text>
-                </TouchableOpacity>
-              ) : (
-                <Text style={styles.timerText}>
-                  Resend available in {resendTimer}s
-                </Text>
-              )}
-            </View>
+          {/* OTP Input */}
+          <View style={styles.otpContainer}>
+            {otp.map((digit, index) => (
+              <TextInput
+                key={index}
+                style={[
+                  styles.otpInput,
+                  digit && styles.otpInputFilled,
+                  isLoading && styles.otpInputDisabled
+                ]}
+                value={digit}
+                onChangeText={(value) => handleOtpChange(value, index)}
+                keyboardType="numeric"
+                maxLength={1}
+                selectTextOnFocus
+                editable={!isLoading}
+                data-index={index}
+              />
+            ))}
           </View>
 
-          {/* Help Section */}
-          <View style={styles.helpContainer}>
-            <Text style={styles.helpTitle}>Didn't receive the email?</Text>
-            <Text style={styles.helpText}>
-              • Check your spam/junk folder{'\n'}
-              • Make sure you entered the correct email{'\n'}
-              • Wait a few minutes for delivery{'\n'}
-              • Try resending the email
+          {/* Resend Section */}
+          <View style={styles.resendContainer}>
+            {canResend ? (
+              <TouchableOpacity 
+                style={styles.resendButton}
+                onPress={handleResendEmail}
+              >
+                <RotateCcw size={16} color="#4facfe" />
+                <Text style={styles.resendButtonText}>Resend Code</Text>
+              </TouchableOpacity>
+            ) : (
+              <Text style={styles.timerText}>
+                Resend code in {resendTimer}s
+              </Text>
+            )}
+          </View>
+
+          {/* Manual Verify Button */}
+          <TouchableOpacity
+            style={[
+              styles.verifyButton,
+              otp.every(digit => digit !== '') && styles.verifyButtonActive
+            ]}
+            onPress={() => handleVerifyOtp(otp.join(''))}
+            disabled={!otp.every(digit => digit !== '') || isLoading}
+          >
+            <Text style={[
+              styles.verifyButtonText,
+              otp.every(digit => digit !== '') && styles.verifyButtonTextActive
+            ]}>
+              {isLoading ? 'Verifying...' : 'Verify Code'}
             </Text>
-          </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Footer */}
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            Didn't receive the code? Check your spam folder or try resending.
+          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -263,41 +282,41 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#111827',
   },
-  description: {
-    fontSize: 14,
-    color: '#9CA3AF',
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 40,
-    paddingHorizontal: 20,
+  otpContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+    marginVertical: 40,
   },
-  actionContainer: {
-    width: '100%',
-    marginBottom: 40,
-  },
-  primaryButton: {
-    backgroundColor: '#4facfe',
+  otpInput: {
+    width: 48,
+    height: 56,
     borderRadius: 12,
-    paddingVertical: 18,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  primaryButtonText: {
-    fontSize: 18,
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
+    textAlign: 'center',
+    fontSize: 20,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: '#111827',
+  },
+  otpInputFilled: {
+    borderColor: '#4facfe',
+    backgroundColor: '#EFF6FF',
+  },
+  otpInputDisabled: {
+    opacity: 0.6,
   },
   resendContainer: {
     alignItems: 'center',
+    marginBottom: 32,
   },
   resendButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    backgroundColor: '#EFF6FF',
-    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
   },
   resendButtonText: {
     fontSize: 16,
@@ -309,23 +328,33 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     fontWeight: '500',
   },
-  helpContainer: {
-    backgroundColor: '#F8FAFC',
-    padding: 20,
-    borderRadius: 16,
+  verifyButton: {
     width: '100%',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    backgroundColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingVertical: 18,
+    alignItems: 'center',
   },
-  helpTitle: {
-    fontSize: 16,
+  verifyButtonActive: {
+    backgroundColor: '#4facfe',
+  },
+  verifyButtonText: {
+    fontSize: 18,
     fontWeight: '600',
-    color: '#475569',
-    marginBottom: 12,
+    color: '#9CA3AF',
   },
-  helpText: {
+  verifyButtonTextActive: {
+    color: '#FFFFFF',
+  },
+  footer: {
+    paddingHorizontal: 20,
+    paddingBottom: 30,
+    paddingTop: 20,
+  },
+  footerText: {
     fontSize: 14,
-    color: '#64748B',
+    color: '#9CA3AF',
+    textAlign: 'center',
     lineHeight: 20,
   },
   verifiedContainer: {

@@ -36,7 +36,7 @@ export default function EmailEntry() {
       // Mock API call to send verification email
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Navigate to email verification
+      // Navigate to email verification (OTP step)
       router.push({
         pathname: '/(auth)/email-verification',
         params: { email }
@@ -126,7 +126,7 @@ export default function EmailEntry() {
                   )}
                 </View>
                 <Text style={styles.helperText}>
-                  We'll send you a secure verification link
+                  We'll send you a secure verification code
                 </Text>
               </View>
 
