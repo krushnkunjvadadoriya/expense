@@ -7,6 +7,7 @@ import {
   Alert,
   Vibration,
   Platform,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -109,16 +110,16 @@ export default function SetupPin() {
           style={styles.backButton}
           onPress={() => step === 'confirm' ? setStep('create') : router.back()}
         >
-          <ArrowLeft size={24} color="#6B7280" />
+          <ArrowLeft size={20} color="#64748B" />
         </TouchableOpacity>
       </View>
 
       {/* Hero Section */}
       <View style={styles.heroSection}>
         <View style={styles.iconContainer}>
-          <Shield size={52} color="#4facfe" />
+          <Shield size={56} color="#4facfe" />
           <View style={styles.sparkleIcon}>
-            <Sparkles size={18} color="#4facfe" />
+            <Sparkles size={20} color="#FFFFFF" />
           </View>
         </View>
         
@@ -132,7 +133,7 @@ export default function SetupPin() {
           <View style={[styles.stepDot, step === 'confirm' && styles.stepDotActive]} />
         </View>
 
-        {/* PIN Display - Modern circular dots */}
+        {/* PIN Display - Enhanced circular dots */}
         <View style={styles.pinContainer}>
           {[0, 1, 2, 3].map(index => (
             <View
@@ -162,7 +163,7 @@ export default function SetupPin() {
               ]}
               onPress={() => handleNumberPress(number.toString())}
               disabled={currentPin.length >= 4}
-              activeOpacity={0.7}
+              activeOpacity={0.6}
             >
               <Text style={[
                 styles.numberText,
@@ -182,7 +183,7 @@ export default function SetupPin() {
             ]}
             onPress={() => handleNumberPress('0')}
             disabled={currentPin.length >= 4}
-            activeOpacity={0.7}
+            activeOpacity={0.6}
           >
             <Text style={[
               styles.numberText,
@@ -199,7 +200,7 @@ export default function SetupPin() {
             ]}
             onPress={handleDelete}
             disabled={currentPin.length === 0}
-            activeOpacity={0.7}
+            activeOpacity={0.6}
           >
             <Text style={[
               styles.deleteText,
@@ -248,100 +249,110 @@ export default function SetupPin() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FAFBFC',
   },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 10,
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 8,
   },
   backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.06,
     shadowRadius: 8,
-    elevation: 3,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
   heroSection: {
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 50,
+    paddingHorizontal: 24,
+    paddingVertical: 48,
   },
   iconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 32,
     position: 'relative',
     shadowColor: '#4facfe',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.15,
-    shadowRadius: 24,
-    elevation: 12,
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.12,
+    shadowRadius: 32,
+    elevation: 16,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: '#F8FAFC',
   },
   sparkleIcon: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    top: 12,
+    right: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: '#4facfe',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#4facfe',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
   },
   title: {
-    fontSize: 32,
+    fontSize: 34,
     fontWeight: '800',
     color: '#0F172A',
     marginBottom: 12,
     textAlign: 'center',
-    letterSpacing: -0.5,
+    letterSpacing: -0.8,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 17,
     color: '#64748B',
     textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 32,
-    paddingHorizontal: 20,
+    lineHeight: 26,
+    marginBottom: 36,
+    paddingHorizontal: 24,
     fontWeight: '500',
   },
   stepIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 44,
   },
   stepDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
     backgroundColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   stepDotActive: {
     backgroundColor: '#4facfe',
+    shadowColor: '#4facfe',
+    shadowOpacity: 0.3,
   },
   stepLine: {
-    width: 40,
-    height: 2,
+    width: 48,
+    height: 3,
     backgroundColor: '#E2E8F0',
-    marginHorizontal: 8,
+    marginHorizontal: 12,
+    borderRadius: 1.5,
   },
   stepLineActive: {
     backgroundColor: '#4facfe',
@@ -350,94 +361,102 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 24,
+    gap: 28,
   },
   pinDot: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 2.5,
     borderColor: '#E2E8F0',
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 3,
   },
   pinDotFilled: {
     borderColor: '#4facfe',
     backgroundColor: '#EFF6FF',
-    transform: [{ scale: 1.1 }],
+    transform: [{ scale: 1.15 }],
+    shadowColor: '#4facfe',
+    shadowOpacity: 0.2,
   },
   pinDotInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: '#4facfe',
   },
   numberPadContainer: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 20,
-    minHeight: 320,
+    paddingHorizontal: 24,
+    minHeight: 340,
   },
   numberPad: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 20,
-    maxWidth: 320,
+    gap: 24,
+    maxWidth: 340,
     alignSelf: 'center',
   },
   numberButton: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 6,
+    shadowRadius: 20,
+    elevation: 8,
     borderWidth: 1,
     borderColor: '#F1F5F9',
   },
   numberButtonDisabled: {
-    opacity: 0.5,
+    opacity: 0.4,
   },
   emptyButton: {
-    width: 84,
-    height: 84,
+    width: 88,
+    height: 88,
   },
   deleteButton: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     backgroundColor: '#F8FAFC',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   deleteButtonDisabled: {
-    opacity: 0.3,
+    opacity: 0.25,
   },
   numberText: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: '600',
     color: '#0F172A',
+    letterSpacing: -0.5,
   },
   numberTextDisabled: {
     color: '#94A3B8',
   },
   deleteText: {
-    fontSize: 28,
+    fontSize: 32,
     color: '#64748B',
     fontWeight: '500',
   },
@@ -445,27 +464,30 @@ const styles = StyleSheet.create({
     color: '#CBD5E1',
   },
   bottomSection: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 24,
+    paddingBottom: 44,
   },
   continueButton: {
     backgroundColor: '#E2E8F0',
-    borderRadius: 20,
+    borderRadius: 24,
     paddingVertical: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 64,
-    marginBottom: 24,
+    minHeight: 68,
+    marginBottom: 28,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 6,
+    shadowRadius: 20,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
   continueButtonActive: {
     backgroundColor: '#4facfe',
     shadowColor: '#4facfe',
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.3,
+    borderColor: '#4facfe',
   },
   buttonContent: {
     flexDirection: 'row',
@@ -473,13 +495,14 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   continueButtonText: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '600',
     color: '#94A3B8',
+    letterSpacing: -0.2,
   },
   continueButtonTextActive: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
   },
   securityNote: {
@@ -487,22 +510,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#F0FDF4',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: '#D1FAE5',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   securityIcon: {
     marginRight: 12,
   },
   securityIconText: {
-    fontSize: 16,
+    fontSize: 18,
   },
   securityText: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#065F46',
     fontWeight: '600',
     textAlign: 'center',
+    letterSpacing: -0.1,
   },
 });
