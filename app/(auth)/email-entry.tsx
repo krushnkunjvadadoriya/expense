@@ -205,10 +205,7 @@ export default function EmailEntry() {
             {/* Footer */}
             <View style={styles.footer}>
               <Text style={styles.footerText}>
-                By continuing, you agree to our{' '}
-                <Text style={styles.footerLink}>Terms of Service</Text>
-                <Text> and </Text>
-                <Text style={styles.footerLink}>Privacy Policy</Text>
+                By continuing, you agree to our <Text style={styles.footerLink}>Terms of Service</Text> and <Text style={styles.footerLink}>Privacy Policy</Text>
               </Text>
             </View>
           </View>
