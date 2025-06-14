@@ -11,15 +11,20 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Users, Plus, Settings, Crown, UserPlus, DollarSign, TrendingUp, TrendingDown, Calendar, MoveVertical as MoreVertical } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import CreateFamilyModal from '../../components/CreateFamilyModal';
 import InviteMemberModal from '../../components/InviteMemberModal';
 import FamilyBudgetModal from '../../components/FamilyBudgetModal';
 
 export default function Family() {
   const { state } = useApp();
+  const { state: themeState } = useTheme();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showBudgetModal, setShowBudgetModal] = useState(false);
+
+  const { colors } = themeState.theme;
+  const styles = createStyles(colors);
 
   // Mock family data - in real app this would come from context/API
   const [familyGroup, setFamilyGroup] = useState({
@@ -79,7 +84,7 @@ export default function Family() {
         </View>
 
         <View style={styles.emptyState}>
-          <Users size={64} color="#D1D5DB" />
+          <Users size={64} color={colors.textTertiary} />
           <Text style={styles.emptyStateTitle}>No Family Group</Text>
           <Text style={styles.emptyStateSubtext}>
             Create or join a family group to start sharing budgets and expenses
@@ -109,7 +114,7 @@ export default function Family() {
           <Text style={styles.subtitle}>{familyGroup.name}</Text>
         </View>
         <TouchableOpacity style={styles.settingsButton}>
-          <Settings size={24} color="#6B7280" />
+          <Settings size={24} color={colors.textTertiary} />
         </TouchableOpacity>
       </View>
 
@@ -179,7 +184,7 @@ export default function Family() {
                   </View>
                   <Text style={[
                     styles.categoryAmount,
-                    { color: isOverBudget ? '#EF4444' : '#111827' }
+                    { color: isOverBudget ? '#EF4444' : colors.text }
                   ]}>
                     {formatCurrency(category.spent)} / {formatCurrency(category.budget)}
                   </Text>
@@ -233,7 +238,7 @@ export default function Family() {
                 </View>
               </View>
               <TouchableOpacity onPress={() => handleMemberAction(member)}>
-                <MoreVertical size={20} color="#6B7280" />
+                <MoreVertical size={20} color={colors.textTertiary} />
               </TouchableOpacity>
             </View>
           ))}
@@ -285,28 +290,28 @@ export default function Family() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: colors.border,
   },
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
   },
   subtitle: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textTertiary,
     fontWeight: '500',
     marginTop: 2,
   },
@@ -314,7 +319,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.borderLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -323,11 +328,11 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   budgetOverview: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 20,
     marginBottom: 20,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -342,7 +347,7 @@ const styles = StyleSheet.create({
   budgetTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
   },
   manageBudgetText: {
     fontSize: 16,
@@ -361,13 +366,13 @@ const styles = StyleSheet.create({
   budgetStatValue: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
     marginTop: 8,
     marginBottom: 4,
   },
   budgetStatLabel: {
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.textTertiary,
     fontWeight: '500',
   },
   progressContainer: {
@@ -381,17 +386,17 @@ const styles = StyleSheet.create({
   },
   progressLabel: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textTertiary,
     fontWeight: '500',
   },
   progressPercentage: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#111827',
+    color: colors.text,
   },
   progressBar: {
     height: 8,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.borderLight,
     borderRadius: 4,
     overflow: 'hidden',
   },
@@ -411,7 +416,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
   },
   inviteButton: {
     flexDirection: 'row',
@@ -428,11 +433,11 @@ const styles = StyleSheet.create({
     color: '#4facfe',
   },
   categoryCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 12,
     marginBottom: 12,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -457,7 +462,7 @@ const styles = StyleSheet.create({
   categoryName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#111827',
+    color: colors.text,
   },
   categoryAmount: {
     fontSize: 14,
@@ -465,7 +470,7 @@ const styles = StyleSheet.create({
   },
   categoryProgressBar: {
     height: 6,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.borderLight,
     borderRadius: 3,
     overflow: 'hidden',
     marginBottom: 8,
@@ -480,14 +485,14 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   memberCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 12,
     marginBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -502,7 +507,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.borderLight,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -521,27 +526,27 @@ const styles = StyleSheet.create({
   memberName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#111827',
+    color: colors.text,
   },
   memberEmail: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textTertiary,
     marginTop: 2,
   },
   memberRole: {
     fontSize: 12,
-    color: '#9CA3AF',
+    color: colors.textTertiary,
     textTransform: 'capitalize',
     marginTop: 2,
   },
   activityCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 12,
     marginBottom: 12,
     flexDirection: 'row',
     alignItems: 'flex-start',
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -553,13 +558,13 @@ const styles = StyleSheet.create({
   },
   activityText: {
     fontSize: 14,
-    color: '#111827',
+    color: colors.text,
     fontWeight: '500',
     marginBottom: 4,
   },
   activityTime: {
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.textTertiary,
   },
   emptyState: {
     flex: 1,
@@ -570,13 +575,13 @@ const styles = StyleSheet.create({
   emptyStateTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
     marginTop: 16,
     marginBottom: 8,
   },
   emptyStateSubtext: {
     fontSize: 16,
-    color: '#6B7280',
+    color: colors.textTertiary,
     textAlign: 'center',
     marginBottom: 32,
     lineHeight: 24,

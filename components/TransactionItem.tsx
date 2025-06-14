@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Transaction } from '@/types';
+import { useTheme } from '@/contexts/ThemeContext';
 import * as Icons from 'lucide-react-native';
 
 interface TransactionItemProps {
@@ -16,6 +17,10 @@ export default function TransactionItem({
   categoryColor = '#6B7280',
   categoryIcon = 'circle'
 }: TransactionItemProps) {
+  const { state: themeState } = useTheme();
+  const { colors } = themeState.theme;
+  const styles = createStyles(colors);
+  
   const IconComponent = (Icons as any)[categoryIcon] || Icons.Circle;
   
   const formatDate = (date: string) => {
@@ -52,15 +57,15 @@ export default function TransactionItem({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 12,
     marginBottom: 8,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -85,12 +90,12 @@ const styles = StyleSheet.create({
   description: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#111827',
+    color: colors.text,
     marginBottom: 4,
   },
   category: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textTertiary,
     fontWeight: '500',
   },
   rightSection: {
@@ -103,7 +108,7 @@ const styles = StyleSheet.create({
   },
   date: {
     fontSize: 12,
-    color: '#9CA3AF',
+    color: colors.textTertiary,
     fontWeight: '500',
   },
 });

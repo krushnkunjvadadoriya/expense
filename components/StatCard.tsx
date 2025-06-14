@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface StatCardProps {
   title: string;
@@ -16,10 +17,14 @@ export default function StatCard({
   subtitle, 
   icon: Icon, 
   color, 
-  backgroundColor = '#FFFFFF' 
+  backgroundColor 
 }: StatCardProps) {
+  const { state: themeState } = useTheme();
+  const { colors } = themeState.theme;
+  const styles = createStyles(colors, backgroundColor);
+
   return (
-    <View style={[styles.container, { backgroundColor }]}>
+    <View style={styles.container}>
       <View style={styles.header}>
         <View style={[styles.iconContainer, { backgroundColor: color + '20' }]}>
           <Icon size={24} color={color} />
@@ -32,12 +37,13 @@ export default function StatCard({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any, backgroundColor?: string) => StyleSheet.create({
   container: {
     padding: 20,
     borderRadius: 16,
     marginBottom: 16,
-    shadowColor: '#000',
+    backgroundColor: backgroundColor || colors.surface,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -59,7 +65,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#374151',
+    color: colors.textSecondary,
     flex: 1,
   },
   value: {
@@ -69,7 +75,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textTertiary,
     fontWeight: '500',
   },
 });

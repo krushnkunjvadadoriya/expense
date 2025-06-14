@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Calendar, Download, Filter, ArrowLeft } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { router } from 'expo-router';
 import PieChart from '@/components/PieChart';
 import LineChart from '@/components/LineChart';
@@ -18,7 +19,11 @@ const screenWidth = Dimensions.get('window').width;
 
 export default function Reports() {
   const { state } = useApp();
+  const { state: themeState } = useTheme();
   const [selectedPeriod, setSelectedPeriod] = useState('month');
+
+  const { colors } = themeState.theme;
+  const styles = createStyles(colors);
 
   const getPeriodData = () => {
     const now = new Date();
@@ -59,7 +64,7 @@ export default function Reports() {
           name: category.length > 15 ? category.substring(0, 15) + '...' : category,
           population: amount,
           color: categoryInfo?.color || '#6B7280',
-          legendFontColor: '#374151',
+          legendFontColor: colors.textSecondary,
           legendFontSize: 12,
         };
       });
@@ -166,15 +171,15 @@ export default function Reports() {
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <ArrowLeft size={24} color="#6B7280" />
+          <ArrowLeft size={24} color={colors.textTertiary} />
         </TouchableOpacity>
         <Text style={styles.title}>Reports & Analytics</Text>
         <View style={styles.headerButtons}>
           <TouchableOpacity style={styles.iconButton}>
-            <Filter size={20} color="#6B7280" />
+            <Filter size={20} color={colors.textTertiary} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconButton}>
-            <Download size={20} color="#6B7280" />
+            <Download size={20} color={colors.textTertiary} />
           </TouchableOpacity>
         </View>
       </View>
@@ -286,32 +291,32 @@ export default function Reports() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: colors.border,
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.borderLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
   title: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
     flex: 1,
     textAlign: 'center',
     marginHorizontal: 16,
@@ -324,21 +329,21 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.borderLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
   periodSelector: {
     flexDirection: 'row',
     padding: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     gap: 8,
   },
   periodButton: {
     flex: 1,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.borderLight,
     alignItems: 'center',
   },
   periodButtonActive: {
@@ -347,7 +352,7 @@ const styles = StyleSheet.create({
   periodButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#6B7280',
+    color: colors.textTertiary,
   },
   periodButtonTextActive: {
     color: '#FFFFFF',
@@ -357,11 +362,11 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   chartContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 20,
     marginBottom: 20,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -370,7 +375,7 @@ const styles = StyleSheet.create({
   chartTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
     marginBottom: 16,
   },
   noDataContainer: {
@@ -380,7 +385,7 @@ const styles = StyleSheet.create({
   },
   noDataText: {
     fontSize: 16,
-    color: '#6B7280',
+    color: colors.textTertiary,
     fontWeight: '500',
   },
   legendContainer: {
@@ -401,7 +406,7 @@ const styles = StyleSheet.create({
   },
   legendText: {
     fontSize: 14,
-    color: '#374151',
+    color: colors.textSecondary,
     fontWeight: '500',
   },
   insightsContainer: {
@@ -410,15 +415,15 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
     marginBottom: 16,
   },
   insightCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 12,
     marginBottom: 12,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -437,18 +442,18 @@ const styles = StyleSheet.create({
   },
   insightTitle: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textTertiary,
     fontWeight: '500',
   },
   insightValue: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
     marginBottom: 4,
   },
   insightAmount: {
     fontSize: 14,
-    color: '#9CA3AF',
+    color: colors.textTertiary,
     fontWeight: '500',
   },
   summaryContainer: {
@@ -460,11 +465,11 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   summaryCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 12,
     width: (screenWidth - 52) / 2,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -472,13 +477,13 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textTertiary,
     fontWeight: '500',
     marginBottom: 8,
   },
   summaryValue: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
   },
 });

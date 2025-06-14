@@ -10,11 +10,16 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus, Calendar, DollarSign, Clock, CircleAlert as AlertCircle } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import AddEMIModal from '@/components/AddEMIModal';
 
 export default function EMIs() {
   const { state, updateEMI } = useApp();
+  const { state: themeState } = useTheme();
   const [showAddModal, setShowAddModal] = useState(false);
+
+  const { colors } = themeState.theme;
+  const styles = createStyles(colors);
 
   const formatCurrency = (amount: number) => {
     return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
@@ -137,7 +142,7 @@ export default function EMIs() {
                       <Text style={styles.emiDetailLabel}>Next Due:</Text>
                       <Text style={[
                         styles.emiDetailValue,
-                        { color: isOverdue ? '#EF4444' : isDueSoon ? '#F59E0B' : '#6B7280' }
+                        { color: isOverdue ? '#EF4444' : isDueSoon ? '#F59E0B' : colors.textTertiary }
                       ]}>
                         {new Date(emi.nextDueDate).toLocaleDateString()}
                       </Text>
@@ -194,7 +199,7 @@ export default function EMIs() {
         {/* Empty State */}
         {state.emis.length === 0 && (
           <View style={styles.emptyState}>
-            <Calendar size={48} color="#D1D5DB" />
+            <Calendar size={48} color={colors.textTertiary} />
             <Text style={styles.emptyStateText}>No EMIs added yet</Text>
             <Text style={styles.emptyStateSubtext}>
               Add your first EMI to start tracking your loan payments
@@ -217,24 +222,24 @@ export default function EMIs() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: colors.border,
   },
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
   },
   addButton: {
     width: 40,
@@ -251,11 +256,11 @@ const styles = StyleSheet.create({
   },
   summaryCard: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     padding: 20,
     borderRadius: 16,
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -264,13 +269,13 @@ const styles = StyleSheet.create({
   summaryValue: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
     marginTop: 8,
     marginBottom: 4,
   },
   summaryLabel: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textTertiary,
     fontWeight: '500',
   },
   scrollView: {
@@ -283,15 +288,15 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
     marginBottom: 16,
   },
   emiCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     padding: 20,
     borderRadius: 16,
     marginBottom: 16,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -314,7 +319,7 @@ const styles = StyleSheet.create({
   emiName: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
   },
   payButton: {
     paddingHorizontal: 16,
@@ -348,13 +353,13 @@ const styles = StyleSheet.create({
   },
   emiDetailLabel: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textTertiary,
     fontWeight: '500',
   },
   emiDetailValue: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#111827',
+    color: colors.text,
   },
   progressContainer: {
     marginTop: 8,
@@ -367,7 +372,7 @@ const styles = StyleSheet.create({
   },
   progressLabel: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textTertiary,
     fontWeight: '500',
   },
   progressPercentage: {
@@ -377,7 +382,7 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: 8,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.borderLight,
     borderRadius: 4,
     overflow: 'hidden',
   },
@@ -393,13 +398,13 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#374151',
+    color: colors.textSecondary,
     marginTop: 16,
     marginBottom: 8,
   },
   emptyStateSubtext: {
     fontSize: 16,
-    color: '#6B7280',
+    color: colors.textTertiary,
     textAlign: 'center',
     marginBottom: 24,
   },

@@ -10,14 +10,19 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Search, Filter, Plus } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import TransactionItem from '@/components/TransactionItem';
 import AddTransactionModal from '@/components/AddTransactionModal';
 
 export default function Transactions() {
   const { state } = useApp();
+  const { state: themeState } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
+
+  const { colors } = themeState.theme;
+  const styles = createStyles(colors);
 
   const filteredTransactions = state.transactions.filter(transaction => {
     const matchesSearch = transaction.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -82,17 +87,17 @@ export default function Transactions() {
       {/* Search and Filter */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBox}>
-          <Search size={20} color="#6B7280" />
+          <Search size={20} color={colors.textTertiary} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search transactions..."
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.textTertiary}
           />
         </View>
         <TouchableOpacity style={styles.filterButton}>
-          <Filter size={20} color="#6B7280" />
+          <Filter size={20} color={colors.textTertiary} />
         </TouchableOpacity>
       </View>
 
@@ -169,24 +174,24 @@ export default function Transactions() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: colors.border,
   },
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
   },
   addButton: {
     width: 40,
@@ -200,27 +205,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 20,
     gap: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
   },
   searchBox: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.borderLight,
     borderRadius: 12,
     padding: 12,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#111827',
+    color: colors.text,
     marginLeft: 8,
   },
   filterButton: {
     width: 48,
     height: 48,
     borderRadius: 12,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.borderLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -228,14 +233,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 20,
     paddingTop: 0,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     gap: 8,
   },
   filterTab: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.borderLight,
   },
   filterTabActive: {
     backgroundColor: '#4facfe',
@@ -243,7 +248,7 @@ const styles = StyleSheet.create({
   filterTabText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#6B7280',
+    color: colors.textTertiary,
   },
   filterTabTextActive: {
     color: '#FFFFFF',
@@ -264,7 +269,7 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#374151',
+    color: colors.textSecondary,
   },
   dayTotalContainer: {
     flexDirection: 'row',
@@ -287,12 +292,12 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#374151',
+    color: colors.textSecondary,
     marginBottom: 8,
   },
   emptyStateSubtext: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textTertiary,
     textAlign: 'center',
   },
 });

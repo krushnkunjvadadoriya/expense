@@ -19,6 +19,7 @@ import {
 } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useGuest } from '@/contexts/GuestContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import StatCard from '@/components/StatCard';
 import TransactionItem from '@/components/TransactionItem';
 import AddTransactionModal from '@/components/AddTransactionModal';
@@ -27,8 +28,12 @@ import GuestModeIndicator from '@/components/GuestModeIndicator';
 export default function Dashboard() {
   const { state, calculateStats } = useApp();
   const { state: guestState } = useGuest();
+  const { state: themeState } = useTheme();
   const [showAddModal, setShowAddModal] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
+  const { colors } = themeState.theme;
+  const styles = createStyles(colors);
 
   const recentTransactions = state.transactions.slice(0, 5);
   const upcomingEMIs = state.emis
@@ -76,7 +81,7 @@ export default function Dashboard() {
             <Text style={styles.userName}>{getUserName()}</Text>
           </View>
           <TouchableOpacity style={styles.notificationButton}>
-            <Bell size={24} color="#6B7280" />
+            <Bell size={24} color={colors.textTertiary} />
           </TouchableOpacity>
         </View>
 
@@ -91,6 +96,7 @@ export default function Dashboard() {
             subtitle="This month"
             icon={DollarSign}
             color="#4facfe"
+            backgroundColor={colors.surface}
           />
           
           <View style={styles.statsRow}>
@@ -100,6 +106,7 @@ export default function Dashboard() {
                 value={formatCurrency(state.monthlyStats.totalIncome)}
                 icon={TrendingUp}
                 color="#4facfe"
+                backgroundColor={colors.surface}
               />
             </View>
             <View style={styles.statCardHalf}>
@@ -108,6 +115,7 @@ export default function Dashboard() {
                 value={formatCurrency(state.monthlyStats.totalExpenses)}
                 icon={TrendingDown}
                 color="#EF4444"
+                backgroundColor={colors.surface}
               />
             </View>
           </View>
@@ -118,6 +126,7 @@ export default function Dashboard() {
             subtitle={`${formatCurrency(state.monthlyStats.totalExpenses)} of ${formatCurrency(state.user?.monthlyBudget || 0)}`}
             icon={PiggyBank}
             color={state.monthlyStats.budgetUsed > 80 ? '#EF4444' : '#4facfe'}
+            backgroundColor={colors.surface}
           />
         </View>
 
@@ -172,7 +181,7 @@ export default function Dashboard() {
                     <Text style={styles.emiAmount}>{formatCurrency(emi.monthlyAmount)}</Text>
                     <Text style={[
                       styles.emiDue,
-                      { color: daysUntilDue <= 3 ? '#EF4444' : '#6B7280' }
+                      { color: daysUntilDue <= 3 ? '#EF4444' : colors.textTertiary }
                     ]}>
                       Due in {daysUntilDue} days
                     </Text>
@@ -201,10 +210,10 @@ export default function Dashboard() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.background,
   },
   scrollView: {
     flex: 1,
@@ -214,24 +223,24 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
   },
   greeting: {
     fontSize: 16,
-    color: '#6B7280',
+    color: colors.textTertiary,
     fontWeight: '500',
   },
   userName: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
     marginTop: 4,
   },
   notificationButton: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.borderLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -259,7 +268,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
   },
   seeAll: {
     fontSize: 16,
@@ -269,26 +278,26 @@ const styles = StyleSheet.create({
   emptyState: {
     alignItems: 'center',
     padding: 40,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 16,
   },
   emptyStateText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#374151',
+    color: colors.textSecondary,
     marginBottom: 8,
   },
   emptyStateSubtext: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textTertiary,
     textAlign: 'center',
   },
   emiCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 12,
     marginBottom: 8,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -302,7 +311,7 @@ const styles = StyleSheet.create({
   emiName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#111827',
+    color: colors.text,
     marginLeft: 8,
   },
   emiDetails: {
