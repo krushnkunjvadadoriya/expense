@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { X, Check } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
+import { useGuest } from '@/contexts/GuestContext';
 
 interface AddTransactionModalProps {
   visible: boolean;
@@ -19,6 +20,7 @@ interface AddTransactionModalProps {
 
 export default function AddTransactionModal({ visible, onClose }: AddTransactionModalProps) {
   const { state, addTransaction } = useApp();
+  const { incrementTransactionCount } = useGuest();
   const [type, setType] = useState<'expense' | 'income'>('expense');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
@@ -53,6 +55,9 @@ export default function AddTransactionModal({ visible, onClose }: AddTransaction
       description,
       date,
     });
+
+    // Increment transaction count for guest users
+    incrementTransactionCount();
 
     resetForm();
     onClose();

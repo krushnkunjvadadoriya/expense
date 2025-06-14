@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Transaction, Category, EMI, User, MonthlyStats, CategoryStats } from '@/types';
+import { useGuest } from '@/contexts/GuestContext';
 
 interface AppState {
   user: User | null;
@@ -134,17 +135,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (userData) {
         dispatch({ type: 'SET_USER', payload: JSON.parse(userData) });
       } else {
-        // Set default user
+        // Set default user for guest mode
         const defaultUser: User = {
-          id: '1',
-          name: 'John Doe',
-          email: 'john@example.com',
+          id: 'guest',
+          name: 'Guest User',
           currency: 'USD',
           monthlyBudget: 3000,
           createdAt: new Date().toISOString(),
         };
         dispatch({ type: 'SET_USER', payload: defaultUser });
-        await AsyncStorage.setItem('user', JSON.stringify(defaultUser));
       }
 
       if (transactionsData) {

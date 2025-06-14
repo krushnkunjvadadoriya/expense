@@ -13,12 +13,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { User, Mail, ArrowRight, ArrowLeft, Smartphone, Sparkles } from 'lucide-react-native';
+import { useGuest } from '@/contexts/GuestContext';
 
 export default function RegistrationForm() {
   const { email, mobile } = useLocalSearchParams<{ 
     email?: string; 
     mobile?: string; 
   }>();
+  const { convertToRegisteredUser } = useGuest();
   const [formData, setFormData] = useState({
     name: '',
     email: email || '',
@@ -55,6 +57,9 @@ export default function RegistrationForm() {
     try {
       // Mock API call to save user data
       await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Convert from guest to registered user
+      convertToRegisteredUser();
       
       // Navigate to PIN setup with user data
       router.push({
@@ -120,7 +125,7 @@ export default function RegistrationForm() {
             </View>
             <Text style={styles.title}>Complete Your Profile</Text>
             <Text style={styles.subtitle}>
-              Just a few details to personalize your experience
+              Just a few details to secure your financial data
             </Text>
             {primaryContact && (
               <View style={styles.contactBadge}>

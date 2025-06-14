@@ -18,12 +18,15 @@ import {
   Calendar,
 } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
+import { useGuest } from '@/contexts/GuestContext';
 import StatCard from '@/components/StatCard';
 import TransactionItem from '@/components/TransactionItem';
 import AddTransactionModal from '@/components/AddTransactionModal';
+import GuestModeIndicator from '@/components/GuestModeIndicator';
 
 export default function Dashboard() {
   const { state, calculateStats } = useApp();
+  const { state: guestState } = useGuest();
   const [showAddModal, setShowAddModal] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -50,6 +53,13 @@ export default function Dashboard() {
     return diffDays;
   };
 
+  const getUserName = () => {
+    if (guestState.isGuest) {
+      return 'Guest';
+    }
+    return state.user?.name || 'User';
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
@@ -63,12 +73,15 @@ export default function Dashboard() {
         <View style={styles.header}>
           <View>
             <Text style={styles.greeting}>Good Morning!</Text>
-            <Text style={styles.userName}>{state.user?.name || 'User'}</Text>
+            <Text style={styles.userName}>{getUserName()}</Text>
           </View>
           <TouchableOpacity style={styles.notificationButton}>
             <Bell size={24} color="#6B7280" />
           </TouchableOpacity>
         </View>
+
+        {/* Guest Mode Indicator */}
+        <GuestModeIndicator />
 
         {/* Stats Cards */}
         <View style={styles.statsContainer}>

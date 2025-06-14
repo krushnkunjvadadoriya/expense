@@ -13,11 +13,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Mail, ArrowRight, Sparkles } from 'lucide-react-native';
+import { Mail, ArrowRight, Sparkles, ArrowLeft } from 'lucide-react-native';
+import { useGuest } from '@/contexts/GuestContext';
 
 export default function EmailEntry() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { convertToRegisteredUser } = useGuest();
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -56,6 +58,10 @@ export default function EmailEntry() {
     Alert.alert('Apple Sign In', 'Apple authentication will be implemented here');
   };
 
+  const handleBackToApp = () => {
+    router.back();
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView 
@@ -68,6 +74,17 @@ export default function EmailEntry() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={handleBackToApp}
+            >
+              <ArrowLeft size={20} color="#6B7280" />
+              <Text style={styles.backButtonText}>Back to App</Text>
+            </TouchableOpacity>
+          </View>
+
           {/* Hero Section */}
           <View style={styles.heroSection}>
             <View style={styles.backgroundGradient}>
@@ -78,9 +95,9 @@ export default function EmailEntry() {
                   </View>
                   <Text style={styles.logoText}>ExpenseTracker</Text>
                 </View>
-                <Text style={styles.heroTitle}>Take Control of Your Finances</Text>
+                <Text style={styles.heroTitle}>Secure Your Financial Data</Text>
                 <Text style={styles.heroSubtitle}>
-                  Join thousands of users who trust us to manage their expenses securely
+                  Create a free account to backup and sync your expenses across all devices
                 </Text>
               </View>
             </View>
@@ -90,7 +107,7 @@ export default function EmailEntry() {
           <View style={styles.mainContent}>
             {/* Welcome Message */}
             <View style={styles.welcomeSection}>
-              <Text style={styles.welcomeTitle}>Welcome Back!</Text>
+              <Text style={styles.welcomeTitle}>Create Your Account</Text>
               <Text style={styles.welcomeSubtitle}>
                 Enter your email to get started
               </Text>
@@ -228,6 +245,22 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 10,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+  },
+  backButtonText: {
+    fontSize: 16,
+    color: '#6B7280',
+    marginLeft: 8,
+    fontWeight: '500',
   },
   heroSection: {
     height: 280,

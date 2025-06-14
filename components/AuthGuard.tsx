@@ -1,21 +1,39 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
+import { useGuest } from '@/contexts/GuestContext';
+import RegistrationPromptModal from './RegistrationPromptModal';
 
 interface AuthGuardProps {
   children: React.ReactNode;
 }
 
 export default function AuthGuard({ children }: AuthGuardProps) {
-  const { state } = useAuth();
+  const { state: authState } = useAuth();
+  const { state: guestState, incrementAppOpenCount } = useGuest();
+  const [showRegistrationPrompt, setShowRegistrationPrompt] = useState(false);
 
   useEffect(() => {
-    if (!state.isLoading && !state.isAuthenticated) {
-      // Check if user has ever set up a PIN
+    // Increment app open count for guest users
+    if (guestState.isGuest && !authState.isAuthenticated) {
+      incrementAppOpenCount();
+    }
+  }, []);
+
+  useEffect(() => {
+    // Show registration prompt when conditions are met
+    if (guestState.shouldShowRegistrationPrompt && guestState.isGuest) {
+      setShowRegistrationPrompt(true);
+    }
+  }, [guestState.shouldShowRegistrationPrompt]);
+
+  useEffect(() => {
+    if (!authState.isLoading && !authState.isAuthenticated && !guestState.isGuest) {
+      // User was registered but is now logged out, check if they have a PIN
       checkPinSetup();
     }
-  }, [state.isLoading, state.isAuthenticated]);
+  }, [authState.isLoading, authState.isAuthenticated, guestState.isGuest]);
 
   const checkPinSetup = async () => {
     try {
@@ -26,7 +44,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
         // User has a PIN, redirect to PIN entry
         router.replace('/(auth)/enter-pin');
       } else {
-        // New user, start with email entry (more cost-effective)
+        // New user, start with email entry
         router.replace('/(auth)/email-entry');
       }
     } catch (error) {
@@ -35,7 +53,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     }
   };
 
-  if (state.isLoading) {
+  if (authState.isLoading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#4facfe" />
@@ -44,11 +62,20 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     );
   }
 
-  if (!state.isAuthenticated) {
-    return null;
+  // Allow guest users to access the app
+  if (guestState.isGuest || authState.isAuthenticated) {
+    return (
+      <>
+        {children}
+        <RegistrationPromptModal
+          visible={showRegistrationPrompt}
+          onClose={() => setShowRegistrationPrompt(false)}
+        />
+      </>
+    );
   }
 
-  return <>{children}</>;
+  return null;
 }
 
 const styles = StyleSheet.create({
