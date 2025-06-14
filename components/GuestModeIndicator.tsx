@@ -22,8 +22,8 @@ export default function GuestModeIndicator() {
           <Cloud size={16} color="#F59E0B" />
         </View>
         <View style={styles.textContainer}>
-          <Text style={styles.title}>Guest Mode</Text>
-          <Text style={styles.subtitle}>Tap to backup your data</Text>
+          <Text style={styles.title}>Unsaved Progress</Text>
+          <Text style={styles.subtitle}>Create an account to save your data</Text>
         </View>
         <ArrowRight size={16} color="#F59E0B" />
       </View>
