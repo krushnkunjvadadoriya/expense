@@ -8,8 +8,9 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Calendar, Download, Filter } from 'lucide-react-native';
+import { Calendar, Download, Filter, ArrowLeft } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
+import { router } from 'expo-router';
 import PieChart from '@/components/PieChart';
 import LineChart from '@/components/LineChart';
 
@@ -161,7 +162,13 @@ export default function Reports() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Reports</Text>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <ArrowLeft size={24} color="#6B7280" />
+        </TouchableOpacity>
+        <Text style={styles.title}>Reports & Analytics</Text>
         <View style={styles.headerButtons}>
           <TouchableOpacity style={styles.iconButton}>
             <Filter size={20} color="#6B7280" />
@@ -293,10 +300,21 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
     color: '#111827',
+    flex: 1,
+    textAlign: 'center',
+    marginHorizontal: 16,
   },
   headerButtons: {
     flexDirection: 'row',
