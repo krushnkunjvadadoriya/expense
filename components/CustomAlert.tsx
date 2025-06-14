@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   Animated,
 } from 'react-native';
-import { AlertTriangle, CheckCircle, Info, X } from 'lucide-react-native';
+import { TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Info, X } from 'lucide-react-native';
 
 interface CustomAlertProps {
   visible: boolean;
