@@ -9,18 +9,22 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { User, Settings, Bell, Download, CircleHelp as HelpCircle, Shield, Trash2, CreditCard as Edit3, Check, X, LogOut, Smartphone, ChartBar as BarChart3 } from 'lucide-react-native';
+import { User, Settings, Bell, Download, CircleHelp as HelpCircle, Shield, Trash2, CreditCard as Edit3, Check, X, LogOut, Smartphone, ChartBar as BarChart3, Sun, Moon, Monitor } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { router } from 'expo-router';
 import ChangePinModal from '@/components/ChangePinModal';
 
 export default function Profile() {
   const { state, dispatch } = useApp();
   const { logout, state: authState } = useAuth();
+  const { state: themeState, setColorScheme, toggleTheme } = useTheme();
   const [editingBudget, setEditingBudget] = useState(false);
   const [budgetInput, setBudgetInput] = useState(state.user?.monthlyBudget.toString() || '');
   const [showChangePinModal, setShowChangePinModal] = useState(false);
+
+  const { colors } = themeState.theme;
 
   const handleBudgetSave = () => {
     const newBudget = parseFloat(budgetInput);
@@ -101,6 +105,8 @@ export default function Profile() {
     return mobile;
   };
 
+  const styles = createStyles(colors);
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -121,7 +127,7 @@ export default function Profile() {
             <Text style={styles.userName}>{authState.user?.name || 'User'}</Text>
             <View style={styles.contactInfo}>
               <View style={styles.contactItem}>
-                <Smartphone size={16} color="#6B7280" />
+                <Smartphone size={16} color={colors.textTertiary} />
                 <Text style={styles.contactText}>
                   {formatMobile(authState.user?.mobile || '')}
                 </Text>
@@ -170,7 +176,7 @@ export default function Profile() {
               <Text style={styles.budgetLabel}>Monthly Budget</Text>
               {!editingBudget && (
                 <TouchableOpacity onPress={() => setEditingBudget(true)}>
-                  <Edit3 size={16} color="#6B7280" />
+                  <Edit3 size={16} color={colors.textTertiary} />
                 </TouchableOpacity>
               )}
             </View>
@@ -183,7 +189,7 @@ export default function Profile() {
                   onChangeText={setBudgetInput}
                   keyboardType="numeric"
                   placeholder="0"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={colors.textTertiary}
                 />
                 <View style={styles.budgetActions}>
                   <TouchableOpacity onPress={handleBudgetCancel} style={styles.budgetCancelButton}>
@@ -219,6 +225,57 @@ export default function Profile() {
           </View>
         </View>
 
+        {/* Display Settings */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Display Settings</Text>
+          <View style={styles.menuContainer}>
+            <View style={styles.themeSection}>
+              <View style={styles.themeSectionHeader}>
+                <Text style={styles.themeSectionTitle}>Appearance</Text>
+                <Text style={styles.themeSectionSubtitle}>Choose your preferred theme</Text>
+              </View>
+              
+              <View style={styles.themeOptions}>
+                <TouchableOpacity
+                  style={[
+                    styles.themeOption,
+                    themeState.colorScheme === 'light' && styles.themeOptionActive
+                  ]}
+                  onPress={() => setColorScheme('light')}
+                >
+                  <View style={styles.themeOptionIcon}>
+                    <Sun size={20} color={themeState.colorScheme === 'light' ? '#4facfe' : colors.textTertiary} />
+                  </View>
+                  <Text style={[
+                    styles.themeOptionText,
+                    themeState.colorScheme === 'light' && styles.themeOptionTextActive
+                  ]}>
+                    Light
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.themeOption,
+                    themeState.colorScheme === 'dark' && styles.themeOptionActive
+                  ]}
+                  onPress={() => setColorScheme('dark')}
+                >
+                  <View style={styles.themeOptionIcon}>
+                    <Moon size={20} color={themeState.colorScheme === 'dark' ? '#4facfe' : colors.textTertiary} />
+                  </View>
+                  <Text style={[
+                    styles.themeOptionText,
+                    themeState.colorScheme === 'dark' && styles.themeOptionTextActive
+                  ]}>
+                    Dark
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+
         {/* Data & Analytics */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Data & Analytics</Text>
@@ -227,12 +284,12 @@ export default function Profile() {
               style={styles.menuItem}
               onPress={handleViewReports}
             >
-              <BarChart3 size={20} color="#6B7280" />
+              <BarChart3 size={20} color={colors.textTertiary} />
               <Text style={styles.menuItemText}>Reports & Analytics</Text>
             </TouchableOpacity>
             
             <TouchableOpacity style={styles.menuItem} onPress={handleExportData}>
-              <Download size={20} color="#6B7280" />
+              <Download size={20} color={colors.textTertiary} />
               <Text style={styles.menuItemText}>Export Data</Text>
             </TouchableOpacity>
           </View>
@@ -246,7 +303,7 @@ export default function Profile() {
               style={styles.menuItem}
               onPress={() => setShowChangePinModal(true)}
             >
-              <Shield size={20} color="#6B7280" />
+              <Shield size={20} color={colors.textTertiary} />
               <Text style={styles.menuItemText}>Change PIN</Text>
             </TouchableOpacity>
           </View>
@@ -257,12 +314,12 @@ export default function Profile() {
           <Text style={styles.sectionTitle}>Settings</Text>
           <View style={styles.menuContainer}>
             <TouchableOpacity style={styles.menuItem}>
-              <Bell size={20} color="#6B7280" />
+              <Bell size={20} color={colors.textTertiary} />
               <Text style={styles.menuItemText}>Notifications</Text>
             </TouchableOpacity>
             
             <TouchableOpacity style={styles.menuItem}>
-              <HelpCircle size={20} color="#6B7280" />
+              <HelpCircle size={20} color={colors.textTertiary} />
               <Text style={styles.menuItemText}>Help & Support</Text>
             </TouchableOpacity>
           </View>
@@ -292,10 +349,10 @@ export default function Profile() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.background,
   },
   scrollView: {
     flex: 1,
@@ -305,14 +362,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: colors.border,
   },
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
   },
   logoutButton: {
     padding: 8,
@@ -320,11 +377,11 @@ const styles = StyleSheet.create({
   userCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     margin: 20,
     padding: 20,
     borderRadius: 16,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -345,7 +402,7 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
     marginBottom: 8,
   },
   contactInfo: {
@@ -358,7 +415,7 @@ const styles = StyleSheet.create({
   },
   contactText: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textTertiary,
     fontWeight: '500',
   },
   statsContainer: {
@@ -368,7 +425,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
     marginBottom: 16,
   },
   statsGrid: {
@@ -377,12 +434,12 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   statCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 12,
     width: '47%',
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -391,12 +448,12 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textTertiary,
     fontWeight: '500',
     textAlign: 'center',
   },
@@ -405,10 +462,10 @@ const styles = StyleSheet.create({
     paddingTop: 0,
   },
   budgetCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     padding: 20,
     borderRadius: 16,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -423,12 +480,12 @@ const styles = StyleSheet.create({
   budgetLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#374151',
+    color: colors.textSecondary,
   },
   budgetValue: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
     marginBottom: 16,
   },
   budgetEditContainer: {
@@ -441,7 +498,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 28,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
     borderBottomWidth: 2,
     borderBottomColor: '#4facfe',
     paddingBottom: 4,
@@ -461,7 +518,7 @@ const styles = StyleSheet.create({
   },
   budgetProgressBar: {
     height: 8,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.borderLight,
     borderRadius: 4,
     overflow: 'hidden',
     marginBottom: 8,
@@ -472,14 +529,14 @@ const styles = StyleSheet.create({
   },
   budgetProgressText: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textTertiary,
     fontWeight: '500',
   },
   menuContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     overflow: 'hidden',
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -490,18 +547,63 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.borderLight,
   },
   menuItemText: {
     fontSize: 16,
-    color: '#111827',
+    color: colors.text,
     fontWeight: '500',
     marginLeft: 12,
+  },
+  themeSection: {
+    padding: 16,
+  },
+  themeSectionHeader: {
+    marginBottom: 16,
+  },
+  themeSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 4,
+  },
+  themeSectionSubtitle: {
+    fontSize: 14,
+    color: colors.textTertiary,
+  },
+  themeOptions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  themeOption: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: colors.borderLight,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  themeOptionActive: {
+    borderColor: '#4facfe',
+    backgroundColor: colors.primaryLight,
+  },
+  themeOptionIcon: {
+    marginRight: 8,
+  },
+  themeOptionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textTertiary,
+  },
+  themeOptionTextActive: {
+    color: '#4facfe',
   },
   dangerButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
@@ -519,12 +621,12 @@ const styles = StyleSheet.create({
   },
   appInfoText: {
     fontSize: 16,
-    color: '#6B7280',
+    color: colors.textTertiary,
     fontWeight: '500',
     marginBottom: 4,
   },
   appInfoSubtext: {
     fontSize: 14,
-    color: '#9CA3AF',
+    color: colors.textTertiary,
   },
 });

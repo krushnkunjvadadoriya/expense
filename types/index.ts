@@ -140,3 +140,29 @@ export interface AuthState {
   isLoading: boolean;
   error: string | null;
 }
+
+// Theme types
+export type ColorScheme = 'light' | 'dark';
+
+export interface ThemeColors {
+  background: string;
+  surface: string;
+  card: string;
+  text: string;
+  textSecondary: string;
+  textTertiary: string;
+  primary: string;
+  primaryLight: string;
+  success: string;
+  warning: string;
+  error: string;
+  border: string;
+  borderLight: string;
+  shadow: string;
+  overlay: string;
+}
+
+export interface Theme {
+  colors: ThemeColors;
+  isDark: boolean;
+}
