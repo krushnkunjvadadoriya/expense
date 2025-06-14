@@ -16,26 +16,31 @@ export default function GuestModeIndicator() {
   };
 
   return (
-    <TouchableOpacity style={styles.container} onPress={handlePress} activeOpacity={0.8}>
-      <View style={styles.content}>
-        <View style={styles.iconContainer}>
-          <Cloud size={16} color="#F59E0B" />
+    <View style={styles.wrapper}>
+      <TouchableOpacity style={styles.container} onPress={handlePress} activeOpacity={0.8}>
+        <View style={styles.content}>
+          <View style={styles.iconContainer}>
+            <Cloud size={16} color="#F59E0B" />
+          </View>
+          <View style={styles.textContainer}>
+            <Text style={styles.title}>Unsaved Progress</Text>
+            <Text style={styles.subtitle}>Create an account to save your data</Text>
+          </View>
+          <ArrowRight size={16} color="#F59E0B" />
         </View>
-        <View style={styles.textContainer}>
-          <Text style={styles.title}>Unsaved Progress</Text>
-          <Text style={styles.subtitle}>Create an account to save your data</Text>
-        </View>
-        <ArrowRight size={16} color="#F59E0B" />
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 0,
+  },
   container: {
     backgroundColor: '#FEF3C7',
-    marginHorizontal: 20,
-    marginBottom: 16,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#FDE68A',

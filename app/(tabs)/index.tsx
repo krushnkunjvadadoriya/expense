@@ -60,7 +60,7 @@ export default function Dashboard() {
 
   const getUserName = () => {
     if (guestState.isGuest) {
-      return 'Visitor';
+      return 'Guest';
     }
     return state.user?.name || 'User';
   };
@@ -202,6 +202,9 @@ export default function Dashboard() {
             })}
           </View>
         )}
+
+        {/* Add some bottom padding for FAB */}
+        <View style={styles.bottomPadding} />
       </ScrollView>
 
       {/* Floating Action Button */}
@@ -339,9 +342,12 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
+  bottomPadding: {
+    height: 100,
+  },
   fab: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 100,
     right: 20,
     width: 56,
     height: 56,

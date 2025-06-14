@@ -27,24 +27,28 @@ export default function LineChart({ data }: LineChartProps) {
       borderRadius: 16,
     },
     propsForDots: {
-      r: '6',
+      r: '4',
       strokeWidth: '2',
       stroke: '#4facfe',
     },
   };
 
   return (
-    <View>
+    <View style={{ alignItems: 'center', overflow: 'hidden' }}>
       <RNLineChart
         data={data}
-        width={screenWidth - 60}
-        height={220}
+        width={screenWidth - 80}
+        height={200}
         chartConfig={chartConfig}
         bezier
         style={{
           marginVertical: 8,
           borderRadius: 16,
         }}
+        withInnerLines={false}
+        withOuterLines={false}
+        withVerticalLines={false}
+        withHorizontalLines={true}
       />
     </View>
   );

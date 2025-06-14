@@ -7,10 +7,10 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  Alert,
 } from 'react-native';
 import { X, Check, Calculator } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
+import CustomAlert from './CustomAlert';
 
 interface AddEMIModalProps {
   visible: boolean;
@@ -24,6 +24,12 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
   const [interestRate, setInterestRate] = useState('');
   const [tenure, setTenure] = useState('');
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({
+    type: 'error' as 'error' | 'success',
+    title: '',
+    message: '',
+  });
 
   const calculateEMI = (p: number, r: number, n: number) => {
     const monthlyRate = r / (12 * 100);
@@ -58,14 +64,19 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
     setStartDate(new Date().toISOString().split('T')[0]);
   };
 
+  const showCustomAlert = (type: 'error' | 'success', title: string, message: string) => {
+    setAlertConfig({ type, title, message });
+    setShowAlert(true);
+  };
+
   const handleSubmit = () => {
     if (!name || !principal || !interestRate || !tenure) {
-      Alert.alert('Error', 'Please fill in all fields');
+      showCustomAlert('error', 'Missing Information', 'Please fill in all fields to continue.');
       return;
     }
 
     if (!name.trim()) {
-      Alert.alert('Error', 'Please enter a name for this EMI');
+      showCustomAlert('error', 'Invalid EMI Name', 'Please enter a valid name for this EMI.');
       return;
     }
 
@@ -74,17 +85,17 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
     const n = parseInt(tenure);
 
     if (isNaN(p) || p <= 0) {
-      Alert.alert('Error', 'Please enter a valid principal amount');
+      showCustomAlert('error', 'Invalid Principal', 'Please enter a valid principal amount greater than zero.');
       return;
     }
 
     if (isNaN(r) || r <= 0) {
-      Alert.alert('Error', 'Please enter a valid interest rate');
+      showCustomAlert('error', 'Invalid Interest Rate', 'Please enter a valid interest rate greater than zero.');
       return;
     }
 
     if (isNaN(n) || n <= 0) {
-      Alert.alert('Error', 'Please enter a valid tenure');
+      showCustomAlert('error', 'Invalid Tenure', 'Please enter a valid tenure in months.');
       return;
     }
 
@@ -103,117 +114,130 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
       status: 'active',
     });
 
+    showCustomAlert('success', 'EMI Added', 'Your EMI has been successfully added.');
     resetForm();
-    onClose();
+    setTimeout(() => {
+      onClose();
+    }, 1500);
   };
 
   const monthlyAmount = getMonthlyAmount();
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <X size={24} color="#6B7280" />
-          </TouchableOpacity>
-          <Text style={styles.title}>Add EMI</Text>
-          <TouchableOpacity onPress={handleSubmit} style={styles.saveButton}>
-            <Check size={24} color="#4facfe" />
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* EMI Name */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>EMI Name *</Text>
-            <TextInput
-              style={styles.input}
-              value={name}
-              onChangeText={setName}
-              placeholder="e.g., Home Loan, Car Loan"
-              placeholderTextColor="#9CA3AF"
-            />
+    <>
+      <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <X size={24} color="#6B7280" />
+            </TouchableOpacity>
+            <Text style={styles.title}>Add EMI</Text>
+            <TouchableOpacity onPress={handleSubmit} style={styles.saveButton}>
+              <Check size={24} color="#4facfe" />
+            </TouchableOpacity>
           </View>
 
-          {/* Principal Amount */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Principal Amount</Text>
-            <TextInput
-              style={styles.input}
-              value={principal}
-              onChangeText={setPrincipal}
-              placeholder="0"
-              keyboardType="numeric"
-              placeholderTextColor="#9CA3AF"
-            />
-          </View>
-
-          {/* Interest Rate */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Interest Rate (% per annum)</Text>
-            <TextInput
-              style={styles.input}
-              value={interestRate}
-              onChangeText={setInterestRate}
-              placeholder="0.0"
-              keyboardType="numeric"
-              placeholderTextColor="#9CA3AF"
-            />
-          </View>
-
-          {/* Tenure */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Tenure (months)</Text>
-            <TextInput
-              style={styles.input}
-              value={tenure}
-              onChangeText={setTenure}
-              placeholder="0"
-              keyboardType="numeric"
-              placeholderTextColor="#9CA3AF"
-            />
-          </View>
-
-          {/* Start Date */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Start Date</Text>
-            <TextInput
-              style={styles.input}
-              value={startDate}
-              onChangeText={setStartDate}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor="#9CA3AF"
-            />
-          </View>
-
-          {/* EMI Calculator */}
-          {monthlyAmount > 0 && (
-            <View style={styles.calculatorCard}>
-              <View style={styles.calculatorHeader}>
-                <Calculator size={20} color="#4facfe" />
-                <Text style={styles.calculatorTitle}>EMI Calculation</Text>
-              </View>
-              <View style={styles.calculatorRow}>
-                <Text style={styles.calculatorLabel}>Monthly EMI:</Text>
-                <Text style={styles.calculatorValue}>${monthlyAmount.toFixed(2)}</Text>
-              </View>
-              <View style={styles.calculatorRow}>
-                <Text style={styles.calculatorLabel}>Total Amount:</Text>
-                <Text style={styles.calculatorValue}>
-                  ${(monthlyAmount * parseInt(tenure || '0')).toFixed(2)}
-                </Text>
-              </View>
-              <View style={styles.calculatorRow}>
-                <Text style={styles.calculatorLabel}>Total Interest:</Text>
-                <Text style={styles.calculatorValue}>
-                  ${((monthlyAmount * parseInt(tenure || '0')) - parseFloat(principal || '0')).toFixed(2)}
-                </Text>
-              </View>
+          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            {/* EMI Name */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>EMI Name *</Text>
+              <TextInput
+                style={styles.input}
+                value={name}
+                onChangeText={setName}
+                placeholder="e.g., Home Loan, Car Loan"
+                placeholderTextColor="#9CA3AF"
+              />
             </View>
-          )}
-        </ScrollView>
-      </View>
-    </Modal>
+
+            {/* Principal Amount */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Principal Amount *</Text>
+              <TextInput
+                style={styles.input}
+                value={principal}
+                onChangeText={setPrincipal}
+                placeholder="0"
+                keyboardType="numeric"
+                placeholderTextColor="#9CA3AF"
+              />
+            </View>
+
+            {/* Interest Rate */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Interest Rate (% per annum) *</Text>
+              <TextInput
+                style={styles.input}
+                value={interestRate}
+                onChangeText={setInterestRate}
+                placeholder="0.0"
+                keyboardType="numeric"
+                placeholderTextColor="#9CA3AF"
+              />
+            </View>
+
+            {/* Tenure */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Tenure (months) *</Text>
+              <TextInput
+                style={styles.input}
+                value={tenure}
+                onChangeText={setTenure}
+                placeholder="0"
+                keyboardType="numeric"
+                placeholderTextColor="#9CA3AF"
+              />
+            </View>
+
+            {/* Start Date */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Start Date</Text>
+              <TextInput
+                style={styles.input}
+                value={startDate}
+                onChangeText={setStartDate}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor="#9CA3AF"
+              />
+            </View>
+
+            {/* EMI Calculator */}
+            {monthlyAmount > 0 && (
+              <View style={styles.calculatorCard}>
+                <View style={styles.calculatorHeader}>
+                  <Calculator size={20} color="#4facfe" />
+                  <Text style={styles.calculatorTitle}>EMI Calculation</Text>
+                </View>
+                <View style={styles.calculatorRow}>
+                  <Text style={styles.calculatorLabel}>Monthly EMI:</Text>
+                  <Text style={styles.calculatorValue}>${monthlyAmount.toFixed(2)}</Text>
+                </View>
+                <View style={styles.calculatorRow}>
+                  <Text style={styles.calculatorLabel}>Total Amount:</Text>
+                  <Text style={styles.calculatorValue}>
+                    ${(monthlyAmount * parseInt(tenure || '0')).toFixed(2)}
+                  </Text>
+                </View>
+                <View style={styles.calculatorRow}>
+                  <Text style={styles.calculatorLabel}>Total Interest:</Text>
+                  <Text style={styles.calculatorValue}>
+                    ${((monthlyAmount * parseInt(tenure || '0')) - parseFloat(principal || '0')).toFixed(2)}
+                  </Text>
+                </View>
+              </View>
+            )}
+          </ScrollView>
+        </View>
+      </Modal>
+
+      <CustomAlert
+        visible={showAlert}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onClose={() => setShowAlert(false)}
+      />
+    </>
   );
 }
 

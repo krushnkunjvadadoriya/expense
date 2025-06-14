@@ -22,17 +22,26 @@ export default function PieChart({ data }: PieChartProps) {
     color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
   };
 
+  // Truncate long category names and ensure they fit
+  const processedData = data.map(item => ({
+    ...item,
+    name: item.name.length > 12 ? item.name.substring(0, 12) + '...' : item.name,
+    legendFontSize: 11,
+  }));
+
   return (
-    <View>
+    <View style={{ alignItems: 'center' }}>
       <RNPieChart
-        data={data}
-        width={screenWidth - 60}
-        height={220}
+        data={processedData}
+        width={screenWidth - 80}
+        height={200}
         chartConfig={chartConfig}
         accessor="population"
         backgroundColor="transparent"
-        paddingLeft="25"
+        paddingLeft="15"
         absolute
+        hasLegend={true}
+        center={[10, 0]}
       />
     </View>
   );
