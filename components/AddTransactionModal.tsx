@@ -42,6 +42,11 @@ export default function AddTransactionModal({ visible, onClose }: AddTransaction
       return;
     }
 
+    if (!description.trim()) {
+      Alert.alert('Error', 'Please enter a description for this transaction');
+      return;
+    }
+
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) {
       Alert.alert('Error', 'Please enter a valid amount');
@@ -52,7 +57,7 @@ export default function AddTransactionModal({ visible, onClose }: AddTransaction
       amount: numAmount,
       type,
       category: selectedCategory,
-      description,
+      description: description.trim(),
       date,
     });
 
@@ -115,7 +120,7 @@ export default function AddTransactionModal({ visible, onClose }: AddTransaction
 
           {/* Description */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Description</Text>
+            <Text style={styles.sectionTitle}>Description *</Text>
             <TextInput
               style={styles.input}
               value={description}

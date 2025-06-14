@@ -26,12 +26,12 @@ export default function PieChart({ data }: PieChartProps) {
     <View>
       <RNPieChart
         data={data}
-        width={screenWidth - 40}
+        width={screenWidth - 60}
         height={220}
         chartConfig={chartConfig}
         accessor="population"
         backgroundColor="transparent"
-        paddingLeft="15"
+        paddingLeft="25"
         absolute
       />
     </View>

@@ -1,19 +1,23 @@
 import { Tabs } from 'expo-router';
 import { Chrome as Home, TrendingUp, CreditCard, User, Users } from 'lucide-react-native';
+import { useTheme } from '@/contexts/ThemeContext';
 import AuthGuard from '@/components/AuthGuard';
 
 export default function TabLayout() {
+  const { state: themeState } = useTheme();
+  const { colors } = themeState.theme;
+
   return (
     <AuthGuard>
       <Tabs
         screenOptions={{
           headerShown: false,
           tabBarActiveTintColor: '#4facfe',
-          tabBarInactiveTintColor: '#6B7280',
+          tabBarInactiveTintColor: colors.textTertiary,
           tabBarStyle: {
-            backgroundColor: '#FFFFFF',
+            backgroundColor: colors.surface,
             borderTopWidth: 1,
-            borderTopColor: '#E5E7EB',
+            borderTopColor: colors.border,
             paddingBottom: 8,
             paddingTop: 8,
             height: 80,

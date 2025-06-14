@@ -60,9 +60,20 @@ export default function Dashboard() {
 
   const getUserName = () => {
     if (guestState.isGuest) {
-      return 'Guest';
+      return 'Visitor';
     }
     return state.user?.name || 'User';
+  };
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) {
+      return 'Good Morning!';
+    } else if (hour < 17) {
+      return 'Good Afternoon!';
+    } else {
+      return 'Good Evening!';
+    }
   };
 
   return (
@@ -77,7 +88,7 @@ export default function Dashboard() {
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Good Morning!</Text>
+            <Text style={styles.greeting}>{getGreeting()}</Text>
             <Text style={styles.userName}>{getUserName()}</Text>
           </View>
           <TouchableOpacity style={styles.notificationButton}>
@@ -330,7 +341,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 90,
+    bottom: 20,
     right: 20,
     width: 56,
     height: 56,

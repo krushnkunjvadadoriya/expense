@@ -33,6 +33,11 @@ export default function CreateFamilyModal({ visible, onClose }: CreateFamilyModa
       return;
     }
 
+    if (!familyName.trim()) {
+      Alert.alert('Error', 'Please enter a family name');
+      return;
+    }
+
     const budget = parseFloat(monthlyBudget);
     if (isNaN(budget) || budget <= 0) {
       Alert.alert('Error', 'Please enter a valid budget amount');

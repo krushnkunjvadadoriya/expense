@@ -38,6 +38,11 @@ export default function InviteMemberModal({ visible, onClose }: InviteMemberModa
       return;
     }
 
+    if (!email.trim()) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return;
+    }
+
     if (!validateEmail(email)) {
       Alert.alert('Error', 'Please enter a valid email address');
       return;
@@ -73,7 +78,7 @@ export default function InviteMemberModal({ visible, onClose }: InviteMemberModa
 
           {/* Email */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Email Address</Text>
+            <Text style={styles.sectionTitle}>Email Address *</Text>
             <View style={styles.inputContainer}>
               <Mail size={20} color="#6B7280" />
               <TextInput

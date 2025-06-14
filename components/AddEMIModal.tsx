@@ -64,6 +64,11 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
       return;
     }
 
+    if (!name.trim()) {
+      Alert.alert('Error', 'Please enter a name for this EMI');
+      return;
+    }
+
     const p = parseFloat(principal);
     const r = parseFloat(interestRate);
     const n = parseInt(tenure);
@@ -86,7 +91,7 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
     const monthlyAmount = calculateEMI(p, r, n);
 
     addEMI({
-      name,
+      name: name.trim(),
       principal: p,
       interestRate: r,
       tenure: n,
@@ -120,7 +125,7 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {/* EMI Name */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>EMI Name</Text>
+            <Text style={styles.sectionTitle}>EMI Name *</Text>
             <TextInput
               style={styles.input}
               value={name}

@@ -37,7 +37,7 @@ export default function LineChart({ data }: LineChartProps) {
     <View>
       <RNLineChart
         data={data}
-        width={screenWidth - 40}
+        width={screenWidth - 60}
         height={220}
         chartConfig={chartConfig}
         bezier

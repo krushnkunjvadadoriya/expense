@@ -54,6 +54,11 @@ export default function FamilyBudgetModal({ visible, onClose, budget }: FamilyBu
   };
 
   const handleSubmit = () => {
+    if (!monthlyBudget) {
+      Alert.alert('Error', 'Please enter a monthly budget');
+      return;
+    }
+
     const totalBudget = parseFloat(monthlyBudget);
     if (isNaN(totalBudget) || totalBudget <= 0) {
       Alert.alert('Error', 'Please enter a valid monthly budget');
@@ -91,7 +96,7 @@ export default function FamilyBudgetModal({ visible, onClose, budget }: FamilyBu
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {/* Monthly Budget */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Monthly Budget</Text>
+            <Text style={styles.sectionTitle}>Monthly Budget *</Text>
             <View style={styles.budgetInputContainer}>
               <DollarSign size={20} color="#6B7280" />
               <TextInput
