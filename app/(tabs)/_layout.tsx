@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Chrome as Home, TrendingUp, CreditCard, ChartBar as BarChart3, User, Users } from 'lucide-react-native';
+import { Chrome as Home, TrendingUp, CreditCard, User, Users } from 'lucide-react-native';
 import AuthGuard from '@/components/AuthGuard';
 
 export default function TabLayout() {
@@ -51,13 +51,6 @@ export default function TabLayout() {
           options={{
             title: 'EMIs',
             tabBarIcon: ({ size, color }) => <CreditCard size={size} color={color} />,
-          }}
-        />
-        <Tabs.Screen
-          name="reports"
-          options={{
-            title: 'Reports',
-            tabBarIcon: ({ size, color }) => <BarChart3 size={size} color={color} />,
           }}
         />
         <Tabs.Screen

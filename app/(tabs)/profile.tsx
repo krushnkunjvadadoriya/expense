@@ -9,9 +9,10 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { User, Settings, Bell, Download, CircleHelp as HelpCircle, Shield, Trash2, CreditCard as Edit3, Check, X, LogOut, Smartphone } from 'lucide-react-native';
+import { User, Settings, Bell, Download, CircleHelp as HelpCircle, Shield, Trash2, CreditCard as Edit3, Check, X, LogOut, Smartphone, BarChart3 } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { router } from 'expo-router';
 import ChangePinModal from '@/components/ChangePinModal';
 
 export default function Profile() {
@@ -81,6 +82,10 @@ export default function Profile() {
         },
       ]
     );
+  };
+
+  const handleViewReports = () => {
+    router.push('/(tabs)/reports');
   };
 
   const formatCurrency = (amount: number) => {
@@ -214,6 +219,25 @@ export default function Profile() {
           </View>
         </View>
 
+        {/* Data & Analytics */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Data & Analytics</Text>
+          <View style={styles.menuContainer}>
+            <TouchableOpacity 
+              style={styles.menuItem}
+              onPress={handleViewReports}
+            >
+              <BarChart3 size={20} color="#6B7280" />
+              <Text style={styles.menuItemText}>Reports & Analytics</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.menuItem} onPress={handleExportData}>
+              <Download size={20} color="#6B7280" />
+              <Text style={styles.menuItemText}>Export Data</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Security Settings */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Security</Text>
@@ -235,11 +259,6 @@ export default function Profile() {
             <TouchableOpacity style={styles.menuItem}>
               <Bell size={20} color="#6B7280" />
               <Text style={styles.menuItemText}>Notifications</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.menuItem} onPress={handleExportData}>
-              <Download size={20} color="#6B7280" />
-              <Text style={styles.menuItemText}>Export Data</Text>
             </TouchableOpacity>
             
             <TouchableOpacity style={styles.menuItem}>
