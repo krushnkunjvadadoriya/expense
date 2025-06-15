@@ -133,7 +133,7 @@ export default function Dashboard() {
 
           <StatCard
             title="Budget Used"
-            value={`${state.monthlyStats.budgetUsed.toFixed(1)}%`}
+            value={`${state.monthlyStats.budgetUsed.toFixed(2)}%`}
             subtitle={`${formatCurrency(state.monthlyStats.totalExpenses)} of ${formatCurrency(state.user?.monthlyBudget || 0)}`}
             icon={PiggyBank}
             color={state.monthlyStats.budgetUsed > 80 ? '#EF4444' : '#4facfe'}

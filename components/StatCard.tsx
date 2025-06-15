@@ -69,9 +69,10 @@ const createStyles = (colors: any, backgroundColor?: string) => StyleSheet.creat
     flex: 1,
   },
   value: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: '700',
     marginBottom: 4,
+    lineHeight: 28,
   },
   subtitle: {
     fontSize: 14,
