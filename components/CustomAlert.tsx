@@ -5,9 +5,7 @@ import {
   StyleSheet,
   Modal,
   TouchableOpacity,
-  Animated,
 } from 'react-native';
-import { TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Info, X } from 'lucide-react-native';
 
 interface CustomAlertProps {
   visible: boolean;
@@ -18,7 +16,7 @@ interface CustomAlertProps {
   onConfirm?: () => void;
   confirmText?: string;
   cancelText?: string;
-  autoHideDelay?: number; // New prop for customizing auto-hide delay
+  autoHideDelay?: number;
 }
 
 export default function CustomAlert({
@@ -30,82 +28,61 @@ export default function CustomAlert({
   onConfirm,
   confirmText = 'OK',
   cancelText = 'Cancel',
-  autoHideDelay = 2000, // Default 2 seconds for success alerts
+  autoHideDelay = 2000,
 }: CustomAlertProps) {
-  const scaleValue = React.useRef(new Animated.Value(0)).current;
-
-  React.useEffect(() => {
-    if (visible) {
-      Animated.spring(scaleValue, {
-        toValue: 1,
-        useNativeDriver: true,
-        tension: 100,
-        friction: 8,
-      }).start();
-    } else {
-      Animated.timing(scaleValue, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [visible]);
 
   // Auto-dismiss success alerts
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
 
-    if (visible && type === 'success') {
+    if (visible && type === 'success' && !onConfirm) {
       timeoutId = setTimeout(() => {
         onClose();
       }, autoHideDelay);
     }
 
-    // Cleanup timeout if component unmounts or props change
     return () => {
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
     };
-  }, [visible, type, onClose, autoHideDelay]);
+  }, [visible, type, onClose, autoHideDelay, onConfirm]);
 
   const getIconAndColor = () => {
     switch (type) {
       case 'success':
-        return { icon: CheckCircle, color: '#10B981' };
+        return { icon: '✅', color: '#10B981' };
       case 'warning':
-        return { icon: AlertTriangle, color: '#F59E0B' };
+        return { icon: '⚠️', color: '#F59E0B' };
       case 'info':
-        return { icon: Info, color: '#3B82F6' };
+        return { icon: 'ℹ️', color: '#3B82F6' };
       default:
-        return { icon: AlertTriangle, color: '#EF4444' };
+        return { icon: '❌', color: '#EF4444' };
     }
   };
 
-  const { icon: Icon, color } = getIconAndColor();
+  const { icon, color } = getIconAndColor();
+
+  if (!visible) {
+    return null;
+  }
 
   return (
     <Modal
       visible={visible}
-      transparent
+      transparent={true}
       animationType="fade"
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        <Animated.View
-          style={[
-            styles.alertContainer,
-            { transform: [{ scale: scaleValue }] },
-          ]}
-        >
+        <View style={styles.alertContainer}>
           <View style={styles.header}>
             <View style={[styles.iconContainer, { backgroundColor: color + '20' }]}>
-              <Icon size={24} color={color} />
+              <Text style={styles.iconText}>{icon}</Text>
             </View>
-            {/* Only show close button for non-success alerts or when there's a confirm action */}
             {(type !== 'success' || onConfirm) && (
               <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                <X size={20} color="#6B7280" />
+                <Text style={styles.closeButtonText}>✕</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -148,7 +125,7 @@ export default function CustomAlert({
               </TouchableOpacity>
             )}
           </View>
-        </Animated.View>
+        </View>
       </View>
     </Modal>
   );
@@ -187,6 +164,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  iconText: {
+    fontSize: 24,
+  },
   closeButton: {
     width: 32,
     height: 32,
@@ -194,6 +174,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  closeButtonText: {
+    fontSize: 16,
+    color: '#6B7280',
+    fontWeight: 'bold',
   },
   content: {
     marginBottom: 24,
