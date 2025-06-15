@@ -7,6 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
+  Platform,
 } from 'react-native';
 import { X, Check } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
@@ -47,6 +48,17 @@ export default function AddTransactionModal({ visible, onClose }: AddTransaction
     setShowAlert(true);
   };
 
+  const handleAlertClose = () => {
+    setShowAlert(false);
+    
+    // If it was a success alert, close the modal after a short delay
+    if (alertConfig.type === 'success') {
+      setTimeout(() => {
+        onClose();
+      }, 300);
+    }
+  };
+
   const handleSubmit = () => {
     if (!amount || !description || !selectedCategory) {
       showCustomAlert('error', 'Missing Information', 'Please fill in all fields to continue.');
@@ -64,27 +76,33 @@ export default function AddTransactionModal({ visible, onClose }: AddTransaction
       return;
     }
 
-    addTransaction({
-      amount: numAmount,
-      type,
-      category: selectedCategory,
-      description: description.trim(),
-      date,
-    });
+    try {
+      addTransaction({
+        amount: numAmount,
+        type,
+        category: selectedCategory,
+        description: description.trim(),
+        date,
+      });
 
-    // Increment transaction count for guest users
-    incrementTransactionCount();
+      // Increment transaction count for guest users
+      incrementTransactionCount();
 
-    showCustomAlert('success', 'Transaction Added', 'Your transaction has been successfully added.');
-    resetForm();
-    setTimeout(() => {
-      onClose();
-    }, 1500);
+      showCustomAlert('success', 'Transaction Added', 'Your transaction has been successfully added.');
+      resetForm();
+    } catch (error) {
+      showCustomAlert('error', 'Error', 'Failed to add transaction. Please try again.');
+    }
   };
 
   return (
     <>
-      <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
+      <Modal 
+        visible={visible} 
+        animationType="slide" 
+        presentationStyle="pageSheet"
+        onRequestClose={onClose}
+      >
         <View style={styles.container}>
           <View style={styles.header}>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
@@ -190,7 +208,7 @@ export default function AddTransactionModal({ visible, onClose }: AddTransaction
         type={alertConfig.type}
         title={alertConfig.title}
         message={alertConfig.message}
-        onClose={() => setShowAlert(false)}
+        onClose={handleAlertClose}
       />
     </>
   );
@@ -206,7 +224,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 20,
-    paddingTop: 60,
+    paddingTop: Platform.OS === 'ios' ? 60 : 20,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',

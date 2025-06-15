@@ -1,10 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Modal,
   TouchableOpacity,
+  Dimensions,
+  Platform,
 } from 'react-native';
 
 interface CustomAlertProps {
@@ -19,6 +21,8 @@ interface CustomAlertProps {
   autoHideDelay?: number;
 }
 
+const { width: screenWidth } = Dimensions.get('window');
+
 export default function CustomAlert({
   visible,
   type = 'error',
@@ -30,6 +34,20 @@ export default function CustomAlert({
   cancelText = 'Cancel',
   autoHideDelay = 2000,
 }: CustomAlertProps) {
+  const [isVisible, setIsVisible] = useState(false);
+
+  // Handle visibility with proper state management for Expo Go
+  useEffect(() => {
+    if (visible) {
+      setIsVisible(true);
+    } else {
+      // Small delay to allow for smooth closing animation
+      const timeout = setTimeout(() => {
+        setIsVisible(false);
+      }, 100);
+      return () => clearTimeout(timeout);
+    }
+  }, [visible]);
 
   // Auto-dismiss success alerts
   useEffect(() => {
@@ -51,19 +69,31 @@ export default function CustomAlert({
   const getIconAndColor = () => {
     switch (type) {
       case 'success':
-        return { icon: '✅', color: '#10B981' };
+        return { icon: '✅', color: '#10B981', bgColor: '#D1FAE5' };
       case 'warning':
-        return { icon: '⚠️', color: '#F59E0B' };
+        return { icon: '⚠️', color: '#F59E0B', bgColor: '#FEF3C7' };
       case 'info':
-        return { icon: 'ℹ️', color: '#3B82F6' };
+        return { icon: 'ℹ️', color: '#3B82F6', bgColor: '#DBEAFE' };
       default:
-        return { icon: '❌', color: '#EF4444' };
+        return { icon: '❌', color: '#EF4444', bgColor: '#FEE2E2' };
     }
   };
 
-  const { icon, color } = getIconAndColor();
+  const { icon, color, bgColor } = getIconAndColor();
 
-  if (!visible) {
+  const handleClose = () => {
+    onClose();
+  };
+
+  const handleConfirm = () => {
+    if (onConfirm) {
+      onConfirm();
+    }
+    onClose();
+  };
+
+  // Don't render anything if not visible
+  if (!isVisible) {
     return null;
   }
 
@@ -71,47 +101,54 @@ export default function CustomAlert({
     <Modal
       visible={visible}
       transparent={true}
-      animationType="fade"
-      onRequestClose={onClose}
+      animationType={Platform.OS === 'web' ? 'fade' : 'slide'}
+      onRequestClose={handleClose}
+      statusBarTranslucent={true}
     >
       <View style={styles.overlay}>
-        <View style={styles.alertContainer}>
+        <View style={[styles.alertContainer, { maxWidth: screenWidth - 40 }]}>
+          {/* Header with icon and close button */}
           <View style={styles.header}>
-            <View style={[styles.iconContainer, { backgroundColor: color + '20' }]}>
+            <View style={[styles.iconContainer, { backgroundColor: bgColor }]}>
               <Text style={styles.iconText}>{icon}</Text>
             </View>
             {(type !== 'success' || onConfirm) && (
-              <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+              <TouchableOpacity 
+                style={styles.closeButton} 
+                onPress={handleClose}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
                 <Text style={styles.closeButtonText}>✕</Text>
               </TouchableOpacity>
             )}
           </View>
 
+          {/* Content */}
           <View style={styles.content}>
             <Text style={styles.title}>{title}</Text>
             <Text style={styles.message}>{message}</Text>
             {type === 'success' && !onConfirm && (
               <Text style={styles.autoHideText}>
-                This message will close automatically
+                This message will close automatically in {Math.ceil(autoHideDelay / 1000)}s
               </Text>
             )}
           </View>
 
+          {/* Action buttons */}
           <View style={styles.buttonContainer}>
             {onConfirm ? (
               <>
                 <TouchableOpacity
                   style={[styles.button, styles.cancelButton]}
-                  onPress={onClose}
+                  onPress={handleClose}
+                  activeOpacity={0.7}
                 >
                   <Text style={styles.cancelButtonText}>{cancelText}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.button, styles.confirmButton, { backgroundColor: color }]}
-                  onPress={() => {
-                    onConfirm();
-                    onClose();
-                  }}
+                  onPress={handleConfirm}
+                  activeOpacity={0.7}
                 >
                   <Text style={styles.confirmButtonText}>{confirmText}</Text>
                 </TouchableOpacity>
@@ -119,7 +156,8 @@ export default function CustomAlert({
             ) : (
               <TouchableOpacity
                 style={[styles.button, styles.singleButton, { backgroundColor: color }]}
-                onPress={onClose}
+                onPress={handleClose}
+                activeOpacity={0.7}
               >
                 <Text style={styles.confirmButtonText}>{confirmText}</Text>
               </TouchableOpacity>
@@ -188,11 +226,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#111827',
     marginBottom: 8,
+    textAlign: 'center',
   },
   message: {
     fontSize: 16,
     color: '#6B7280',
     lineHeight: 24,
+    textAlign: 'center',
   },
   autoHideText: {
     fontSize: 12,
@@ -210,6 +250,8 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 48,
   },
   singleButton: {
     flex: 1,

@@ -7,6 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
+  Platform,
 } from 'react-native';
 import { X, Check, Calculator } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
@@ -69,6 +70,17 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
     setShowAlert(true);
   };
 
+  const handleAlertClose = () => {
+    setShowAlert(false);
+    
+    // If it was a success alert, close the modal after a short delay
+    if (alertConfig.type === 'success') {
+      setTimeout(() => {
+        onClose();
+      }, 300);
+    }
+  };
+
   const handleSubmit = () => {
     if (!name || !principal || !interestRate || !tenure) {
       showCustomAlert('error', 'Missing Information', 'Please fill in all fields to continue.');
@@ -99,33 +111,39 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
       return;
     }
 
-    const monthlyAmount = calculateEMI(p, r, n);
+    try {
+      const monthlyAmount = calculateEMI(p, r, n);
 
-    addEMI({
-      name: name.trim(),
-      principal: p,
-      interestRate: r,
-      tenure: n,
-      monthlyAmount,
-      startDate,
-      nextDueDate: getNextDueDate(),
-      totalPaid: 0,
-      remainingAmount: p,
-      status: 'active',
-    });
+      addEMI({
+        name: name.trim(),
+        principal: p,
+        interestRate: r,
+        tenure: n,
+        monthlyAmount,
+        startDate,
+        nextDueDate: getNextDueDate(),
+        totalPaid: 0,
+        remainingAmount: p,
+        status: 'active',
+      });
 
-    showCustomAlert('success', 'EMI Added', 'Your EMI has been successfully added.');
-    resetForm();
-    setTimeout(() => {
-      onClose();
-    }, 1500);
+      showCustomAlert('success', 'EMI Added', 'Your EMI has been successfully added.');
+      resetForm();
+    } catch (error) {
+      showCustomAlert('error', 'Error', 'Failed to add EMI. Please try again.');
+    }
   };
 
   const monthlyAmount = getMonthlyAmount();
 
   return (
     <>
-      <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
+      <Modal 
+        visible={visible} 
+        animationType="slide" 
+        presentationStyle="pageSheet"
+        onRequestClose={onClose}
+      >
         <View style={styles.container}>
           <View style={styles.header}>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
@@ -235,7 +253,7 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
         type={alertConfig.type}
         title={alertConfig.title}
         message={alertConfig.message}
-        onClose={() => setShowAlert(false)}
+        onClose={handleAlertClose}
       />
     </>
   );
@@ -251,7 +269,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 20,
-    paddingTop: 60,
+    paddingTop: Platform.OS === 'ios' ? 60 : 20,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
