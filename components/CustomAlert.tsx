@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,7 @@ interface CustomAlertProps {
   onConfirm?: () => void;
   confirmText?: string;
   cancelText?: string;
+  autoHideDelay?: number; // New prop for customizing auto-hide delay
 }
 
 export default function CustomAlert({
@@ -29,6 +30,7 @@ export default function CustomAlert({
   onConfirm,
   confirmText = 'OK',
   cancelText = 'Cancel',
+  autoHideDelay = 2000, // Default 2 seconds for success alerts
 }: CustomAlertProps) {
   const scaleValue = React.useRef(new Animated.Value(0)).current;
 
@@ -48,6 +50,24 @@ export default function CustomAlert({
       }).start();
     }
   }, [visible]);
+
+  // Auto-dismiss success alerts
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
+    if (visible && type === 'success') {
+      timeoutId = setTimeout(() => {
+        onClose();
+      }, autoHideDelay);
+    }
+
+    // Cleanup timeout if component unmounts or props change
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [visible, type, onClose, autoHideDelay]);
 
   const getIconAndColor = () => {
     switch (type) {
@@ -82,14 +102,22 @@ export default function CustomAlert({
             <View style={[styles.iconContainer, { backgroundColor: color + '20' }]}>
               <Icon size={24} color={color} />
             </View>
-            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-              <X size={20} color="#6B7280" />
-            </TouchableOpacity>
+            {/* Only show close button for non-success alerts or when there's a confirm action */}
+            {(type !== 'success' || onConfirm) && (
+              <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+                <X size={20} color="#6B7280" />
+              </TouchableOpacity>
+            )}
           </View>
 
           <View style={styles.content}>
             <Text style={styles.title}>{title}</Text>
             <Text style={styles.message}>{message}</Text>
+            {type === 'success' && !onConfirm && (
+              <Text style={styles.autoHideText}>
+                This message will close automatically
+              </Text>
+            )}
           </View>
 
           <View style={styles.buttonContainer}>
@@ -180,6 +208,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#6B7280',
     lineHeight: 24,
+  },
+  autoHideText: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    fontStyle: 'italic',
+    marginTop: 8,
+    textAlign: 'center',
   },
   buttonContainer: {
     flexDirection: 'row',
