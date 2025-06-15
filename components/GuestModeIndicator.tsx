@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
   wrapper: {
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 0,
+    paddingBottom: 20,
   },
   container: {
     backgroundColor: '#FEF3C7',

@@ -343,11 +343,11 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontWeight: '500',
   },
   bottomPadding: {
-    height: 100,
+    height: 120,
   },
   fab: {
     position: 'absolute',
-    bottom: 100,
+    bottom: 30,
     right: 20,
     width: 56,
     height: 56,

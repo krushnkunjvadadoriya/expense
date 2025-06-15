@@ -9,7 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { User, Settings, Bell, Download, CircleHelp as HelpCircle, Shield, Trash2, CreditCard as Edit3, Check, X, LogOut, Smartphone, ChartBar as BarChart3, Sun, Moon, Monitor } from 'lucide-react-native';
+import { User, Settings, Bell, Download, CircleHelp as HelpCircle, Shield, Trash2, CreditCard as Edit3, Check, X, LogOut, Smartphone, Sun, Moon, Monitor } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -86,10 +86,6 @@ export default function Profile() {
         },
       ]
     );
-  };
-
-  const handleViewReports = () => {
-    router.push('/(tabs)/reports');
   };
 
   const formatCurrency = (amount: number) => {
@@ -280,14 +276,6 @@ export default function Profile() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Data & Analytics</Text>
           <View style={styles.menuContainer}>
-            <TouchableOpacity 
-              style={styles.menuItem}
-              onPress={handleViewReports}
-            >
-              <BarChart3 size={20} color={colors.textTertiary} />
-              <Text style={styles.menuItemText}>Reports & Analytics</Text>
-            </TouchableOpacity>
-            
             <TouchableOpacity style={styles.menuItem} onPress={handleExportData}>
               <Download size={20} color={colors.textTertiary} />
               <Text style={styles.menuItemText}>Export Data</Text>
