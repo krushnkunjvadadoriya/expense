@@ -10,7 +10,7 @@ import Animated, {
 import { Transaction } from '@/types';
 import { useTheme } from '@/contexts/ThemeContext';
 import * as Icons from 'lucide-react-native';
-import { Edit3, Trash2 } from 'lucide-react-native';
+import { CreditCard as Edit3, Trash2 } from 'lucide-react-native';
 
 interface TransactionItemProps {
   transaction: Transaction;
