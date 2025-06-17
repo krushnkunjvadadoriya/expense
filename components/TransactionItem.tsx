@@ -6,6 +6,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   runOnJS,
+  interpolate,
 } from 'react-native-reanimated';
 import { Transaction } from '@/types';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -24,6 +25,7 @@ interface TransactionItemProps {
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const ACTION_WIDTH = 160; // Width for both action buttons
+const SWIPE_THRESHOLD = ACTION_WIDTH * 0.3; // 30% of action width to trigger open
 
 export default function TransactionItem({ 
   transaction, 
@@ -41,6 +43,7 @@ export default function TransactionItem({
   const IconComponent = (Icons as any)[categoryIcon] || Icons.Circle;
   const translateX = useSharedValue(0);
   const isOpen = useRef(false);
+  const startX = useRef(0);
   
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('en-US', {
@@ -53,7 +56,7 @@ export default function TransactionItem({
     closeSwipe();
     setTimeout(() => {
       onEdit?.(transaction);
-    }, 200);
+    }, 150);
   };
 
   const handleDelete = () => {
@@ -71,55 +74,88 @@ export default function TransactionItem({
           },
         ]
       );
-    }, 200);
+    }, 150);
   };
 
   const closeSwipe = () => {
+    'worklet';
     translateX.value = withSpring(0, {
-      damping: 20,
-      stiffness: 300,
+      damping: 25,
+      stiffness: 400,
+      mass: 0.8,
     });
-    isOpen.current = false;
+    runOnJS(() => {
+      isOpen.current = false;
+    })();
   };
 
   const openSwipe = () => {
+    'worklet';
     translateX.value = withSpring(-ACTION_WIDTH, {
-      damping: 20,
-      stiffness: 300,
+      damping: 25,
+      stiffness: 400,
+      mass: 0.8,
     });
-    isOpen.current = true;
+    runOnJS(() => {
+      isOpen.current = true;
+    })();
   };
 
   const panGesture = Gesture.Pan()
+    .onBegin(() => {
+      startX.current = translateX.value;
+    })
     .onUpdate((event) => {
       if (!showActions || (!onEdit && !onDelete)) return;
       
-      // Only allow left swipe (negative translation)
-      const newTranslateX = Math.max(-ACTION_WIDTH, Math.min(0, event.translationX));
-      translateX.value = newTranslateX;
+      // Calculate new position based on start position and translation
+      const newTranslateX = startX.current + event.translationX;
+      
+      // Constrain the movement: allow left swipe only, with some resistance when going beyond limits
+      if (newTranslateX <= 0 && newTranslateX >= -ACTION_WIDTH) {
+        translateX.value = newTranslateX;
+      } else if (newTranslateX > 0) {
+        // Add resistance when trying to swipe right beyond closed position
+        translateX.value = newTranslateX * 0.1;
+      } else if (newTranslateX < -ACTION_WIDTH) {
+        // Add resistance when trying to swipe left beyond open position
+        const excess = newTranslateX + ACTION_WIDTH;
+        translateX.value = -ACTION_WIDTH + (excess * 0.1);
+      }
     })
     .onEnd((event) => {
       if (!showActions || (!onEdit && !onDelete)) return;
       
-      const shouldOpen = event.translationX < -ACTION_WIDTH / 3 || event.velocityX < -800;
+      const currentPosition = translateX.value;
+      const velocity = event.velocityX;
       
-      if (shouldOpen) {
-        runOnJS(openSwipe)();
+      // Determine if we should open or close based on position and velocity
+      const shouldOpen = currentPosition < -SWIPE_THRESHOLD || velocity < -800;
+      const shouldClose = currentPosition > -SWIPE_THRESHOLD || velocity > 800;
+      
+      if (shouldOpen && !isOpen.current) {
+        openSwipe();
+      } else if (shouldClose && isOpen.current) {
+        closeSwipe();
+      } else if (currentPosition < -SWIPE_THRESHOLD) {
+        openSwipe();
       } else {
-        runOnJS(closeSwipe)();
+        closeSwipe();
       }
     });
 
   const tapGesture = Gesture.Tap()
+    .maxDuration(250)
     .onEnd(() => {
       if (isOpen.current) {
-        runOnJS(closeSwipe)();
-      } else {
-        runOnJS(() => onPress?.())();
+        closeSwipe();
+      } else if (onPress) {
+        runOnJS(onPress)();
       }
     });
 
-  const combinedGesture = Gesture.Simultaneous(panGesture, tapGesture);
+  // Use Race instead of Simultaneous to prevent conflicts
+  const combinedGesture = Gesture.Race(panGesture, tapGesture);
 
   const animatedCardStyle = useAnimatedStyle(() => {
     return {
@@ -128,8 +164,15 @@ export default function TransactionItem({
   });
 
   const animatedActionsStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      translateX.value,
+      [-ACTION_WIDTH, -20, 0],
+      [1, 0.8, 0],
+      'clamp'
+    );
+    
     return {
-      opacity: translateX.value < -10 ? 1 : 0,
+      opacity,
       transform: [{ translateX: translateX.value + ACTION_WIDTH }],
     };
   });
@@ -199,6 +242,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     height: 72, // Fixed height for consistent layout
     borderRadius: 12,
     overflow: 'hidden',
+    backgroundColor: colors.background, // Ensure background matches
   },
   card: {
     flexDirection: 'row',
@@ -213,6 +257,10 @@ const createStyles = (colors: any) => StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
     zIndex: 2,
+    position: 'absolute',
+    width: '100%',
+    left: 0,
+    top: 0,
   },
   leftSection: {
     flexDirection: 'row',
@@ -275,7 +323,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     backgroundColor: colors.primaryLight, // Light blue background
   },
   deleteButton: {
-    backgroundColor: '#FEE2E2', // Light red background (error + '20')
+    backgroundColor: '#FEE2E2', // Light red background
   },
   actionButtonText: {
     fontSize: 12,
