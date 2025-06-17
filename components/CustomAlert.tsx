@@ -101,9 +101,9 @@ export default function CustomAlert({
     <Modal
       visible={visible}
       transparent={true}
-      animationType="fade"
+      animationType={Platform.OS === 'web' ? 'fade' : 'slide'}
       onRequestClose={handleClose}
-      statusBarTranslucent={false}
+      statusBarTranslucent={true}
     >
       <View style={styles.overlay}>
         <View style={[styles.alertContainer, { maxWidth: screenWidth - 40 }]}>
@@ -172,13 +172,13 @@ export default function CustomAlert({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'red', // DEBUG: Changed to red for visibility testing
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   alertContainer: {
-    backgroundColor: 'blue', // DEBUG: Changed to blue for visibility testing
+    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 24,
     width: '100%',
@@ -224,19 +224,19 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#FFFFFF', // DEBUG: Changed to white for visibility on blue background
+    color: '#111827',
     marginBottom: 8,
     textAlign: 'center',
   },
   message: {
     fontSize: 16,
-    color: '#FFFFFF', // DEBUG: Changed to white for visibility on blue background
+    color: '#6B7280',
     lineHeight: 24,
     textAlign: 'center',
   },
   autoHideText: {
     fontSize: 12,
-    color: '#FFFFFF', // DEBUG: Changed to white for visibility on blue background
+    color: '#9CA3AF',
     fontStyle: 'italic',
     marginTop: 8,
     textAlign: 'center',
