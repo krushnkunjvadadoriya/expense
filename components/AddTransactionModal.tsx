@@ -10,6 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { X, Check } from 'lucide-react-native';
+import * as Icons from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useGuest } from '@/contexts/GuestContext';
 import CustomAlert from './CustomAlert';
@@ -59,6 +60,11 @@ export default function AddTransactionModal({ visible, onClose }: AddTransaction
     }
   };
 
+  const handleTypeChange = (newType: 'expense' | 'income') => {
+    setType(newType);
+    setSelectedCategory(''); // Reset category when type changes
+  };
+
   const handleSubmit = () => {
     if (!amount || !description || !selectedCategory) {
       showCustomAlert('error', 'Missing Information', 'Please fill in all fields to continue.');
@@ -95,6 +101,12 @@ export default function AddTransactionModal({ visible, onClose }: AddTransaction
     }
   };
 
+  const getSelectedCategoryInfo = () => {
+    return categories.find(c => c.name === selectedCategory);
+  };
+
+  const selectedCategoryInfo = getSelectedCategoryInfo();
+
   return (
     <>
       <Modal 
@@ -120,7 +132,7 @@ export default function AddTransactionModal({ visible, onClose }: AddTransaction
               <View style={styles.typeContainer}>
                 <TouchableOpacity
                   style={[styles.typeButton, type === 'expense' && styles.typeButtonActive]}
-                  onPress={() => setType('expense')}
+                  onPress={() => handleTypeChange('expense')}
                 >
                   <Text style={[styles.typeButtonText, type === 'expense' && styles.typeButtonTextActive]}>
                     Expense
@@ -128,7 +140,7 @@ export default function AddTransactionModal({ visible, onClose }: AddTransaction
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.typeButton, type === 'income' && styles.typeButtonActive]}
-                  onPress={() => setType('income')}
+                  onPress={() => handleTypeChange('income')}
                 >
                   <Text style={[styles.typeButtonText, type === 'income' && styles.typeButtonTextActive]}>
                     Income
@@ -162,28 +174,70 @@ export default function AddTransactionModal({ visible, onClose }: AddTransaction
               />
             </View>
 
-            {/* Category */}
+            {/* Category Selection */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Category *</Text>
+              
+              {/* Selected Category Display */}
+              {selectedCategoryInfo && (
+                <View style={styles.selectedCategoryContainer}>
+                  <View style={[styles.selectedCategoryCard, { borderColor: selectedCategoryInfo.color }]}>
+                    <View style={styles.selectedCategoryContent}>
+                      <View style={[styles.selectedCategoryIcon, { backgroundColor: selectedCategoryInfo.color + '20' }]}>
+                        {React.createElement((Icons as any)[selectedCategoryInfo.icon] || Icons.Circle, {
+                          size: 20,
+                          color: selectedCategoryInfo.color
+                        })}
+                      </View>
+                      <Text style={styles.selectedCategoryText}>{selectedCategoryInfo.name}</Text>
+                    </View>
+                    <View style={[styles.selectedCategoryCheck, { backgroundColor: selectedCategoryInfo.color }]}>
+                      <Check size={16} color="#FFFFFF" />
+                    </View>
+                  </View>
+                </View>
+              )}
+
+              {/* Category Grid */}
               <View style={styles.categoryGrid}>
-                {categories.map(category => (
-                  <TouchableOpacity
-                    key={category.id}
-                    style={[
-                      styles.categoryButton,
-                      selectedCategory === category.name && styles.categoryButtonActive,
-                      { borderColor: category.color }
-                    ]}
-                    onPress={() => setSelectedCategory(category.name)}
-                  >
-                    <Text style={[
-                      styles.categoryButtonText,
-                      selectedCategory === category.name && { color: category.color }
-                    ]}>
-                      {category.name}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                {categories.map(category => {
+                  const IconComponent = (Icons as any)[category.icon] || Icons.Circle;
+                  const isSelected = selectedCategory === category.name;
+                  
+                  return (
+                    <TouchableOpacity
+                      key={category.id}
+                      style={[
+                        styles.categoryButton,
+                        isSelected && styles.categoryButtonActive,
+                        { borderColor: isSelected ? category.color : '#E5E7EB' }
+                      ]}
+                      onPress={() => setSelectedCategory(category.name)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={[
+                        styles.categoryIconContainer,
+                        { backgroundColor: isSelected ? category.color + '20' : '#F3F4F6' }
+                      ]}>
+                        <IconComponent 
+                          size={20} 
+                          color={isSelected ? category.color : '#6B7280'} 
+                        />
+                      </View>
+                      <Text style={[
+                        styles.categoryButtonText,
+                        { color: isSelected ? category.color : '#6B7280' }
+                      ]}>
+                        {category.name}
+                      </Text>
+                      {isSelected && (
+                        <View style={[styles.categoryCheckmark, { backgroundColor: category.color }]}>
+                          <Check size={12} color="#FFFFFF" />
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
 
@@ -297,26 +351,93 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
+  selectedCategoryContainer: {
+    marginBottom: 16,
+  },
+  selectedCategoryCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 2,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  selectedCategoryContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  selectedCategoryIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  selectedCategoryText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  selectedCategoryCheck: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   categoryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 12,
   },
   categoryButton: {
-    padding: 12,
-    borderRadius: 8,
+    width: '47%',
     backgroundColor: '#FFFFFF',
+    borderRadius: 16,
     borderWidth: 2,
-    marginBottom: 8,
-    minWidth: '45%',
+    padding: 16,
     alignItems: 'center',
+    position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   categoryButtonActive: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#F8FAFC',
+    transform: [{ scale: 0.98 }],
+  },
+  categoryIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   categoryButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  categoryCheckmark: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
