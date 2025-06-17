@@ -23,7 +23,7 @@ interface TransactionItemProps {
 }
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const ACTION_WIDTH = 150;
+const ACTION_WIDTH = 160; // Width for both action buttons
 
 export default function TransactionItem({ 
   transaction, 
@@ -50,15 +50,15 @@ export default function TransactionItem({
   };
 
   const handleEdit = () => {
-    runOnJS(() => {
-      closeSwipe();
+    closeSwipe();
+    setTimeout(() => {
       onEdit?.(transaction);
-    })();
+    }, 200);
   };
 
   const handleDelete = () => {
-    runOnJS(() => {
-      closeSwipe();
+    closeSwipe();
+    setTimeout(() => {
       Alert.alert(
         'Delete Transaction',
         `Are you sure you want to delete this transaction?\n\n"${transaction.description}" - ${transaction.type === 'income' ? '+' : '-'}$${transaction.amount.toFixed(2)}`,
@@ -71,7 +71,7 @@ export default function TransactionItem({
           },
         ]
       );
-    })();
+    }, 200);
   };
 
   const closeSwipe = () => {
@@ -94,47 +94,58 @@ export default function TransactionItem({
     .onUpdate((event) => {
       if (!showActions || (!onEdit && !onDelete)) return;
       
+      // Only allow left swipe (negative translation)
       const newTranslateX = Math.max(-ACTION_WIDTH, Math.min(0, event.translationX));
       translateX.value = newTranslateX;
     })
     .onEnd((event) => {
       if (!showActions || (!onEdit && !onDelete)) return;
       
-      const shouldOpen = event.translationX < -ACTION_WIDTH / 2 || event.velocityX < -500;
+      const shouldOpen = event.translationX < -ACTION_WIDTH / 3 || event.velocityX < -800;
       
       if (shouldOpen) {
-        openSwipe();
+        runOnJS(openSwipe)();
       } else {
-        closeSwipe();
+        runOnJS(closeSwipe)();
       }
     });
 
-  const animatedStyle = useAnimatedStyle(() => {
+  const tapGesture = Gesture.Tap()
+    .onEnd(() => {
+      if (isOpen.current) {
+        runOnJS(closeSwipe)();
+      } else {
+        runOnJS(() => onPress?.())();
+      }
+    });
+
+  const combinedGesture = Gesture.Simultaneous(panGesture, tapGesture);
+
+  const animatedCardStyle = useAnimatedStyle(() => {
     return {
       transform: [{ translateX: translateX.value }],
     };
   });
 
-  const handlePress = () => {
-    if (isOpen.current) {
-      closeSwipe();
-    } else {
-      onPress?.();
-    }
-  };
+  const animatedActionsStyle = useAnimatedStyle(() => {
+    return {
+      opacity: translateX.value < -10 ? 1 : 0,
+      transform: [{ translateX: translateX.value + ACTION_WIDTH }],
+    };
+  });
 
   return (
-    <View style={styles.wrapper}>
-      {/* Action Buttons Background */}
+    <View style={styles.container}>
+      {/* Action Buttons - Behind the card */}
       {showActions && (onEdit || onDelete) && (
-        <View style={styles.actionsContainer}>
+        <Animated.View style={[styles.actionsContainer, animatedActionsStyle]}>
           {onEdit && (
             <TouchableOpacity
               style={[styles.actionButton, styles.editButton]}
               onPress={handleEdit}
               activeOpacity={0.8}
             >
-              <Edit3 size={20} color="#FFFFFF" />
+              <Edit3 size={22} color="#FFFFFF" strokeWidth={2} />
               <Text style={styles.actionButtonText}>Edit</Text>
             </TouchableOpacity>
           )}
@@ -144,43 +155,37 @@ export default function TransactionItem({
               onPress={handleDelete}
               activeOpacity={0.8}
             >
-              <Trash2 size={20} color="#FFFFFF" />
+              <Trash2 size={22} color="#FFFFFF" strokeWidth={2} />
               <Text style={styles.actionButtonText}>Delete</Text>
             </TouchableOpacity>
           )}
-        </View>
+        </Animated.View>
       )}
 
-      {/* Main Content */}
-      <GestureDetector gesture={panGesture}>
-        <Animated.View style={[animatedStyle]}>
-          <TouchableOpacity 
-            style={styles.container} 
-            onPress={handlePress} 
-            activeOpacity={0.7}
-          >
-            <View style={styles.leftSection}>
-              <View style={[styles.iconContainer, { backgroundColor: categoryColor + '20' }]}>
-                <IconComponent size={20} color={categoryColor} />
-              </View>
-              <View style={styles.details}>
-                <Text style={styles.description} numberOfLines={1}>
-                  {transaction.description}
-                </Text>
-                <Text style={styles.category}>{transaction.category}</Text>
-              </View>
+      {/* Main Transaction Card */}
+      <GestureDetector gesture={combinedGesture}>
+        <Animated.View style={[styles.card, animatedCardStyle]}>
+          <View style={styles.leftSection}>
+            <View style={[styles.iconContainer, { backgroundColor: categoryColor + '20' }]}>
+              <IconComponent size={20} color={categoryColor} />
             </View>
-            
-            <View style={styles.rightSection}>
-              <Text style={[
-                styles.amount,
-                { color: transaction.type === 'income' ? '#4facfe' : '#EF4444' }
-              ]}>
-                {transaction.type === 'income' ? '+' : '-'}${transaction.amount.toFixed(2)}
+            <View style={styles.details}>
+              <Text style={styles.description} numberOfLines={1}>
+                {transaction.description}
               </Text>
-              <Text style={styles.date}>{formatDate(transaction.date)}</Text>
+              <Text style={styles.category}>{transaction.category}</Text>
             </View>
-          </TouchableOpacity>
+          </View>
+          
+          <View style={styles.rightSection}>
+            <Text style={[
+              styles.amount,
+              { color: transaction.type === 'income' ? '#4facfe' : '#EF4444' }
+            ]}>
+              {transaction.type === 'income' ? '+' : '-'}${transaction.amount.toFixed(2)}
+            </Text>
+            <Text style={styles.date}>{formatDate(transaction.date)}</Text>
+          </View>
         </Animated.View>
       </GestureDetector>
     </View>
@@ -188,22 +193,26 @@ export default function TransactionItem({
 }
 
 const createStyles = (colors: any) => StyleSheet.create({
-  wrapper: {
+  container: {
     marginBottom: 8,
     position: 'relative',
-    overflow: 'hidden',
+    height: 72, // Fixed height for consistent layout
     borderRadius: 12,
+    overflow: 'hidden',
   },
-  container: {
+  card: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surface,
     padding: 16,
+    height: '100%',
+    borderRadius: 12,
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
+    zIndex: 2,
   },
   leftSection: {
     flexDirection: 'row',
@@ -253,12 +262,14 @@ const createStyles = (colors: any) => StyleSheet.create({
     width: ACTION_WIDTH,
     flexDirection: 'row',
     zIndex: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   actionButton: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
   },
   editButton: {
     backgroundColor: '#4facfe',
@@ -270,6 +281,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '600',
-    marginTop: 4,
+    marginTop: 6,
+    textAlign: 'center',
   },
 });
