@@ -141,7 +141,6 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
       <Modal 
         visible={visible} 
         animationType="slide" 
-        presentationStyle="pageSheet"
         onRequestClose={onClose}
       >
         <View style={styles.container}>
