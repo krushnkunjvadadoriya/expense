@@ -1,9 +1,16 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import React, { useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Dimensions } from 'react-native';
+import { GestureDetector, Gesture } from 'react-native-gesture-handler';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  runOnJS,
+} from 'react-native-reanimated';
 import { Transaction } from '@/types';
 import { useTheme } from '@/contexts/ThemeContext';
 import * as Icons from 'lucide-react-native';
-import { MoveHorizontal as MoreHorizontal, CreditCard as Edit3, Trash2 } from 'lucide-react-native';
+import { Edit3, Trash2 } from 'lucide-react-native';
 
 interface TransactionItemProps {
   transaction: Transaction;
@@ -14,6 +21,9 @@ interface TransactionItemProps {
   categoryIcon?: string;
   showActions?: boolean;
 }
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const ACTION_WIDTH = 150;
 
 export default function TransactionItem({ 
   transaction, 
@@ -29,6 +39,8 @@ export default function TransactionItem({
   const styles = createStyles(colors);
   
   const IconComponent = (Icons as any)[categoryIcon] || Icons.Circle;
+  const translateX = useSharedValue(0);
+  const isOpen = useRef(false);
   
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('en-US', {
@@ -37,89 +49,156 @@ export default function TransactionItem({
     });
   };
 
-  const handleMorePress = () => {
-    Alert.alert(
-      'Transaction Options',
-      `What would you like to do with this transaction?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Edit',
-          onPress: () => onEdit?.(transaction),
-          style: 'default'
-        },
-        {
-          text: 'Delete',
-          onPress: () => handleDelete(),
-          style: 'destructive'
-        },
-      ],
-      { cancelable: true }
-    );
+  const handleEdit = () => {
+    runOnJS(() => {
+      closeSwipe();
+      onEdit?.(transaction);
+    })();
   };
 
   const handleDelete = () => {
-    Alert.alert(
-      'Delete Transaction',
-      `Are you sure you want to delete this transaction?\n\n"${transaction.description}" - ${transaction.type === 'income' ? '+' : '-'}$${transaction.amount.toFixed(2)}`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          onPress: () => onDelete?.(transaction),
-          style: 'destructive'
-        },
-      ]
-    );
+    runOnJS(() => {
+      closeSwipe();
+      Alert.alert(
+        'Delete Transaction',
+        `Are you sure you want to delete this transaction?\n\n"${transaction.description}" - ${transaction.type === 'income' ? '+' : '-'}$${transaction.amount.toFixed(2)}`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            onPress: () => onDelete?.(transaction),
+            style: 'destructive'
+          },
+        ]
+      );
+    })();
+  };
+
+  const closeSwipe = () => {
+    translateX.value = withSpring(0, {
+      damping: 20,
+      stiffness: 300,
+    });
+    isOpen.current = false;
+  };
+
+  const openSwipe = () => {
+    translateX.value = withSpring(-ACTION_WIDTH, {
+      damping: 20,
+      stiffness: 300,
+    });
+    isOpen.current = true;
+  };
+
+  const panGesture = Gesture.Pan()
+    .onUpdate((event) => {
+      if (!showActions || (!onEdit && !onDelete)) return;
+      
+      const newTranslateX = Math.max(-ACTION_WIDTH, Math.min(0, event.translationX));
+      translateX.value = newTranslateX;
+    })
+    .onEnd((event) => {
+      if (!showActions || (!onEdit && !onDelete)) return;
+      
+      const shouldOpen = event.translationX < -ACTION_WIDTH / 2 || event.velocityX < -500;
+      
+      if (shouldOpen) {
+        openSwipe();
+      } else {
+        closeSwipe();
+      }
+    });
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateX: translateX.value }],
+    };
+  });
+
+  const handlePress = () => {
+    if (isOpen.current) {
+      closeSwipe();
+    } else {
+      onPress?.();
+    }
   };
 
   return (
-    <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.7}>
-      <View style={styles.leftSection}>
-        <View style={[styles.iconContainer, { backgroundColor: categoryColor + '20' }]}>
-          <IconComponent size={20} color={categoryColor} />
+    <View style={styles.wrapper}>
+      {/* Action Buttons Background */}
+      {showActions && (onEdit || onDelete) && (
+        <View style={styles.actionsContainer}>
+          {onEdit && (
+            <TouchableOpacity
+              style={[styles.actionButton, styles.editButton]}
+              onPress={handleEdit}
+              activeOpacity={0.8}
+            >
+              <Edit3 size={20} color="#FFFFFF" />
+              <Text style={styles.actionButtonText}>Edit</Text>
+            </TouchableOpacity>
+          )}
+          {onDelete && (
+            <TouchableOpacity
+              style={[styles.actionButton, styles.deleteButton]}
+              onPress={handleDelete}
+              activeOpacity={0.8}
+            >
+              <Trash2 size={20} color="#FFFFFF" />
+              <Text style={styles.actionButtonText}>Delete</Text>
+            </TouchableOpacity>
+          )}
         </View>
-        <View style={styles.details}>
-          <Text style={styles.description} numberOfLines={1}>
-            {transaction.description}
-          </Text>
-          <Text style={styles.category}>{transaction.category}</Text>
-        </View>
-      </View>
-      
-      <View style={styles.rightSection}>
-        <View style={styles.amountContainer}>
-          <Text style={[
-            styles.amount,
-            { color: transaction.type === 'income' ? '#4facfe' : '#EF4444' }
-          ]}>
-            {transaction.type === 'income' ? '+' : '-'}${transaction.amount.toFixed(2)}
-          </Text>
-          <Text style={styles.date}>{formatDate(transaction.date)}</Text>
-        </View>
-        
-        {showActions && (onEdit || onDelete) && (
+      )}
+
+      {/* Main Content */}
+      <GestureDetector gesture={panGesture}>
+        <Animated.View style={[animatedStyle]}>
           <TouchableOpacity 
-            style={styles.moreButton}
-            onPress={handleMorePress}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            style={styles.container} 
+            onPress={handlePress} 
+            activeOpacity={0.7}
           >
-            <MoreHorizontal size={20} color={colors.textTertiary} />
+            <View style={styles.leftSection}>
+              <View style={[styles.iconContainer, { backgroundColor: categoryColor + '20' }]}>
+                <IconComponent size={20} color={categoryColor} />
+              </View>
+              <View style={styles.details}>
+                <Text style={styles.description} numberOfLines={1}>
+                  {transaction.description}
+                </Text>
+                <Text style={styles.category}>{transaction.category}</Text>
+              </View>
+            </View>
+            
+            <View style={styles.rightSection}>
+              <Text style={[
+                styles.amount,
+                { color: transaction.type === 'income' ? '#4facfe' : '#EF4444' }
+              ]}>
+                {transaction.type === 'income' ? '+' : '-'}${transaction.amount.toFixed(2)}
+              </Text>
+              <Text style={styles.date}>{formatDate(transaction.date)}</Text>
+            </View>
           </TouchableOpacity>
-        )}
-      </View>
-    </TouchableOpacity>
+        </Animated.View>
+      </GestureDetector>
+    </View>
   );
 }
 
 const createStyles = (colors: any) => StyleSheet.create({
+  wrapper: {
+    marginBottom: 8,
+    position: 'relative',
+    overflow: 'hidden',
+    borderRadius: 12,
+  },
   container: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surface,
     padding: 16,
-    borderRadius: 12,
-    marginBottom: 8,
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -154,11 +233,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontWeight: '500',
   },
   rightSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  amountContainer: {
     alignItems: 'flex-end',
   },
   amount: {
@@ -171,12 +245,31 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: colors.textTertiary,
     fontWeight: '500',
   },
-  moreButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.borderLight,
+  actionsContainer: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: ACTION_WIDTH,
+    flexDirection: 'row',
+    zIndex: 1,
+  },
+  actionButton: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 12,
+  },
+  editButton: {
+    backgroundColor: '#4facfe',
+  },
+  deleteButton: {
+    backgroundColor: '#EF4444',
+  },
+  actionButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 4,
   },
 });
