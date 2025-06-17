@@ -9,7 +9,7 @@ import {
   ScrollView,
   Platform,
 } from 'react-native';
-import { X, Check } from 'lucide-react-native';
+import { X, Check, Calendar } from 'lucide-react-native';
 import * as Icons from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useGuest } from '@/contexts/GuestContext';
@@ -28,6 +28,7 @@ export default function AddTransactionModal({ visible, onClose }: AddTransaction
   const [description, setDescription] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
   const [alertConfig, setAlertConfig] = useState({
     type: 'error' as 'error' | 'success',
@@ -63,6 +64,28 @@ export default function AddTransactionModal({ visible, onClose }: AddTransaction
   const handleTypeChange = (newType: 'expense' | 'income') => {
     setType(newType);
     setSelectedCategory(''); // Reset category when type changes
+  };
+
+  const formatDateForDisplay = (dateString: string) => {
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
+  const formatDateForInput = (dateString: string) => {
+    // Convert from DD-MM-YYYY to YYYY-MM-DD for input
+    const parts = dateString.split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return dateString;
+  };
+
+  const handleDateChange = (inputDate: string) => {
+    // inputDate comes in YYYY-MM-DD format from the input
+    setDate(inputDate);
   };
 
   const handleSubmit = () => {
@@ -174,6 +197,46 @@ export default function AddTransactionModal({ visible, onClose }: AddTransaction
               />
             </View>
 
+            {/* Date */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Date</Text>
+              <View style={styles.dateContainer}>
+                <View style={styles.dateInputWrapper}>
+                  <Calendar size={20} color="#6B7280" />
+                  <TextInput
+                    style={styles.dateInput}
+                    value={formatDateForDisplay(date)}
+                    onChangeText={(text) => {
+                      // Handle manual text input - convert DD-MM-YYYY to YYYY-MM-DD
+                      const parts = text.split('-');
+                      if (parts.length === 3 && parts[0].length <= 2 && parts[1].length <= 2 && parts[2].length <= 4) {
+                        if (parts[2].length === 4) {
+                          const isoDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                          setDate(isoDate);
+                        }
+                      }
+                    }}
+                    placeholder="DD-MM-YYYY"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                </View>
+                {Platform.OS === 'web' && (
+                  <input
+                    type="date"
+                    value={date}
+                    onChange={(e) => handleDateChange(e.target.value)}
+                    style={{
+                      position: 'absolute',
+                      opacity: 0,
+                      width: '100%',
+                      height: '100%',
+                      cursor: 'pointer',
+                    }}
+                  />
+                )}
+              </View>
+            </View>
+
             {/* Category Selection */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Category *</Text>
@@ -239,18 +302,6 @@ export default function AddTransactionModal({ visible, onClose }: AddTransaction
                   );
                 })}
               </View>
-            </View>
-
-            {/* Date */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Date</Text>
-              <TextInput
-                style={styles.input}
-                value={date}
-                onChangeText={setDate}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor="#9CA3AF"
-              />
             </View>
           </ScrollView>
         </View>
@@ -350,6 +401,26 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#E5E7EB',
+  },
+  dateContainer: {
+    position: 'relative',
+  },
+  dateInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  dateInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#111827',
+    marginLeft: 12,
+    fontWeight: '500',
   },
   selectedCategoryContainer: {
     marginBottom: 16,
