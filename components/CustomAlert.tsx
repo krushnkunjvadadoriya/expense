@@ -101,7 +101,7 @@ export default function CustomAlert({
     <Modal
       visible={visible}
       transparent={true}
-      animationType={Platform.OS === 'web' ? 'fade' : 'slide'}
+      animationType="fade"
       onRequestClose={handleClose}
       statusBarTranslucent={true}
     >
