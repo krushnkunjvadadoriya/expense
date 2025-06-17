@@ -145,8 +145,8 @@ export default function TransactionItem({
               onPress={handleEdit}
               activeOpacity={0.8}
             >
-              <Edit3 size={22} color="#FFFFFF" strokeWidth={2} />
-              <Text style={styles.actionButtonText}>Edit</Text>
+              <Edit3 size={22} color={colors.primary} strokeWidth={2} />
+              <Text style={[styles.actionButtonText, styles.editButtonText]}>Edit</Text>
             </TouchableOpacity>
           )}
           {onDelete && (
@@ -155,8 +155,8 @@ export default function TransactionItem({
               onPress={handleDelete}
               activeOpacity={0.8}
             >
-              <Trash2 size={22} color="#FFFFFF" strokeWidth={2} />
-              <Text style={styles.actionButtonText}>Delete</Text>
+              <Trash2 size={22} color={colors.error} strokeWidth={2} />
+              <Text style={[styles.actionButtonText, styles.deleteButtonText]}>Delete</Text>
             </TouchableOpacity>
           )}
         </Animated.View>
@@ -272,16 +272,21 @@ const createStyles = (colors: any) => StyleSheet.create({
     paddingHorizontal: 8,
   },
   editButton: {
-    backgroundColor: '#4facfe',
+    backgroundColor: colors.primaryLight, // Light blue background
   },
   deleteButton: {
-    backgroundColor: '#EF4444',
+    backgroundColor: '#FEE2E2', // Light red background (error + '20')
   },
   actionButtonText: {
-    color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '600',
     marginTop: 6,
     textAlign: 'center',
+  },
+  editButtonText: {
+    color: colors.primary, // Blue text
+  },
+  deleteButtonText: {
+    color: colors.error, // Red text
   },
 });
