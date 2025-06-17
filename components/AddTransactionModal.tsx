@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,15 +13,17 @@ import { X, Check, Calendar } from 'lucide-react-native';
 import * as Icons from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useGuest } from '@/contexts/GuestContext';
+import { Transaction } from '@/types';
 import CustomAlert from './CustomAlert';
 
 interface AddTransactionModalProps {
   visible: boolean;
   onClose: () => void;
+  transaction?: Transaction | null; // For editing existing transactions
 }
 
-export default function AddTransactionModal({ visible, onClose }: AddTransactionModalProps) {
-  const { state, addTransaction } = useApp();
+export default function AddTransactionModal({ visible, onClose, transaction }: AddTransactionModalProps) {
+  const { state, addTransaction, updateTransaction } = useApp();
   const { incrementTransactionCount } = useGuest();
   const [type, setType] = useState<'expense' | 'income'>('expense');
   const [amount, setAmount] = useState('');
@@ -36,9 +38,32 @@ export default function AddTransactionModal({ visible, onClose }: AddTransaction
     message: '',
   });
 
+  const isEditing = !!transaction;
   const categories = state.categories.filter(c => c.type === type);
 
+  // Pre-fill form when editing
+  useEffect(() => {
+    if (transaction && visible) {
+      setType(transaction.type);
+      setAmount(transaction.amount.toString());
+      setDescription(transaction.description);
+      setSelectedCategory(transaction.category);
+      setDate(transaction.date);
+    } else if (!transaction && visible) {
+      // Reset form for new transaction
+      resetForm();
+    }
+  }, [transaction, visible]);
+
+  // Reset category when type changes and not editing
+  useEffect(() => {
+    if (!isEditing) {
+      setSelectedCategory('');
+    }
+  }, [type, isEditing]);
+
   const resetForm = () => {
+    setType('expense');
     setAmount('');
     setDescription('');
     setSelectedCategory('');
@@ -63,7 +88,9 @@ export default function AddTransactionModal({ visible, onClose }: AddTransaction
 
   const handleTypeChange = (newType: 'expense' | 'income') => {
     setType(newType);
-    setSelectedCategory(''); // Reset category when type changes
+    if (!isEditing) {
+      setSelectedCategory(''); // Reset category when type changes for new transactions
+    }
   };
 
   const formatDateForDisplay = (dateString: string) => {
@@ -72,15 +99,6 @@ export default function AddTransactionModal({ visible, onClose }: AddTransaction
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear();
     return `${day}-${month}-${year}`;
-  };
-
-  const formatDateForInput = (dateString: string) => {
-    // Convert from DD-MM-YYYY to YYYY-MM-DD for input
-    const parts = dateString.split('-');
-    if (parts.length === 3) {
-      return `${parts[2]}-${parts[1]}-${parts[0]}`;
-    }
-    return dateString;
   };
 
   const handleDateChange = (inputDate: string) => {
@@ -106,21 +124,40 @@ export default function AddTransactionModal({ visible, onClose }: AddTransaction
     }
 
     try {
-      addTransaction({
-        amount: numAmount,
-        type,
-        category: selectedCategory,
-        description: description.trim(),
-        date,
-      });
+      if (isEditing && transaction) {
+        // Update existing transaction
+        const updatedTransaction: Transaction = {
+          ...transaction,
+          amount: numAmount,
+          type,
+          category: selectedCategory,
+          description: description.trim(),
+          date,
+          updatedAt: new Date().toISOString(),
+        };
+        
+        updateTransaction(updatedTransaction);
+        showCustomAlert('success', 'Transaction Updated', 'Your transaction has been successfully updated.');
+      } else {
+        // Add new transaction
+        addTransaction({
+          amount: numAmount,
+          type,
+          category: selectedCategory,
+          description: description.trim(),
+          date,
+        });
 
-      // Increment transaction count for guest users
-      incrementTransactionCount();
-
-      showCustomAlert('success', 'Transaction Added', 'Your transaction has been successfully added.');
-      resetForm();
+        // Increment transaction count for guest users
+        incrementTransactionCount();
+        showCustomAlert('success', 'Transaction Added', 'Your transaction has been successfully added.');
+      }
+      
+      if (!isEditing) {
+        resetForm();
+      }
     } catch (error) {
-      showCustomAlert('error', 'Error', 'Failed to add transaction. Please try again.');
+      showCustomAlert('error', 'Error', `Failed to ${isEditing ? 'update' : 'add'} transaction. Please try again.`);
     }
   };
 
@@ -142,7 +179,9 @@ export default function AddTransactionModal({ visible, onClose }: AddTransaction
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <X size={24} color="#6B7280" />
             </TouchableOpacity>
-            <Text style={styles.title}>Add Transaction</Text>
+            <Text style={styles.title}>
+              {isEditing ? 'Edit Transaction' : 'Add Transaction'}
+            </Text>
             <TouchableOpacity onPress={handleSubmit} style={styles.saveButton}>
               <Check size={24} color="#4facfe" />
             </TouchableOpacity>

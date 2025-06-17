@@ -11,15 +11,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Search, Filter, Plus } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { Transaction } from '@/types';
 import TransactionItem from '@/components/TransactionItem';
 import AddTransactionModal from '@/components/AddTransactionModal';
 
 export default function Transactions() {
-  const { state } = useApp();
+  const { state, deleteTransaction } = useApp();
   const { state: themeState } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
 
   const { colors } = themeState.theme;
   const styles = createStyles(colors);
@@ -71,6 +73,24 @@ export default function Transactions() {
     return { income, expenses, net: income - expenses };
   };
 
+  const handleEditTransaction = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
+    setShowAddModal(true);
+  };
+
+  const handleDeleteTransaction = async (transaction: Transaction) => {
+    try {
+      await deleteTransaction(transaction.id);
+    } catch (error) {
+      console.error('Error deleting transaction:', error);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowAddModal(false);
+    setEditingTransaction(null);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -78,7 +98,10 @@ export default function Transactions() {
         <Text style={styles.title}>Transactions</Text>
         <TouchableOpacity
           style={styles.addButton}
-          onPress={() => setShowAddModal(true)}
+          onPress={() => {
+            setEditingTransaction(null);
+            setShowAddModal(true);
+          }}
         >
           <Plus size={20} color="#FFFFFF" />
         </TouchableOpacity>
@@ -150,6 +173,9 @@ export default function Transactions() {
                       transaction={transaction}
                       categoryColor={category?.color}
                       categoryIcon={category?.icon}
+                      onEdit={handleEditTransaction}
+                      onDelete={handleDeleteTransaction}
+                      showActions={true}
                     />
                   );
                 })}
@@ -168,7 +194,8 @@ export default function Transactions() {
 
       <AddTransactionModal
         visible={showAddModal}
-        onClose={() => setShowAddModal(false)}
+        onClose={handleCloseModal}
+        transaction={editingTransaction}
       />
     </SafeAreaView>
   );

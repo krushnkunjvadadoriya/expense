@@ -1,21 +1,28 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Transaction } from '@/types';
 import { useTheme } from '@/contexts/ThemeContext';
 import * as Icons from 'lucide-react-native';
+import { MoreHorizontal, Edit3, Trash2 } from 'lucide-react-native';
 
 interface TransactionItemProps {
   transaction: Transaction;
   onPress?: () => void;
+  onEdit?: (transaction: Transaction) => void;
+  onDelete?: (transaction: Transaction) => void;
   categoryColor?: string;
   categoryIcon?: string;
+  showActions?: boolean;
 }
 
 export default function TransactionItem({ 
   transaction, 
   onPress, 
+  onEdit,
+  onDelete,
   categoryColor = '#6B7280',
-  categoryIcon = 'circle'
+  categoryIcon = 'circle',
+  showActions = true
 }: TransactionItemProps) {
   const { state: themeState } = useTheme();
   const { colors } = themeState.theme;
@@ -28,6 +35,42 @@ export default function TransactionItem({
       month: 'short',
       day: 'numeric',
     });
+  };
+
+  const handleMorePress = () => {
+    Alert.alert(
+      'Transaction Options',
+      `What would you like to do with this transaction?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Edit',
+          onPress: () => onEdit?.(transaction),
+          style: 'default'
+        },
+        {
+          text: 'Delete',
+          onPress: () => handleDelete(),
+          style: 'destructive'
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      'Delete Transaction',
+      `Are you sure you want to delete this transaction?\n\n"${transaction.description}" - ${transaction.type === 'income' ? '+' : '-'}$${transaction.amount.toFixed(2)}`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          onPress: () => onDelete?.(transaction),
+          style: 'destructive'
+        },
+      ]
+    );
   };
 
   return (
@@ -45,13 +88,25 @@ export default function TransactionItem({
       </View>
       
       <View style={styles.rightSection}>
-        <Text style={[
-          styles.amount,
-          { color: transaction.type === 'income' ? '#4facfe' : '#EF4444' }
-        ]}>
-          {transaction.type === 'income' ? '+' : '-'}${transaction.amount.toFixed(2)}
-        </Text>
-        <Text style={styles.date}>{formatDate(transaction.date)}</Text>
+        <View style={styles.amountContainer}>
+          <Text style={[
+            styles.amount,
+            { color: transaction.type === 'income' ? '#4facfe' : '#EF4444' }
+          ]}>
+            {transaction.type === 'income' ? '+' : '-'}${transaction.amount.toFixed(2)}
+          </Text>
+          <Text style={styles.date}>{formatDate(transaction.date)}</Text>
+        </View>
+        
+        {showActions && (onEdit || onDelete) && (
+          <TouchableOpacity 
+            style={styles.moreButton}
+            onPress={handleMorePress}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <MoreHorizontal size={20} color={colors.textTertiary} />
+          </TouchableOpacity>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -99,6 +154,11 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontWeight: '500',
   },
   rightSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  amountContainer: {
     alignItems: 'flex-end',
   },
   amount: {
@@ -110,5 +170,13 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 12,
     color: colors.textTertiary,
     fontWeight: '500',
+  },
+  moreButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.borderLight,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

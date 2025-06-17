@@ -20,16 +20,18 @@ import {
 import { useApp } from '@/contexts/AppContext';
 import { useGuest } from '@/contexts/GuestContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { Transaction } from '@/types';
 import StatCard from '@/components/StatCard';
 import TransactionItem from '@/components/TransactionItem';
 import AddTransactionModal from '@/components/AddTransactionModal';
 import GuestModeIndicator from '@/components/GuestModeIndicator';
 
 export default function Dashboard() {
-  const { state, calculateStats } = useApp();
+  const { state, calculateStats, deleteTransaction } = useApp();
   const { state: guestState } = useGuest();
   const { state: themeState } = useTheme();
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   const { colors } = themeState.theme;
@@ -74,6 +76,24 @@ export default function Dashboard() {
     } else {
       return 'Good Evening!';
     }
+  };
+
+  const handleEditTransaction = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
+    setShowAddModal(true);
+  };
+
+  const handleDeleteTransaction = async (transaction: Transaction) => {
+    try {
+      await deleteTransaction(transaction.id);
+    } catch (error) {
+      console.error('Error deleting transaction:', error);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowAddModal(false);
+    setEditingTransaction(null);
   };
 
   return (
@@ -159,6 +179,9 @@ export default function Dashboard() {
                   transaction={transaction}
                   categoryColor={category?.color}
                   categoryIcon={category?.icon}
+                  onEdit={handleEditTransaction}
+                  onDelete={handleDeleteTransaction}
+                  showActions={true}
                 />
               );
             })
@@ -210,7 +233,10 @@ export default function Dashboard() {
       {/* Floating Action Button */}
       <TouchableOpacity
         style={styles.fab}
-        onPress={() => setShowAddModal(true)}
+        onPress={() => {
+          setEditingTransaction(null);
+          setShowAddModal(true);
+        }}
         activeOpacity={0.8}
       >
         <Plus size={24} color="#FFFFFF" />
@@ -218,7 +244,8 @@ export default function Dashboard() {
 
       <AddTransactionModal
         visible={showAddModal}
-        onClose={() => setShowAddModal(false)}
+        onClose={handleCloseModal}
+        transaction={editingTransaction}
       />
     </SafeAreaView>
   );
