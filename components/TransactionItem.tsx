@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Transaction } from '@/types';
 import { useTheme } from '@/contexts/ThemeContext';
 import * as Icons from 'lucide-react-native';
-import { MoreHorizontal, Edit3, Trash2 } from 'lucide-react-native';
+import { MoveHorizontal as MoreHorizontal, CreditCard as Edit3, Trash2 } from 'lucide-react-native';
 
 interface TransactionItemProps {
   transaction: Transaction;
