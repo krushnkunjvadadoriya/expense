@@ -103,7 +103,7 @@ export default function CustomAlert({
       transparent={true}
       animationType="fade"
       onRequestClose={handleClose}
-      statusBarTranslucent={true}
+      statusBarTranslucent={false}
     >
       <View style={styles.overlay}>
         <View style={[styles.alertContainer, { maxWidth: screenWidth - 40 }]}>
@@ -172,13 +172,13 @@ export default function CustomAlert({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'red', // DEBUG: Changed to red for visibility testing
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   alertContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'blue', // DEBUG: Changed to blue for visibility testing
     borderRadius: 20,
     padding: 24,
     width: '100%',
@@ -224,19 +224,19 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#111827',
+    color: '#FFFFFF', // DEBUG: Changed to white for visibility on blue background
     marginBottom: 8,
     textAlign: 'center',
   },
   message: {
     fontSize: 16,
-    color: '#6B7280',
+    color: '#FFFFFF', // DEBUG: Changed to white for visibility on blue background
     lineHeight: 24,
     textAlign: 'center',
   },
   autoHideText: {
     fontSize: 12,
-    color: '#9CA3AF',
+    color: '#FFFFFF', // DEBUG: Changed to white for visibility on blue background
     fontStyle: 'italic',
     marginTop: 8,
     textAlign: 'center',
