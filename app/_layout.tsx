@@ -29,13 +29,13 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>
-        <GuestProvider>
-          <AuthProvider>
+        <AuthProvider>
+          <GuestProvider>
             <AppProvider>
               <RootLayoutContent />
             </AppProvider>
-          </AuthProvider>
-        </GuestProvider>
+          </GuestProvider>
+        </AuthProvider>
       </ThemeProvider>
     </GestureHandlerRootView>
   );
