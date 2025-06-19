@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGuest } from '@/contexts/GuestContext';
 import RegistrationPromptModal from './RegistrationPromptModal';
@@ -16,42 +15,17 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 
   useEffect(() => {
     // Increment app open count for guest users
-    if (guestState.isGuest && !authState.isAuthenticated) {
+    if (!authState.isAuthenticated) {
       incrementAppOpenCount();
     }
   }, []);
 
   useEffect(() => {
     // Show registration prompt when conditions are met
-    if (guestState.shouldShowRegistrationPrompt && guestState.isGuest) {
+    if (guestState.shouldShowRegistrationPrompt && !authState.isAuthenticated) {
       setShowRegistrationPrompt(true);
     }
   }, [guestState.shouldShowRegistrationPrompt]);
-
-  useEffect(() => {
-    if (!authState.isLoading && !authState.isAuthenticated && !guestState.isGuest) {
-      // User was registered but is now logged out, check if they have a PIN
-      checkPinSetup();
-    }
-  }, [authState.isLoading, authState.isAuthenticated, guestState.isGuest]);
-
-  const checkPinSetup = async () => {
-    try {
-      const { default: AsyncStorage } = await import('@react-native-async-storage/async-storage');
-      const userPin = await AsyncStorage.getItem('userPin');
-      
-      if (userPin) {
-        // User has a PIN, redirect to PIN entry
-        router.replace('/(auth)/enter-pin');
-      } else {
-        // New user, start with email entry
-        router.replace('/(auth)/email-entry');
-      }
-    } catch (error) {
-      // Default to email entry if there's an error
-      router.replace('/(auth)/email-entry');
-    }
-  };
 
   if (authState.isLoading) {
     return (
@@ -62,20 +36,16 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     );
   }
 
-  // Allow guest users to access the app
-  if (guestState.isGuest || authState.isAuthenticated) {
-    return (
-      <>
-        {children}
-        <RegistrationPromptModal
-          visible={showRegistrationPrompt}
-          onClose={() => setShowRegistrationPrompt(false)}
-        />
-      </>
-    );
-  }
-
-  return null;
+  // Always render children (main app content) and registration prompt modal
+  return (
+    <>
+      {children}
+      <RegistrationPromptModal
+        visible={showRegistrationPrompt}
+        onClose={() => setShowRegistrationPrompt(false)}
+      />
+    </>
+  );
 }
 
 const styles = StyleSheet.create({

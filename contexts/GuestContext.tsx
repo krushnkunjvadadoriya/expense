@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface GuestState {
-  isGuest: boolean;
   transactionCount: number;
   appOpenCount: number;
   firstOpenDate: string | null;
@@ -12,17 +12,16 @@ interface GuestState {
 }
 
 type GuestAction =
-  | { type: 'SET_GUEST_MODE'; payload: boolean }
   | { type: 'INCREMENT_TRANSACTION_COUNT' }
   | { type: 'INCREMENT_APP_OPEN_COUNT' }
   | { type: 'SET_FIRST_OPEN_DATE'; payload: string }
   | { type: 'SET_REGISTRATION_PROMPT_SHOWN' }
   | { type: 'DISMISS_REGISTRATION_PROMPT' }
   | { type: 'RESET_GUEST_DATA' }
-  | { type: 'LOAD_GUEST_STATE'; payload: Partial<GuestState> };
+  | { type: 'LOAD_GUEST_STATE'; payload: Partial<GuestState> }
+  | { type: 'UPDATE_PROMPT_STATUS'; payload: boolean };
 
 const initialState: GuestState = {
-  isGuest: true,
   transactionCount: 0,
   appOpenCount: 0,
   firstOpenDate: null,
@@ -31,57 +30,9 @@ const initialState: GuestState = {
   lastPromptDate: null,
 };
 
-function guestReducer(state: GuestState, action: GuestAction): GuestState {
-  switch (action.type) {
-    case 'SET_GUEST_MODE':
-      return { ...state, isGuest: action.payload };
-    case 'INCREMENT_TRANSACTION_COUNT':
-      const newTransactionCount = state.transactionCount + 1;
-      return {
-        ...state,
-        transactionCount: newTransactionCount,
-        shouldShowRegistrationPrompt: shouldShowPrompt({
-          ...state,
-          transactionCount: newTransactionCount,
-        }),
-      };
-    case 'INCREMENT_APP_OPEN_COUNT':
-      const newAppOpenCount = state.appOpenCount + 1;
-      return {
-        ...state,
-        appOpenCount: newAppOpenCount,
-        shouldShowRegistrationPrompt: shouldShowPrompt({
-          ...state,
-          appOpenCount: newAppOpenCount,
-        }),
-      };
-    case 'SET_FIRST_OPEN_DATE':
-      return { ...state, firstOpenDate: action.payload };
-    case 'SET_REGISTRATION_PROMPT_SHOWN':
-      return {
-        ...state,
-        hasSeenRegistrationPrompt: true,
-        shouldShowRegistrationPrompt: false,
-        lastPromptDate: new Date().toISOString(),
-      };
-    case 'DISMISS_REGISTRATION_PROMPT':
-      return {
-        ...state,
-        shouldShowRegistrationPrompt: false,
-        lastPromptDate: new Date().toISOString(),
-      };
-    case 'RESET_GUEST_DATA':
-      return initialState;
-    case 'LOAD_GUEST_STATE':
-      return { ...state, ...action.payload };
-    default:
-      return state;
-  }
-}
-
 // Logic to determine if registration prompt should be shown
-function shouldShowPrompt(state: GuestState): boolean {
-  if (!state.isGuest || state.hasSeenRegistrationPrompt) {
+function shouldShowPrompt(state: GuestState, isAuthenticated: boolean): boolean {
+  if (isAuthenticated || state.hasSeenRegistrationPrompt) {
     return false;
   }
 
@@ -107,6 +58,49 @@ function shouldShowPrompt(state: GuestState): boolean {
   return false;
 }
 
+function guestReducer(state: GuestState, action: GuestAction): GuestState {
+  switch (action.type) {
+    case 'INCREMENT_TRANSACTION_COUNT':
+      const newTransactionCount = state.transactionCount + 1;
+      return {
+        ...state,
+        transactionCount: newTransactionCount,
+      };
+    case 'INCREMENT_APP_OPEN_COUNT':
+      const newAppOpenCount = state.appOpenCount + 1;
+      return {
+        ...state,
+        appOpenCount: newAppOpenCount,
+      };
+    case 'SET_FIRST_OPEN_DATE':
+      return { ...state, firstOpenDate: action.payload };
+    case 'SET_REGISTRATION_PROMPT_SHOWN':
+      return {
+        ...state,
+        hasSeenRegistrationPrompt: true,
+        shouldShowRegistrationPrompt: false,
+        lastPromptDate: new Date().toISOString(),
+      };
+    case 'DISMISS_REGISTRATION_PROMPT':
+      return {
+        ...state,
+        shouldShowRegistrationPrompt: false,
+        lastPromptDate: new Date().toISOString(),
+      };
+    case 'RESET_GUEST_DATA':
+      return initialState;
+    case 'LOAD_GUEST_STATE':
+      return { ...state, ...action.payload };
+    case 'UPDATE_PROMPT_STATUS':
+      return {
+        ...state,
+        shouldShowRegistrationPrompt: action.payload,
+      };
+    default:
+      return state;
+  }
+}
+
 const GuestContext = createContext<{
   state: GuestState;
   dispatch: React.Dispatch<GuestAction>;
@@ -114,11 +108,15 @@ const GuestContext = createContext<{
   incrementAppOpenCount: () => void;
   markRegistrationPromptShown: () => void;
   dismissRegistrationPrompt: () => void;
-  convertToRegisteredUser: () => void;
+  isGuest: boolean;
 } | null>(null);
 
 export function GuestProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(guestReducer, initialState);
+  const { state: authState } = useAuth();
+
+  // Derive guest status from authentication state
+  const isGuest = !authState.isAuthenticated;
 
   useEffect(() => {
     loadGuestState();
@@ -127,6 +125,14 @@ export function GuestProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     saveGuestState();
   }, [state]);
+
+  // Update prompt status when authentication or guest state changes
+  useEffect(() => {
+    const shouldShow = shouldShowPrompt(state, authState.isAuthenticated);
+    if (shouldShow !== state.shouldShowRegistrationPrompt) {
+      dispatch({ type: 'UPDATE_PROMPT_STATUS', payload: shouldShow });
+    }
+  }, [state.transactionCount, state.appOpenCount, state.hasSeenRegistrationPrompt, authState.isAuthenticated]);
 
   const loadGuestState = async () => {
     try {
@@ -169,10 +175,6 @@ export function GuestProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'DISMISS_REGISTRATION_PROMPT' });
   };
 
-  const convertToRegisteredUser = () => {
-    dispatch({ type: 'SET_GUEST_MODE', payload: false });
-  };
-
   return (
     <GuestContext.Provider
       value={{
@@ -182,7 +184,7 @@ export function GuestProvider({ children }: { children: React.ReactNode }) {
         incrementAppOpenCount,
         markRegistrationPromptShown,
         dismissRegistrationPrompt,
-        convertToRegisteredUser,
+        isGuest,
       }}
     >
       {children}

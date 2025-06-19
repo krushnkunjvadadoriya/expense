@@ -19,6 +19,7 @@ import {
 } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useGuest } from '@/contexts/GuestContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Transaction } from '@/types';
 import StatCard from '@/components/StatCard';
@@ -28,7 +29,8 @@ import GuestModeIndicator from '@/components/GuestModeIndicator';
 
 export default function Dashboard() {
   const { state, calculateStats, deleteTransaction } = useApp();
-  const { state: guestState } = useGuest();
+  const { isGuest } = useGuest();
+  const { state: authState } = useAuth();
   const { state: themeState } = useTheme();
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
@@ -61,10 +63,10 @@ export default function Dashboard() {
   };
 
   const getUserName = () => {
-    if (guestState.isGuest) {
+    if (!authState.isAuthenticated) {
       return 'Guest';
     }
-    return state.user?.name || 'User';
+    return authState.user?.name || 'User';
   };
 
   const getGreeting = () => {

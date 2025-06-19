@@ -5,9 +5,9 @@ import { useGuest } from '@/contexts/GuestContext';
 import { router } from 'expo-router';
 
 export default function GuestModeIndicator() {
-  const { state } = useGuest();
+  const { isGuest } = useGuest();
 
-  if (!state.isGuest) {
+  if (!isGuest) {
     return null;
   }
 

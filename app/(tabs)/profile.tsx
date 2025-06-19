@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { User, Settings, Bell, Download, CircleHelp as HelpCircle, Shield, Trash2, CreditCard as Edit3, Check, X, LogOut, Smartphone, Sun, Moon, Monitor } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useGuest } from '@/contexts/GuestContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { router } from 'expo-router';
 import ChangePinModal from '@/components/ChangePinModal';
@@ -19,6 +20,7 @@ import ChangePinModal from '@/components/ChangePinModal';
 export default function Profile() {
   const { state, dispatch } = useApp();
   const { logout, state: authState } = useAuth();
+  const { isGuest } = useGuest();
   const { state: themeState, setColorScheme, toggleTheme } = useTheme();
   const [editingBudget, setEditingBudget] = useState(false);
   const [budgetInput, setBudgetInput] = useState(state.user?.monthlyBudget.toString() || '');
@@ -74,18 +76,32 @@ export default function Profile() {
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: logout,
-        },
-      ]
-    );
+    if (isGuest) {
+      Alert.alert(
+        'Create Account',
+        'You are currently using the app as a guest. Would you like to create an account to save your data?',
+        [
+          { text: 'Continue as Guest', style: 'cancel' },
+          {
+            text: 'Create Account',
+            onPress: () => router.push('/(auth)/email-entry'),
+          },
+        ]
+      );
+    } else {
+      Alert.alert(
+        'Sign Out',
+        'Are you sure you want to sign out?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Sign Out',
+            style: 'destructive',
+            onPress: logout,
+          },
+        ]
+      );
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -101,6 +117,11 @@ export default function Profile() {
     return mobile;
   };
 
+  const getUserDisplayName = () => {
+    if (isGuest) return 'Guest User';
+    return authState.user?.name || 'User';
+  };
+
   const styles = createStyles(colors);
 
   return (
@@ -110,7 +131,7 @@ export default function Profile() {
         <View style={styles.header}>
           <Text style={styles.title}>Profile</Text>
           <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-            <LogOut size={20} color="#EF4444" />
+            <LogOut size={20} color={isGuest ? "#4facfe" : "#EF4444"} />
           </TouchableOpacity>
         </View>
 
@@ -120,20 +141,32 @@ export default function Profile() {
             <User size={32} color="#4facfe" />
           </View>
           <View style={styles.userInfo}>
-            <Text style={styles.userName}>{authState.user?.name || 'User'}</Text>
-            <View style={styles.contactInfo}>
-              <View style={styles.contactItem}>
-                <Smartphone size={16} color={colors.textTertiary} />
-                <Text style={styles.contactText}>
-                  {formatMobile(authState.user?.mobile || '')}
-                </Text>
+            <Text style={styles.userName}>{getUserDisplayName()}</Text>
+            {!isGuest && (
+              <View style={styles.contactInfo}>
+                {authState.user?.mobile && (
+                  <View style={styles.contactItem}>
+                    <Smartphone size={16} color={colors.textTertiary} />
+                    <Text style={styles.contactText}>
+                      {formatMobile(authState.user.mobile)}
+                    </Text>
+                  </View>
+                )}
+                {authState.user?.email && (
+                  <View style={styles.contactItem}>
+                    <Text style={styles.contactText}>{authState.user.email}</Text>
+                  </View>
+                )}
               </View>
-              {authState.user?.email && (
-                <View style={styles.contactItem}>
-                  <Text style={styles.contactText}>{authState.user.email}</Text>
-                </View>
-              )}
-            </View>
+            )}
+            {isGuest && (
+              <TouchableOpacity 
+                style={styles.createAccountButton}
+                onPress={() => router.push('/(auth)/email-entry')}
+              >
+                <Text style={styles.createAccountText}>Create Account to Save Data</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
@@ -284,18 +317,20 @@ export default function Profile() {
         </View>
 
         {/* Security Settings */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Security</Text>
-          <View style={styles.menuContainer}>
-            <TouchableOpacity 
-              style={styles.menuItem}
-              onPress={() => setShowChangePinModal(true)}
-            >
-              <Shield size={20} color={colors.textTertiary} />
-              <Text style={styles.menuItemText}>Change PIN</Text>
-            </TouchableOpacity>
+        {!isGuest && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Security</Text>
+            <View style={styles.menuContainer}>
+              <TouchableOpacity 
+                style={styles.menuItem}
+                onPress={() => setShowChangePinModal(true)}
+              >
+                <Shield size={20} color={colors.textTertiary} />
+                <Text style={styles.menuItemText}>Change PIN</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        )}
 
         {/* Settings Menu */}
         <View style={styles.section}>
@@ -329,10 +364,12 @@ export default function Profile() {
         </View>
       </ScrollView>
 
-      <ChangePinModal
-        visible={showChangePinModal}
-        onClose={() => setShowChangePinModal(false)}
-      />
+      {!isGuest && (
+        <ChangePinModal
+          visible={showChangePinModal}
+          onClose={() => setShowChangePinModal(false)}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -405,6 +442,18 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 14,
     color: colors.textTertiary,
     fontWeight: '500',
+  },
+  createAccountButton: {
+    backgroundColor: '#4facfe',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  createAccountText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   statsContainer: {
     padding: 20,

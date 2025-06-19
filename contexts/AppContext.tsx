@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Transaction, Category, EMI, User, MonthlyStats, CategoryStats } from '@/types';
-import { useGuest } from '@/contexts/GuestContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AppState {
   user: User | null;
@@ -15,7 +15,7 @@ interface AppState {
 
 type AppAction =
   | { type: 'SET_LOADING'; payload: boolean }
-  | { type: 'SET_USER'; payload: User }
+  | { type: 'SET_USER'; payload: User | null }
   | { type: 'SET_TRANSACTIONS'; payload: Transaction[] }
   | { type: 'ADD_TRANSACTION'; payload: Transaction }
   | { type: 'UPDATE_TRANSACTION'; payload: Transaction }
@@ -114,6 +114,7 @@ const AppContext = createContext<{
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
+  const { state: authState } = useAuth();
 
   useEffect(() => {
     loadData();
@@ -123,28 +124,43 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     calculateStats();
   }, [state.transactions]);
 
+  // Update user from auth state
+  useEffect(() => {
+    if (authState.user) {
+      // Convert AuthUser to User format for AppContext
+      const appUser: User = {
+        id: authState.user.id,
+        name: authState.user.name,
+        email: authState.user.email,
+        mobile: authState.user.mobile,
+        currency: 'USD',
+        monthlyBudget: 3000, // Default budget
+        createdAt: authState.user.createdAt,
+        avatar: authState.user.avatar,
+        isEmailVerified: authState.user.isEmailVerified,
+        isMobileVerified: authState.user.isMobileVerified,
+      };
+      dispatch({ type: 'SET_USER', payload: appUser });
+    } else {
+      // Set default user for guest mode
+      const defaultUser: User = {
+        id: 'guest',
+        name: 'Guest User',
+        currency: 'USD',
+        monthlyBudget: 3000,
+        createdAt: new Date().toISOString(),
+      };
+      dispatch({ type: 'SET_USER', payload: defaultUser });
+    }
+  }, [authState.user]);
+
   const loadData = async () => {
     try {
-      const [userData, transactionsData, categoriesData, emisData] = await Promise.all([
-        AsyncStorage.getItem('user'),
+      const [transactionsData, categoriesData, emisData] = await Promise.all([
         AsyncStorage.getItem('transactions'),
         AsyncStorage.getItem('categories'),
         AsyncStorage.getItem('emis'),
       ]);
-
-      if (userData) {
-        dispatch({ type: 'SET_USER', payload: JSON.parse(userData) });
-      } else {
-        // Set default user for guest mode
-        const defaultUser: User = {
-          id: 'guest',
-          name: 'Guest User',
-          currency: 'USD',
-          monthlyBudget: 3000,
-          createdAt: new Date().toISOString(),
-        };
-        dispatch({ type: 'SET_USER', payload: defaultUser });
-      }
 
       if (transactionsData) {
         dispatch({ type: 'SET_TRANSACTIONS', payload: JSON.parse(transactionsData) });
