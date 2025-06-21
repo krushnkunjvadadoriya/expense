@@ -9,7 +9,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { X, Check, Mail, UserPlus } from 'lucide-react-native';
-import CustomAlert from './CustomAlert';
+import { useApp } from '@/contexts/AppContext';
 
 interface InviteMemberModalProps {
   visible: boolean;
@@ -17,17 +17,12 @@ interface InviteMemberModalProps {
 }
 
 export default function InviteMemberModal({ visible, onClose }: InviteMemberModalProps) {
+  const { showGlobalAlert } = useApp();
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<'member' | 'admin'>('member');
   const [message, setMessage] = useState('');
   const [emailError, setEmailError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showAlert, setShowAlert] = useState(false);
-  const [alertConfig, setAlertConfig] = useState({
-    type: 'error' as 'error' | 'success',
-    title: '',
-    message: '',
-  });
 
   const resetForm = () => {
     setEmail('');
@@ -39,23 +34,6 @@ export default function InviteMemberModal({ visible, onClose }: InviteMemberModa
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
-  };
-
-  const showCustomAlert = (type: 'error' | 'success', title: string, message: string) => {
-    setAlertConfig({ type, title, message });
-    setShowAlert(true);
-  };
-
-  const handleAlertClose = () => {
-    setShowAlert(false);
-    
-    // If it was a success alert, close the modal after a short delay
-    if (alertConfig.type === 'success') {
-      setTimeout(() => {
-        resetForm();
-        onClose();
-      }, 300);
-    }
   };
 
   const handleSubmit = async () => {
@@ -83,133 +61,135 @@ export default function InviteMemberModal({ visible, onClose }: InviteMemberModa
       // Mock API call to send invitation
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      showCustomAlert('success', 'Invitation Sent', `Invitation has been sent to ${email} successfully!`);
+      showGlobalAlert({
+        type: 'success',
+        title: 'Invitation Sent',
+        message: `Invitation has been sent to ${email} successfully!`,
+        onConfirm: () => {
+          resetForm();
+          onClose();
+        },
+      });
     } catch (error) {
-      showCustomAlert('error', 'Failed to Send Invitation', 'There was an error sending the invitation. Please try again.');
+      showGlobalAlert({
+        type: 'error',
+        title: 'Failed to Send Invitation',
+        message: 'There was an error sending the invitation. Please try again.',
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <>
-      <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <X size={24} color="#6B7280" />
-            </TouchableOpacity>
-            <Text style={styles.title}>Invite Member</Text>
-            <TouchableOpacity 
-              onPress={handleSubmit} 
-              style={[styles.saveButton, isLoading && styles.saveButtonDisabled]}
-              disabled={isLoading}
-            >
-              <Check size={24} color={isLoading ? "#9CA3AF" : "#4facfe"} />
-            </TouchableOpacity>
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <X size={24} color="#6B7280" />
+          </TouchableOpacity>
+          <Text style={styles.title}>Invite Member</Text>
+          <TouchableOpacity 
+            onPress={handleSubmit} 
+            style={[styles.saveButton, isLoading && styles.saveButtonDisabled]}
+            disabled={isLoading}
+          >
+            <Check size={24} color={isLoading ? "#9CA3AF" : "#4facfe"} />
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Icon */}
+          <View style={styles.iconContainer}>
+            <UserPlus size={48} color="#4facfe" />
           </View>
 
-          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-            {/* Icon */}
-            <View style={styles.iconContainer}>
-              <UserPlus size={48} color="#4facfe" />
-            </View>
-
-            {/* Email */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Email Address *</Text>
-              <View style={[
-                styles.inputContainer,
-                emailError && styles.inputContainerError
-              ]}>
-                <Mail size={20} color={emailError ? "#EF4444" : "#6B7280"} />
-                <TextInput
-                  style={styles.input}
-                  value={email}
-                  onChangeText={(text) => {
-                    setEmail(text);
-                    if (emailError) {
-                      setEmailError(''); // Clear error when user starts typing
-                    }
-                  }}
-                  placeholder="member@example.com"
-                  placeholderTextColor="#9CA3AF"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  editable={!isLoading}
-                />
-              </View>
-              {emailError ? (
-                <Text style={styles.errorText}>{emailError}</Text>
-              ) : null}
-            </View>
-
-            {/* Role Selection */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Role</Text>
-              <View style={styles.roleContainer}>
-                <TouchableOpacity
-                  style={[styles.roleButton, role === 'member' && styles.roleButtonActive]}
-                  onPress={() => setRole('member')}
-                  disabled={isLoading}
-                >
-                  <Text style={[styles.roleButtonText, role === 'member' && styles.roleButtonTextActive]}>
-                    Member
-                  </Text>
-                  <Text style={styles.roleDescription}>
-                    Can add expenses and view family budget
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.roleButton, role === 'admin' && styles.roleButtonActive]}
-                  onPress={() => setRole('admin')}
-                  disabled={isLoading}
-                >
-                  <Text style={[styles.roleButtonText, role === 'admin' && styles.roleButtonTextActive]}>
-                    Admin
-                  </Text>
-                  <Text style={styles.roleDescription}>
-                    Can manage budget, invite members, and all member permissions
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Personal Message */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Personal Message (Optional)</Text>
+          {/* Email */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Email Address *</Text>
+            <View style={[
+              styles.inputContainer,
+              emailError && styles.inputContainerError
+            ]}>
+              <Mail size={20} color={emailError ? "#EF4444" : "#6B7280"} />
               <TextInput
-                style={[styles.textInput, styles.textArea]}
-                value={message}
-                onChangeText={setMessage}
-                placeholder="Add a personal message to the invitation..."
+                style={styles.input}
+                value={email}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  if (emailError) {
+                    setEmailError(''); // Clear error when user starts typing
+                  }
+                }}
+                placeholder="member@example.com"
                 placeholderTextColor="#9CA3AF"
-                multiline
-                numberOfLines={3}
+                keyboardType="email-address"
+                autoCapitalize="none"
                 editable={!isLoading}
               />
             </View>
+            {emailError ? (
+              <Text style={styles.errorText}>{emailError}</Text>
+            ) : null}
+          </View>
 
-            {/* Preview Card */}
-            <View style={styles.previewCard}>
-              <Text style={styles.previewTitle}>Invitation Preview</Text>
-              <Text style={styles.previewText}>
-                You've been invited to join "The Doe Family" budget group as a {role}.
-                {message && `\n\n"${message}"`}
-              </Text>
+          {/* Role Selection */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Role</Text>
+            <View style={styles.roleContainer}>
+              <TouchableOpacity
+                style={[styles.roleButton, role === 'member' && styles.roleButtonActive]}
+                onPress={() => setRole('member')}
+                disabled={isLoading}
+              >
+                <Text style={[styles.roleButtonText, role === 'member' && styles.roleButtonTextActive]}>
+                  Member
+                </Text>
+                <Text style={styles.roleDescription}>
+                  Can add expenses and view family budget
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.roleButton, role === 'admin' && styles.roleButtonActive]}
+                onPress={() => setRole('admin')}
+                disabled={isLoading}
+              >
+                <Text style={[styles.roleButtonText, role === 'admin' && styles.roleButtonTextActive]}>
+                  Admin
+                </Text>
+                <Text style={styles.roleDescription}>
+                  Can manage budget, invite members, and all member permissions
+                </Text>
+              </TouchableOpacity>
             </View>
-          </ScrollView>
-        </View>
-      </Modal>
+          </View>
 
-      <CustomAlert
-        visible={showAlert}
-        type={alertConfig.type}
-        title={alertConfig.title}
-        message={alertConfig.message}
-        onClose={handleAlertClose}
-      />
-    </>
+          {/* Personal Message */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Personal Message (Optional)</Text>
+            <TextInput
+              style={[styles.textInput, styles.textArea]}
+              value={message}
+              onChangeText={setMessage}
+              placeholder="Add a personal message to the invitation..."
+              placeholderTextColor="#9CA3AF"
+              multiline
+              numberOfLines={3}
+              editable={!isLoading}
+            />
+          </View>
+
+          {/* Preview Card */}
+          <View style={styles.previewCard}>
+            <Text style={styles.previewTitle}>Invitation Preview</Text>
+            <Text style={styles.previewText}>
+              You've been invited to join "The Doe Family" budget group as a {role}.
+              {message && `\n\n"${message}"`}
+            </Text>
+          </View>
+        </ScrollView>
+      </View>
+    </Modal>
   );
 }
 

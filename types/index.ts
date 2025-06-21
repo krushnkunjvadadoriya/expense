@@ -166,3 +166,14 @@ export interface Theme {
   colors: ThemeColors;
   isDark: boolean;
 }
+
+// Global Alert types
+export interface GlobalAlert {
+  type: 'error' | 'success' | 'info' | 'warning';
+  title: string;
+  message: string;
+  onConfirm?: () => void;
+  confirmText?: string;
+  cancelText?: string;
+  autoHideDelay?: number;
+}

@@ -14,7 +14,6 @@ import * as Icons from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useGuest } from '@/contexts/GuestContext';
 import { Transaction } from '@/types';
-import CustomAlert from './CustomAlert';
 
 interface AddTransactionModalProps {
   visible: boolean;
@@ -23,20 +22,13 @@ interface AddTransactionModalProps {
 }
 
 export default function AddTransactionModal({ visible, onClose, transaction }: AddTransactionModalProps) {
-  const { state, addTransaction, updateTransaction } = useApp();
+  const { state, addTransaction, updateTransaction, showGlobalAlert } = useApp();
   const { incrementTransactionCount } = useGuest();
   const [type, setType] = useState<'expense' | 'income'>('expense');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showAlert, setShowAlert] = useState(false);
-  const [alertConfig, setAlertConfig] = useState({
-    type: 'error' as 'error' | 'success',
-    title: '',
-    message: '',
-  });
 
   const isEditing = !!transaction;
   const categories = state.categories.filter(c => c.type === type);
@@ -70,22 +62,6 @@ export default function AddTransactionModal({ visible, onClose, transaction }: A
     setDate(new Date().toISOString().split('T')[0]);
   };
 
-  const showCustomAlert = (type: 'error' | 'success', title: string, message: string) => {
-    setAlertConfig({ type, title, message });
-    setShowAlert(true);
-  };
-
-  const handleAlertClose = () => {
-    setShowAlert(false);
-    
-    // If it was a success alert, close the modal after a short delay
-    if (alertConfig.type === 'success') {
-      setTimeout(() => {
-        onClose();
-      }, 300);
-    }
-  };
-
   const handleTypeChange = (newType: 'expense' | 'income') => {
     setType(newType);
     if (!isEditing) {
@@ -108,18 +84,30 @@ export default function AddTransactionModal({ visible, onClose, transaction }: A
 
   const handleSubmit = () => {
     if (!amount || !description || !selectedCategory) {
-      showCustomAlert('error', 'Missing Information', 'Please fill in all fields to continue.');
+      showGlobalAlert({
+        type: 'error',
+        title: 'Missing Information',
+        message: 'Please fill in all fields to continue.',
+      });
       return;
     }
 
     if (!description.trim()) {
-      showCustomAlert('error', 'Invalid Description', 'Please enter a valid description for this transaction.');
+      showGlobalAlert({
+        type: 'error',
+        title: 'Invalid Description',
+        message: 'Please enter a valid description for this transaction.',
+      });
       return;
     }
 
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) {
-      showCustomAlert('error', 'Invalid Amount', 'Please enter a valid amount greater than zero.');
+      showGlobalAlert({
+        type: 'error',
+        title: 'Invalid Amount',
+        message: 'Please enter a valid amount greater than zero.',
+      });
       return;
     }
 
@@ -137,7 +125,12 @@ export default function AddTransactionModal({ visible, onClose, transaction }: A
         };
         
         updateTransaction(updatedTransaction);
-        showCustomAlert('success', 'Transaction Updated', 'Your transaction has been successfully updated.');
+        showGlobalAlert({
+          type: 'success',
+          title: 'Transaction Updated',
+          message: 'Your transaction has been successfully updated.',
+          onConfirm: onClose,
+        });
       } else {
         // Add new transaction
         addTransaction({
@@ -150,14 +143,23 @@ export default function AddTransactionModal({ visible, onClose, transaction }: A
 
         // Increment transaction count for guest users
         incrementTransactionCount();
-        showCustomAlert('success', 'Transaction Added', 'Your transaction has been successfully added.');
+        showGlobalAlert({
+          type: 'success',
+          title: 'Transaction Added',
+          message: 'Your transaction has been successfully added.',
+          onConfirm: onClose,
+        });
       }
       
       if (!isEditing) {
         resetForm();
       }
     } catch (error) {
-      showCustomAlert('error', 'Error', `Failed to ${isEditing ? 'update' : 'add'} transaction. Please try again.`);
+      showGlobalAlert({
+        type: 'error',
+        title: 'Error',
+        message: `Failed to ${isEditing ? 'update' : 'add'} transaction. Please try again.`,
+      });
     }
   };
 
@@ -168,192 +170,182 @@ export default function AddTransactionModal({ visible, onClose, transaction }: A
   const selectedCategoryInfo = getSelectedCategoryInfo();
 
   return (
-    <>
-      <Modal 
-        visible={visible} 
-        animationType="slide" 
-        onRequestClose={onClose}
-      >
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <X size={24} color="#6B7280" />
-            </TouchableOpacity>
-            <Text style={styles.title}>
-              {isEditing ? 'Edit Transaction' : 'Add Transaction'}
-            </Text>
-            <TouchableOpacity onPress={handleSubmit} style={styles.saveButton}>
-              <Check size={24} color="#4facfe" />
-            </TouchableOpacity>
+    <Modal 
+      visible={visible} 
+      animationType="slide" 
+      onRequestClose={onClose}
+    >
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <X size={24} color="#6B7280" />
+          </TouchableOpacity>
+          <Text style={styles.title}>
+            {isEditing ? 'Edit Transaction' : 'Add Transaction'}
+          </Text>
+          <TouchableOpacity onPress={handleSubmit} style={styles.saveButton}>
+            <Check size={24} color="#4facfe" />
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Type Selection */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Type</Text>
+            <View style={styles.typeContainer}>
+              <TouchableOpacity
+                style={[styles.typeButton, type === 'expense' && styles.typeButtonActive]}
+                onPress={() => handleTypeChange('expense')}
+              >
+                <Text style={[styles.typeButtonText, type === 'expense' && styles.typeButtonTextActive]}>
+                  Expense
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.typeButton, type === 'income' && styles.typeButtonActive]}
+                onPress={() => handleTypeChange('income')}
+              >
+                <Text style={[styles.typeButtonText, type === 'income' && styles.typeButtonTextActive]}>
+                  Income
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
-          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-            {/* Type Selection */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Type</Text>
-              <View style={styles.typeContainer}>
-                <TouchableOpacity
-                  style={[styles.typeButton, type === 'expense' && styles.typeButtonActive]}
-                  onPress={() => handleTypeChange('expense')}
-                >
-                  <Text style={[styles.typeButtonText, type === 'expense' && styles.typeButtonTextActive]}>
-                    Expense
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.typeButton, type === 'income' && styles.typeButtonActive]}
-                  onPress={() => handleTypeChange('income')}
-                >
-                  <Text style={[styles.typeButtonText, type === 'income' && styles.typeButtonTextActive]}>
-                    Income
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+          {/* Amount */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Amount *</Text>
+            <TextInput
+              style={styles.amountInput}
+              value={amount}
+              onChangeText={setAmount}
+              placeholder="0.00"
+              keyboardType="numeric"
+              placeholderTextColor="#9CA3AF"
+            />
+          </View>
 
-            {/* Amount */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Amount *</Text>
-              <TextInput
-                style={styles.amountInput}
-                value={amount}
-                onChangeText={setAmount}
-                placeholder="0.00"
-                keyboardType="numeric"
-                placeholderTextColor="#9CA3AF"
-              />
-            </View>
+          {/* Description */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Description *</Text>
+            <TextInput
+              style={styles.input}
+              value={description}
+              onChangeText={setDescription}
+              placeholder="Enter description"
+              placeholderTextColor="#9CA3AF"
+            />
+          </View>
 
-            {/* Description */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Description *</Text>
-              <TextInput
-                style={styles.input}
-                value={description}
-                onChangeText={setDescription}
-                placeholder="Enter description"
-                placeholderTextColor="#9CA3AF"
-              />
-            </View>
-
-            {/* Date */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Date</Text>
-              <View style={styles.dateContainer}>
-                <View style={styles.dateInputWrapper}>
-                  <Calendar size={20} color="#6B7280" />
-                  <TextInput
-                    style={styles.dateInput}
-                    value={formatDateForDisplay(date)}
-                    onChangeText={(text) => {
-                      // Handle manual text input - convert DD-MM-YYYY to YYYY-MM-DD
-                      const parts = text.split('-');
-                      if (parts.length === 3 && parts[0].length <= 2 && parts[1].length <= 2 && parts[2].length <= 4) {
-                        if (parts[2].length === 4) {
-                          const isoDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-                          setDate(isoDate);
-                        }
+          {/* Date */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Date</Text>
+            <View style={styles.dateContainer}>
+              <View style={styles.dateInputWrapper}>
+                <Calendar size={20} color="#6B7280" />
+                <TextInput
+                  style={styles.dateInput}
+                  value={formatDateForDisplay(date)}
+                  onChangeText={(text) => {
+                    // Handle manual text input - convert DD-MM-YYYY to YYYY-MM-DD
+                    const parts = text.split('-');
+                    if (parts.length === 3 && parts[0].length <= 2 && parts[1].length <= 2 && parts[2].length <= 4) {
+                      if (parts[2].length === 4) {
+                        const isoDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                        setDate(isoDate);
                       }
-                    }}
-                    placeholder="DD-MM-YYYY"
-                    placeholderTextColor="#9CA3AF"
-                  />
-                </View>
-                {Platform.OS === 'web' && (
-                  <input
-                    type="date"
-                    value={date}
-                    onChange={(e) => handleDateChange(e.target.value)}
-                    style={{
-                      position: 'absolute',
-                      opacity: 0,
-                      width: '100%',
-                      height: '100%',
-                      cursor: 'pointer',
-                    }}
-                  />
-                )}
+                    }
+                  }}
+                  placeholder="DD-MM-YYYY"
+                  placeholderTextColor="#9CA3AF"
+                />
               </View>
+              {Platform.OS === 'web' && (
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(e) => handleDateChange(e.target.value)}
+                  style={{
+                    position: 'absolute',
+                    opacity: 0,
+                    width: '100%',
+                    height: '100%',
+                    cursor: 'pointer',
+                  }}
+                />
+              )}
             </View>
+          </View>
 
-            {/* Category Selection */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Category *</Text>
-              
-              {/* Selected Category Display */}
-              {selectedCategoryInfo && (
-                <View style={styles.selectedCategoryContainer}>
-                  <View style={[styles.selectedCategoryCard, { borderColor: selectedCategoryInfo.color }]}>
-                    <View style={styles.selectedCategoryContent}>
-                      <View style={[styles.selectedCategoryIcon, { backgroundColor: selectedCategoryInfo.color + '20' }]}>
-                        {React.createElement((Icons as any)[selectedCategoryInfo.icon] || Icons.Circle, {
-                          size: 20,
-                          color: selectedCategoryInfo.color
-                        })}
-                      </View>
-                      <Text style={styles.selectedCategoryText}>{selectedCategoryInfo.name}</Text>
+          {/* Category Selection */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Category *</Text>
+            
+            {/* Selected Category Display */}
+            {selectedCategoryInfo && (
+              <View style={styles.selectedCategoryContainer}>
+                <View style={[styles.selectedCategoryCard, { borderColor: selectedCategoryInfo.color }]}>
+                  <View style={styles.selectedCategoryContent}>
+                    <View style={[styles.selectedCategoryIcon, { backgroundColor: selectedCategoryInfo.color + '20' }]}>
+                      {React.createElement((Icons as any)[selectedCategoryInfo.icon] || Icons.Circle, {
+                        size: 20,
+                        color: selectedCategoryInfo.color
+                      })}
                     </View>
-                    <View style={[styles.selectedCategoryCheck, { backgroundColor: selectedCategoryInfo.color }]}>
-                      <Check size={16} color="#FFFFFF" />
-                    </View>
+                    <Text style={styles.selectedCategoryText}>{selectedCategoryInfo.name}</Text>
+                  </View>
+                  <View style={[styles.selectedCategoryCheck, { backgroundColor: selectedCategoryInfo.color }]}>
+                    <Check size={16} color="#FFFFFF" />
                   </View>
                 </View>
-              )}
-
-              {/* Category Grid */}
-              <View style={styles.categoryGrid}>
-                {categories.map(category => {
-                  const IconComponent = (Icons as any)[category.icon] || Icons.Circle;
-                  const isSelected = selectedCategory === category.name;
-                  
-                  return (
-                    <TouchableOpacity
-                      key={category.id}
-                      style={[
-                        styles.categoryButton,
-                        isSelected && styles.categoryButtonActive,
-                        { borderColor: isSelected ? category.color : '#E5E7EB' }
-                      ]}
-                      onPress={() => setSelectedCategory(category.name)}
-                      activeOpacity={0.7}
-                    >
-                      <View style={[
-                        styles.categoryIconContainer,
-                        { backgroundColor: isSelected ? category.color + '20' : '#F3F4F6' }
-                      ]}>
-                        <IconComponent 
-                          size={20} 
-                          color={isSelected ? category.color : '#6B7280'} 
-                        />
-                      </View>
-                      <Text style={[
-                        styles.categoryButtonText,
-                        { color: isSelected ? category.color : '#6B7280' }
-                      ]}>
-                        {category.name}
-                      </Text>
-                      {isSelected && (
-                        <View style={[styles.categoryCheckmark, { backgroundColor: category.color }]}>
-                          <Check size={12} color="#FFFFFF" />
-                        </View>
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
               </View>
-            </View>
-          </ScrollView>
-        </View>
-      </Modal>
+            )}
 
-      <CustomAlert
-        visible={showAlert}
-        type={alertConfig.type}
-        title={alertConfig.title}
-        message={alertConfig.message}
-        onClose={handleAlertClose}
-      />
-    </>
+            {/* Category Grid */}
+            <View style={styles.categoryGrid}>
+              {categories.map(category => {
+                const IconComponent = (Icons as any)[category.icon] || Icons.Circle;
+                const isSelected = selectedCategory === category.name;
+                
+                return (
+                  <TouchableOpacity
+                    key={category.id}
+                    style={[
+                      styles.categoryButton,
+                      isSelected && styles.categoryButtonActive,
+                      { borderColor: isSelected ? category.color : '#E5E7EB' }
+                    ]}
+                    onPress={() => setSelectedCategory(category.name)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[
+                      styles.categoryIconContainer,
+                      { backgroundColor: isSelected ? category.color + '20' : '#F3F4F6' }
+                    ]}>
+                      <IconComponent 
+                        size={20} 
+                        color={isSelected ? category.color : '#6B7280'} 
+                      />
+                    </View>
+                    <Text style={[
+                      styles.categoryButtonText,
+                      { color: isSelected ? category.color : '#6B7280' }
+                    ]}>
+                      {category.name}
+                    </Text>
+                    {isSelected && (
+                      <View style={[styles.categoryCheckmark, { backgroundColor: category.color }]}>
+                        <Check size={12} color="#FFFFFF" />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        </ScrollView>
+      </View>
+    </Modal>
   );
 }
 

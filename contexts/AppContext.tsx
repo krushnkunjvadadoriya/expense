@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Transaction, Category, EMI, User, MonthlyStats, CategoryStats } from '@/types';
+import { Transaction, Category, EMI, User, MonthlyStats, CategoryStats, GlobalAlert } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface AppState {
@@ -11,6 +11,7 @@ interface AppState {
   isLoading: boolean;
   monthlyStats: MonthlyStats;
   categoryStats: CategoryStats[];
+  currentAlert: GlobalAlert | null;
 }
 
 type AppAction =
@@ -26,7 +27,9 @@ type AppAction =
   | { type: 'ADD_EMI'; payload: EMI }
   | { type: 'UPDATE_EMI'; payload: EMI }
   | { type: 'SET_MONTHLY_STATS'; payload: MonthlyStats }
-  | { type: 'SET_CATEGORY_STATS'; payload: CategoryStats[] };
+  | { type: 'SET_CATEGORY_STATS'; payload: CategoryStats[] }
+  | { type: 'SHOW_ALERT'; payload: GlobalAlert }
+  | { type: 'HIDE_ALERT' };
 
 const initialState: AppState = {
   user: null,
@@ -42,6 +45,7 @@ const initialState: AppState = {
     transactionCount: 0,
   },
   categoryStats: [],
+  currentAlert: null,
 };
 
 const defaultCategories: Category[] = [
@@ -96,6 +100,10 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, monthlyStats: action.payload };
     case 'SET_CATEGORY_STATS':
       return { ...state, categoryStats: action.payload };
+    case 'SHOW_ALERT':
+      return { ...state, currentAlert: action.payload };
+    case 'HIDE_ALERT':
+      return { ...state, currentAlert: null };
     default:
       return state;
   }
@@ -110,6 +118,8 @@ const AppContext = createContext<{
   addEMI: (emi: Omit<EMI, 'id'>) => void;
   updateEMI: (emi: EMI) => void;
   calculateStats: () => void;
+  showGlobalAlert: (alert: GlobalAlert) => void;
+  hideGlobalAlert: () => void;
 } | null>(null);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -285,6 +295,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'SET_CATEGORY_STATS', payload: categoryStats });
   };
 
+  const showGlobalAlert = (alert: GlobalAlert) => {
+    dispatch({ type: 'SHOW_ALERT', payload: alert });
+  };
+
+  const hideGlobalAlert = () => {
+    dispatch({ type: 'HIDE_ALERT' });
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -296,6 +314,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         addEMI,
         updateEMI,
         calculateStats,
+        showGlobalAlert,
+        hideGlobalAlert,
       }}
     >
       {children}
