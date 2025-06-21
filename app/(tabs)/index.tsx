@@ -17,6 +17,7 @@ import {
   Bell,
   Calendar,
 } from 'lucide-react-native';
+import { router } from 'expo-router';
 import { useApp } from '@/contexts/AppContext';
 import { useGuest } from '@/contexts/GuestContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -98,6 +99,10 @@ export default function Dashboard() {
     setEditingTransaction(null);
   };
 
+  const handleSeeAllTransactions = () => {
+    router.push('/(tabs)/transactions');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
@@ -167,7 +172,7 @@ export default function Dashboard() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recent Transactions</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={handleSeeAllTransactions}>
               <Text style={styles.seeAll}>See All</Text>
             </TouchableOpacity>
           </View>
