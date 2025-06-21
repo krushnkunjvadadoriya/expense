@@ -23,6 +23,7 @@ type AppAction =
   | { type: 'DELETE_TRANSACTION'; payload: string }
   | { type: 'SET_CATEGORIES'; payload: Category[] }
   | { type: 'ADD_CATEGORY'; payload: Category }
+  | { type: 'UPDATE_CATEGORY'; payload: Category }
   | { type: 'SET_EMIS'; payload: EMI[] }
   | { type: 'ADD_EMI'; payload: EMI }
   | { type: 'UPDATE_EMI'; payload: EMI }
@@ -49,16 +50,18 @@ const initialState: AppState = {
 };
 
 const defaultCategories: Category[] = [
-  { id: '1', name: 'Food & Dining', type: 'expense', color: '#EF4444', icon: 'utensils' },
-  { id: '2', name: 'Transportation', type: 'expense', color: '#4facfe', icon: 'car' },
-  { id: '3', name: 'Shopping', type: 'expense', color: '#8B5CF6', icon: 'shopping-bag' },
-  { id: '4', name: 'Entertainment', type: 'expense', color: '#F59E0B', icon: 'tv' },
-  { id: '5', name: 'Bills & Utilities', type: 'expense', color: '#4facfe', icon: 'receipt' },
-  { id: '6', name: 'Healthcare', type: 'expense', color: '#EF4444', icon: 'heart' },
-  { id: '7', name: 'Education', type: 'expense', color: '#6366F1', icon: 'book' },
-  { id: '8', name: 'Salary', type: 'income', color: '#4facfe', icon: 'briefcase' },
-  { id: '9', name: 'Freelance', type: 'income', color: '#2563EB', icon: 'laptop' },
-  { id: '10', name: 'Investment', type: 'income', color: '#1D4ED8', icon: 'trending-up' },
+  { id: '1', name: 'Food & Dining', type: 'expense', color: '#EF4444', icon: 'utensils', scopes: ['personal', 'family'] },
+  { id: '2', name: 'Transportation', type: 'expense', color: '#4facfe', icon: 'car', scopes: ['personal', 'family'] },
+  { id: '3', name: 'Shopping', type: 'expense', color: '#8B5CF6', icon: 'shopping-bag', scopes: ['personal', 'family'] },
+  { id: '4', name: 'Entertainment', type: 'expense', color: '#F59E0B', icon: 'tv', scopes: ['personal', 'family'] },
+  { id: '5', name: 'Bills & Utilities', type: 'expense', color: '#4facfe', icon: 'receipt', scopes: ['personal', 'family'] },
+  { id: '6', name: 'Healthcare', type: 'expense', color: '#EF4444', icon: 'heart', scopes: ['personal'] },
+  { id: '7', name: 'Education', type: 'expense', color: '#6366F1', icon: 'book', scopes: ['personal'] },
+  { id: '8', name: 'Personal Care', type: 'expense', color: '#EC4899', icon: 'sparkles', scopes: ['personal'] },
+  { id: '9', name: 'Salary', type: 'income', color: '#4facfe', icon: 'briefcase', scopes: ['personal'] },
+  { id: '10', name: 'Freelance', type: 'income', color: '#2563EB', icon: 'laptop', scopes: ['personal'] },
+  { id: '11', name: 'Investment', type: 'income', color: '#1D4ED8', icon: 'trending-up', scopes: ['personal'] },
+  { id: '12', name: 'Family Income', type: 'income', color: '#059669', icon: 'users', scopes: ['family'] },
 ];
 
 function appReducer(state: AppState, action: AppAction): AppState {
@@ -87,6 +90,13 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, categories: action.payload };
     case 'ADD_CATEGORY':
       return { ...state, categories: [...state.categories, action.payload] };
+    case 'UPDATE_CATEGORY':
+      return {
+        ...state,
+        categories: state.categories.map(c =>
+          c.id === action.payload.id ? action.payload : c
+        ),
+      };
     case 'SET_EMIS':
       return { ...state, emis: action.payload };
     case 'ADD_EMI':
@@ -115,11 +125,15 @@ const AppContext = createContext<{
   addTransaction: (transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateTransaction: (transaction: Transaction) => void;
   deleteTransaction: (id: string) => void;
+  addCategory: (category: Omit<Category, 'id'>) => void;
+  updateCategory: (category: Category) => void;
   addEMI: (emi: Omit<EMI, 'id'>) => void;
   updateEMI: (emi: EMI) => void;
   calculateStats: () => void;
   showGlobalAlert: (alert: GlobalAlert) => void;
   hideGlobalAlert: () => void;
+  getPersonalCategories: (type?: 'expense' | 'income') => Category[];
+  getFamilyCategories: (type?: 'expense' | 'income') => Category[];
 } | null>(null);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -177,7 +191,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (categoriesData) {
-        dispatch({ type: 'SET_CATEGORIES', payload: JSON.parse(categoriesData) });
+        const savedCategories = JSON.parse(categoriesData);
+        // Migrate old categories to include scopes if they don't have them
+        const migratedCategories = savedCategories.map((cat: any) => ({
+          ...cat,
+          scopes: cat.scopes || ['personal'], // Default to personal scope for existing categories
+        }));
+        dispatch({ type: 'SET_CATEGORIES', payload: migratedCategories });
+        
+        // Save migrated categories back to storage
+        if (JSON.stringify(migratedCategories) !== JSON.stringify(savedCategories)) {
+          await AsyncStorage.setItem('categories', JSON.stringify(migratedCategories));
+        }
       } else {
         dispatch({ type: 'SET_CATEGORIES', payload: defaultCategories });
         await AsyncStorage.setItem('categories', JSON.stringify(defaultCategories));
@@ -222,6 +247,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     
     const updatedTransactions = state.transactions.filter(t => t.id !== id);
     await AsyncStorage.setItem('transactions', JSON.stringify(updatedTransactions));
+  };
+
+  const addCategory = async (categoryData: Omit<Category, 'id'>) => {
+    const category: Category = {
+      ...categoryData,
+      id: Date.now().toString(),
+    };
+
+    dispatch({ type: 'ADD_CATEGORY', payload: category });
+    
+    const updatedCategories = [...state.categories, category];
+    await AsyncStorage.setItem('categories', JSON.stringify(updatedCategories));
+  };
+
+  const updateCategory = async (category: Category) => {
+    dispatch({ type: 'UPDATE_CATEGORY', payload: category });
+    
+    const updatedCategories = state.categories.map(c =>
+      c.id === category.id ? category : c
+    );
+    await AsyncStorage.setItem('categories', JSON.stringify(updatedCategories));
   };
 
   const addEMI = async (emiData: Omit<EMI, 'id'>) => {
@@ -303,6 +349,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'HIDE_ALERT' });
   };
 
+  const getPersonalCategories = (type?: 'expense' | 'income') => {
+    let categories = state.categories.filter(c => c.scopes.includes('personal'));
+    if (type) {
+      categories = categories.filter(c => c.type === type);
+    }
+    return categories;
+  };
+
+  const getFamilyCategories = (type?: 'expense' | 'income') => {
+    let categories = state.categories.filter(c => c.scopes.includes('family'));
+    if (type) {
+      categories = categories.filter(c => c.type === type);
+    }
+    return categories;
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -311,11 +373,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         addTransaction,
         updateTransaction,
         deleteTransaction,
+        addCategory,
+        updateCategory,
         addEMI,
         updateEMI,
         calculateStats,
         showGlobalAlert,
         hideGlobalAlert,
+        getPersonalCategories,
+        getFamilyCategories,
       }}
     >
       {children}

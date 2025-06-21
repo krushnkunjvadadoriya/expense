@@ -18,7 +18,7 @@ import InviteMemberModal from '../../components/InviteMemberModal';
 import FamilyBudgetModal from '../../components/FamilyBudgetModal';
 
 export default function Family() {
-  const { state } = useApp();
+  const { state, getFamilyCategories } = useApp();
   const { state: themeState } = useTheme();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -42,13 +42,7 @@ export default function Family() {
     budget: {
       monthly: 4000,
       spent: 0, // Will be calculated from actual transactions
-      categories: [
-        { id: '1', name: 'Food & Dining', budget: 1200, spent: 0, color: '#EF4444' },
-        { id: '2', name: 'Transportation', budget: 800, spent: 0, color: '#4facfe' },
-        { id: '3', name: 'Shopping', budget: 600, spent: 0, color: '#8B5CF6' },
-        { id: '4', name: 'Entertainment', budget: 400, spent: 0, color: '#F59E0B' },
-        { id: '5', name: 'Bills & Utilities', budget: 1000, spent: 0, color: '#4facfe' },
-      ]
+      categories: []
     }
   });
 
@@ -57,20 +51,47 @@ export default function Family() {
     loadFamilyGroup();
   }, []);
 
-  // Update category spending based on actual transactions
+  // Update category spending based on actual transactions and sync with global categories
   useEffect(() => {
     updateCategorySpending();
-  }, [state.categoryStats]);
+  }, [state.categoryStats, state.categories]);
 
   const loadFamilyGroup = async () => {
     try {
       const savedFamilyGroup = await AsyncStorage.getItem('familyGroup');
       if (savedFamilyGroup) {
-        setFamilyGroup(JSON.parse(savedFamilyGroup));
+        const parsed = JSON.parse(savedFamilyGroup);
+        setFamilyGroup(parsed);
+      } else {
+        // Initialize with default categories from global family categories
+        initializeDefaultFamilyBudget();
       }
     } catch (error) {
       console.error('Error loading family group:', error);
     }
+  };
+
+  const initializeDefaultFamilyBudget = () => {
+    const familyCategories = getFamilyCategories('expense');
+    const defaultBudgetCategories: FamilyBudgetCategory[] = familyCategories.map(category => ({
+      id: `budget-${category.id}`,
+      categoryId: category.id,
+      name: category.name,
+      budget: 0,
+      spent: 0,
+      color: category.color,
+    }));
+
+    const updatedGroup = {
+      ...familyGroup,
+      budget: {
+        ...familyGroup.budget,
+        categories: defaultBudgetCategories
+      }
+    };
+
+    setFamilyGroup(updatedGroup);
+    saveFamilyGroup(updatedGroup);
   };
 
   const saveFamilyGroup = async (updatedGroup: FamilyGroup) => {
@@ -83,22 +104,47 @@ export default function Family() {
   };
 
   const updateCategorySpending = () => {
-    const updatedCategories = familyGroup.budget.categories.map(category => {
-      const categoryStats = state.categoryStats.find(stat => stat.category === category.name);
+    // Sync budget categories with global categories and update spending
+    const familyCategories = getFamilyCategories('expense');
+    
+    const updatedCategories = familyGroup.budget.categories.map(budgetCategory => {
+      // Find corresponding global category
+      const globalCategory = familyCategories.find(gc => gc.id === budgetCategory.categoryId);
+      
+      // Find spending from category stats
+      const categoryStats = state.categoryStats.find(stat => stat.category === budgetCategory.name);
+      
       return {
-        ...category,
+        ...budgetCategory,
+        name: globalCategory?.name || budgetCategory.name, // Sync name from global category
+        color: globalCategory?.color || budgetCategory.color, // Sync color from global category
         spent: categoryStats ? categoryStats.amount : 0
       };
     });
 
-    const totalSpent = updatedCategories.reduce((sum, cat) => sum + cat.spent, 0);
+    // Add any new family categories that aren't in the budget yet
+    const newCategories = familyCategories.filter(
+      globalCat => !familyGroup.budget.categories.some(budgetCat => budgetCat.categoryId === globalCat.id)
+    );
+
+    const newBudgetCategories: FamilyBudgetCategory[] = newCategories.map(category => ({
+      id: `budget-${category.id}`,
+      categoryId: category.id,
+      name: category.name,
+      budget: 0,
+      spent: state.categoryStats.find(stat => stat.category === category.name)?.amount || 0,
+      color: category.color,
+    }));
+
+    const allCategories = [...updatedCategories, ...newBudgetCategories];
+    const totalSpent = allCategories.reduce((sum, cat) => sum + cat.spent, 0);
 
     const updatedGroup = {
       ...familyGroup,
       budget: {
         ...familyGroup.budget,
         spent: totalSpent,
-        categories: updatedCategories
+        categories: allCategories
       }
     };
 
@@ -113,7 +159,7 @@ export default function Family() {
   };
 
   const getBudgetUsedPercentage = () => {
-    return (familyGroup.budget.spent / familyGroup.budget.monthly) * 100;
+    return familyGroup.budget.monthly > 0 ? (familyGroup.budget.spent / familyGroup.budget.monthly) * 100 : 0;
   };
 
   const handleInviteMember = () => {
@@ -244,43 +290,52 @@ export default function Family() {
         {/* Category Breakdown */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Category Breakdown</Text>
-          {familyGroup.budget.categories.map((category, index) => {
-            const percentage = category.budget > 0 ? (category.spent / category.budget) * 100 : 0;
-            const isOverBudget = category.spent > category.budget;
-            
-            return (
-              <View key={category.id} style={styles.categoryCard}>
-                <View style={styles.categoryHeader}>
-                  <View style={styles.categoryInfo}>
-                    <View style={[styles.categoryDot, { backgroundColor: category.color }]} />
-                    <Text style={styles.categoryName}>{category.name}</Text>
+          {familyGroup.budget.categories.length > 0 ? (
+            familyGroup.budget.categories.map((category) => {
+              const percentage = category.budget > 0 ? (category.spent / category.budget) * 100 : 0;
+              const isOverBudget = category.spent > category.budget;
+              
+              return (
+                <View key={category.id} style={styles.categoryCard}>
+                  <View style={styles.categoryHeader}>
+                    <View style={styles.categoryInfo}>
+                      <View style={[styles.categoryDot, { backgroundColor: category.color }]} />
+                      <Text style={styles.categoryName}>{category.name}</Text>
+                    </View>
+                    <Text style={[
+                      styles.categoryAmount,
+                      { color: isOverBudget ? '#EF4444' : colors.text }
+                    ]}>
+                      {formatCurrency(category.spent)} / {formatCurrency(category.budget)}
+                    </Text>
                   </View>
-                  <Text style={[
-                    styles.categoryAmount,
-                    { color: isOverBudget ? '#EF4444' : colors.text }
-                  ]}>
-                    {formatCurrency(category.spent)} / {formatCurrency(category.budget)}
-                  </Text>
+                  <View style={styles.categoryProgressBar}>
+                    <View 
+                      style={[
+                        styles.categoryProgressFill, 
+                        { 
+                          width: `${Math.min(percentage, 100)}%`,
+                          backgroundColor: isOverBudget ? '#EF4444' : category.color
+                        }
+                      ]} 
+                    />
+                  </View>
+                  {isOverBudget && (
+                    <Text style={styles.overBudgetText}>
+                      Over budget by {formatCurrency(category.spent - category.budget)}
+                    </Text>
+                  )}
                 </View>
-                <View style={styles.categoryProgressBar}>
-                  <View 
-                    style={[
-                      styles.categoryProgressFill, 
-                      { 
-                        width: `${Math.min(percentage, 100)}%`,
-                        backgroundColor: isOverBudget ? '#EF4444' : category.color
-                      }
-                    ]} 
-                  />
-                </View>
-                {isOverBudget && (
-                  <Text style={styles.overBudgetText}>
-                    Over budget by {formatCurrency(category.spent - category.budget)}
-                  </Text>
-                )}
-              </View>
-            );
-          })}
+              );
+            })
+          ) : (
+            <View style={styles.noCategoriesContainer}>
+              <Text style={styles.noCategoriesText}>No budget categories set up</Text>
+              <Text style={styles.noCategoriesSubtext}>
+                Tap "Manage" to add categories to your family budget
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Family Members */}
@@ -558,6 +613,27 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 12,
     color: '#EF4444',
     fontWeight: '500',
+  },
+  noCategoriesContainer: {
+    backgroundColor: colors.surface,
+    padding: 24,
+    borderRadius: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderStyle: 'dashed',
+  },
+  noCategoriesText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  noCategoriesSubtext: {
+    fontSize: 14,
+    color: colors.textTertiary,
+    textAlign: 'center',
   },
   memberCard: {
     backgroundColor: colors.surface,

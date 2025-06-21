@@ -16,6 +16,7 @@ export interface Category {
   color: string;
   icon: string;
   budget?: number;
+  scopes: ('personal' | 'family')[];
 }
 
 export interface EMI {
@@ -90,7 +91,8 @@ export interface FamilyBudget {
 }
 
 export interface FamilyBudgetCategory {
-  id: string; // Added unique ID for proper identification
+  id: string;
+  categoryId: string; // Reference to global Category ID
   name: string;
   budget: number;
   spent: number;

@@ -22,7 +22,7 @@ interface AddTransactionModalProps {
 }
 
 export default function AddTransactionModal({ visible, onClose, transaction }: AddTransactionModalProps) {
-  const { state, addTransaction, updateTransaction, showGlobalAlert } = useApp();
+  const { addTransaction, updateTransaction, showGlobalAlert, getPersonalCategories } = useApp();
   const { incrementTransactionCount } = useGuest();
   const [type, setType] = useState<'expense' | 'income'>('expense');
   const [amount, setAmount] = useState('');
@@ -31,7 +31,8 @@ export default function AddTransactionModal({ visible, onClose, transaction }: A
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
 
   const isEditing = !!transaction;
-  const categories = state.categories.filter(c => c.type === type);
+  // Use unified categories filtered for personal scope
+  const categories = getPersonalCategories(type);
 
   // Pre-fill form when editing
   useEffect(() => {
@@ -342,6 +343,18 @@ export default function AddTransactionModal({ visible, onClose, transaction }: A
                 );
               })}
             </View>
+
+            {/* No Categories Message */}
+            {categories.length === 0 && (
+              <View style={styles.noCategoriesContainer}>
+                <Text style={styles.noCategoriesText}>
+                  No {type} categories available for personal use.
+                </Text>
+                <Text style={styles.noCategoriesSubtext}>
+                  Categories can be managed in the settings.
+                </Text>
+              </View>
+            )}
           </View>
         </ScrollView>
       </View>
@@ -541,5 +554,26 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  noCategoriesContainer: {
+    backgroundColor: '#FFFFFF',
+    padding: 24,
+    borderRadius: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderStyle: 'dashed',
+  },
+  noCategoriesText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  noCategoriesSubtext: {
+    fontSize: 14,
+    color: '#9CA3AF',
+    textAlign: 'center',
   },
 });

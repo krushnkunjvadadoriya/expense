@@ -20,9 +20,12 @@ interface FamilyBudgetModalProps {
 }
 
 export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: FamilyBudgetModalProps) {
-  const { showGlobalAlert } = useApp();
+  const { showGlobalAlert, getFamilyCategories, addCategory } = useApp();
   const [monthlyBudget, setMonthlyBudget] = useState(budget.monthly.toString());
   const [categories, setCategories] = useState<FamilyBudgetCategory[]>(budget.categories);
+
+  // Get available family categories from the unified system
+  const availableFamilyCategories = getFamilyCategories('expense');
 
   // Update local state when budget prop changes
   useEffect(() => {
@@ -48,15 +51,64 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
     setCategories(updatedCategories);
   };
 
-  const addCategory = () => {
+  const addCategoryFromGlobal = (globalCategoryId: string) => {
+    const globalCategory = availableFamilyCategories.find(c => c.id === globalCategoryId);
+    if (!globalCategory) return;
+
+    // Check if category is already added
+    const existingCategory = categories.find(c => c.categoryId === globalCategoryId);
+    if (existingCategory) {
+      showGlobalAlert({
+        type: 'warning',
+        title: 'Category Already Added',
+        message: `${globalCategory.name} is already in your family budget.`,
+      });
+      return;
+    }
+
     const newCategory: FamilyBudgetCategory = {
-      id: Date.now().toString(), // Generate unique ID
-      name: 'New Category',
+      id: Date.now().toString(),
+      categoryId: globalCategoryId,
+      name: globalCategory.name,
       budget: 0,
       spent: 0,
-      color: '#6B7280',
+      color: globalCategory.color,
     };
     setCategories([...categories, newCategory]);
+  };
+
+  const addNewCategory = async () => {
+    const newCategoryName = 'New Family Category';
+    
+    // Create a new global category with family scope
+    const newGlobalCategory = {
+      name: newCategoryName,
+      type: 'expense' as const,
+      color: '#6B7280',
+      icon: 'circle',
+      scopes: ['family' as const],
+    };
+
+    try {
+      await addCategory(newGlobalCategory);
+      
+      // Add to local budget categories
+      const newBudgetCategory: FamilyBudgetCategory = {
+        id: Date.now().toString(),
+        categoryId: Date.now().toString(), // This will be updated when the global category is created
+        name: newCategoryName,
+        budget: 0,
+        spent: 0,
+        color: '#6B7280',
+      };
+      setCategories([...categories, newBudgetCategory]);
+    } catch (error) {
+      showGlobalAlert({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to create new category. Please try again.',
+      });
+    }
   };
 
   const removeCategory = (index: number) => {
@@ -125,6 +177,11 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
   const totalCategoryBudget = categories.reduce((sum, cat) => sum + cat.budget, 0);
   const remainingBudget = parseFloat(monthlyBudget || '0') - totalCategoryBudget;
 
+  // Get categories that are not yet added to the budget
+  const availableToAdd = availableFamilyCategories.filter(
+    globalCat => !categories.some(budgetCat => budgetCat.categoryId === globalCat.id)
+  );
+
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
       <View style={styles.container}>
@@ -132,7 +189,7 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <X size={24} color="#6B7280" />
           </TouchableOpacity>
-          <Text style={styles.title}>Manage Budget</Text>
+          <Text style={styles.title}>Manage Family Budget</Text>
           <TouchableOpacity onPress={handleSubmit} style={styles.saveButton}>
             <Check size={24} color="#4facfe" />
           </TouchableOpacity>
@@ -180,11 +237,39 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Category Budgets</Text>
-              <TouchableOpacity onPress={addCategory} style={styles.addButton}>
-                <Plus size={16} color="#4facfe" />
-                <Text style={styles.addButtonText}>Add</Text>
-              </TouchableOpacity>
+              <View style={styles.addButtonsContainer}>
+                {availableToAdd.length > 0 && (
+                  <TouchableOpacity onPress={() => addCategoryFromGlobal(availableToAdd[0].id)} style={styles.addButton}>
+                    <Plus size={16} color="#4facfe" />
+                    <Text style={styles.addButtonText}>Add Existing</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity onPress={addNewCategory} style={styles.addButton}>
+                  <Plus size={16} color="#4facfe" />
+                  <Text style={styles.addButtonText}>New</Text>
+                </TouchableOpacity>
+              </View>
             </View>
+
+            {/* Available Categories to Add */}
+            {availableToAdd.length > 0 && (
+              <View style={styles.availableCategoriesContainer}>
+                <Text style={styles.availableCategoriesTitle}>Available Categories:</Text>
+                <View style={styles.availableCategoriesGrid}>
+                  {availableToAdd.map(category => (
+                    <TouchableOpacity
+                      key={category.id}
+                      style={styles.availableCategoryButton}
+                      onPress={() => addCategoryFromGlobal(category.id)}
+                    >
+                      <View style={[styles.availableCategoryDot, { backgroundColor: category.color }]} />
+                      <Text style={styles.availableCategoryText}>{category.name}</Text>
+                      <Plus size={14} color="#4facfe" />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
 
             {categories.map((category, index) => (
               <View key={category.id} style={styles.categoryCard}>
@@ -226,16 +311,25 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
                 </View>
               </View>
             ))}
+
+            {categories.length === 0 && (
+              <View style={styles.noCategoriesContainer}>
+                <Text style={styles.noCategoriesText}>No categories added yet</Text>
+                <Text style={styles.noCategoriesSubtext}>
+                  Add categories to organize your family budget
+                </Text>
+              </View>
+            )}
           </View>
 
           {/* Tips */}
           <View style={styles.tipsCard}>
-            <Text style={styles.tipsTitle}>💡 Budget Tips</Text>
+            <Text style={styles.tipsTitle}>💡 Family Budget Tips</Text>
             <Text style={styles.tipsText}>
-              • Allocate 50% for needs, 30% for wants, 20% for savings{'\n'}
-              • Review and adjust budgets monthly{'\n'}
-              • Set aside emergency funds{'\n'}
-              • Track spending regularly to stay on budget
+              • Categories are shared across personal and family budgets{'\n'}
+              • Set realistic budgets for each category{'\n'}
+              • Review spending regularly with family members{'\n'}
+              • Adjust budgets monthly based on actual spending
             </Text>
           </View>
         </ScrollView>
@@ -287,6 +381,10 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: '#111827',
+  },
+  addButtonsContainer: {
+    flexDirection: 'row',
+    gap: 8,
   },
   addButton: {
     flexDirection: 'row',
@@ -344,6 +442,46 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#111827',
+  },
+  availableCategoriesContainer: {
+    backgroundColor: '#F8FAFC',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  availableCategoriesTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#475569',
+    marginBottom: 12,
+  },
+  availableCategoriesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  availableCategoryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    gap: 6,
+  },
+  availableCategoryDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  availableCategoryText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#374151',
   },
   categoryCard: {
     backgroundColor: '#FFFFFF',
@@ -408,6 +546,27 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#4facfe',
     fontWeight: '500',
+  },
+  noCategoriesContainer: {
+    backgroundColor: '#FFFFFF',
+    padding: 24,
+    borderRadius: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderStyle: 'dashed',
+  },
+  noCategoriesText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  noCategoriesSubtext: {
+    fontSize: 14,
+    color: '#9CA3AF',
+    textAlign: 'center',
   },
   tipsCard: {
     backgroundColor: '#FEF3C7',
