@@ -151,8 +151,7 @@ export default function AddTransactionModal({ visible, onClose, transaction }: A
         });
       }
       
-      if (!isEditing) {Add a unique id property to the FamilyBudgetCategory interface. This will allow for proper identification and manipulation of individual categories within the budget management modal.
-
+      if (!isEditing) {
         resetForm();
       }
     } catch (error) {
