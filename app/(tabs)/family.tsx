@@ -1,17 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  TextInput,
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Users, Plus, Settings, Crown, UserPlus, DollarSign, TrendingUp, TrendingDown, Calendar, MoveVertical as MoreVertical } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { FamilyGroup, FamilyBudgetCategory } from '@/types';
 import CreateFamilyModal from '../../components/CreateFamilyModal';
 import InviteMemberModal from '../../components/InviteMemberModal';
 import FamilyBudgetModal from '../../components/FamilyBudgetModal';
@@ -26,27 +27,86 @@ export default function Family() {
   const { colors } = themeState.theme;
   const styles = createStyles(colors);
 
-  // Mock family data - in real app this would come from context/API
-  const [familyGroup, setFamilyGroup] = useState({
+  // Initialize family group with proper structure and persistence
+  const [familyGroup, setFamilyGroup] = useState<FamilyGroup>({
     id: '1',
     name: 'The Doe Family',
+    createdBy: 'user1',
+    createdAt: new Date().toISOString(),
+    monthlyBudget: 4000, // Different from personal budget
     members: [
-      { id: '1', name: 'John Doe', email: 'john@example.com', role: 'admin', avatar: '👨' },
-      { id: '2', name: 'Jane Doe', email: 'jane@example.com', role: 'member', avatar: '👩' },
-      { id: '3', name: 'Alex Doe', email: 'alex@example.com', role: 'member', avatar: '👦' },
+      { id: '1', userId: 'user1', name: 'John Doe', email: 'john@example.com', role: 'admin', avatar: '👨', joinedAt: new Date().toISOString(), status: 'active' },
+      { id: '2', userId: 'user2', name: 'Jane Doe', email: 'jane@example.com', role: 'member', avatar: '👩', joinedAt: new Date().toISOString(), status: 'active' },
+      { id: '3', userId: 'user3', name: 'Alex Doe', email: 'alex@example.com', role: 'member', avatar: '👦', joinedAt: new Date().toISOString(), status: 'active' },
     ],
     budget: {
-      monthly: 5000,
-      spent: 3250,
+      monthly: 4000,
+      spent: 0, // Will be calculated from actual transactions
       categories: [
-        { name: 'Food & Dining', budget: 1200, spent: 850, color: '#EF4444' },
-        { name: 'Transportation', budget: 800, spent: 650, color: '#4facfe' },
-        { name: 'Shopping', budget: 600, spent: 420, color: '#8B5CF6' },
-        { name: 'Entertainment', budget: 400, spent: 280, color: '#F59E0B' },
-        { name: 'Bills & Utilities', budget: 1000, spent: 1050, color: '#4facfe' },
+        { id: '1', name: 'Food & Dining', budget: 1200, spent: 0, color: '#EF4444' },
+        { id: '2', name: 'Transportation', budget: 800, spent: 0, color: '#4facfe' },
+        { id: '3', name: 'Shopping', budget: 600, spent: 0, color: '#8B5CF6' },
+        { id: '4', name: 'Entertainment', budget: 400, spent: 0, color: '#F59E0B' },
+        { id: '5', name: 'Bills & Utilities', budget: 1000, spent: 0, color: '#4facfe' },
       ]
     }
   });
+
+  // Load family group data from AsyncStorage
+  useEffect(() => {
+    loadFamilyGroup();
+  }, []);
+
+  // Update category spending based on actual transactions
+  useEffect(() => {
+    updateCategorySpending();
+  }, [state.categoryStats]);
+
+  const loadFamilyGroup = async () => {
+    try {
+      const savedFamilyGroup = await AsyncStorage.getItem('familyGroup');
+      if (savedFamilyGroup) {
+        setFamilyGroup(JSON.parse(savedFamilyGroup));
+      }
+    } catch (error) {
+      console.error('Error loading family group:', error);
+    }
+  };
+
+  const saveFamilyGroup = async (updatedGroup: FamilyGroup) => {
+    try {
+      await AsyncStorage.setItem('familyGroup', JSON.stringify(updatedGroup));
+      setFamilyGroup(updatedGroup);
+    } catch (error) {
+      console.error('Error saving family group:', error);
+    }
+  };
+
+  const updateCategorySpending = () => {
+    const updatedCategories = familyGroup.budget.categories.map(category => {
+      const categoryStats = state.categoryStats.find(stat => stat.category === category.name);
+      return {
+        ...category,
+        spent: categoryStats ? categoryStats.amount : 0
+      };
+    });
+
+    const totalSpent = updatedCategories.reduce((sum, cat) => sum + cat.spent, 0);
+
+    const updatedGroup = {
+      ...familyGroup,
+      budget: {
+        ...familyGroup.budget,
+        spent: totalSpent,
+        categories: updatedCategories
+      }
+    };
+
+    if (JSON.stringify(updatedGroup) !== JSON.stringify(familyGroup)) {
+      setFamilyGroup(updatedGroup);
+      saveFamilyGroup(updatedGroup);
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
@@ -62,6 +122,19 @@ export default function Family() {
 
   const handleManageBudget = () => {
     setShowBudgetModal(true);
+  };
+
+  const handleBudgetSave = (updatedBudget: { monthly: number; categories: FamilyBudgetCategory[] }) => {
+    const updatedGroup = {
+      ...familyGroup,
+      monthlyBudget: updatedBudget.monthly,
+      budget: {
+        ...familyGroup.budget,
+        monthly: updatedBudget.monthly,
+        categories: updatedBudget.categories
+      }
+    };
+    saveFamilyGroup(updatedGroup);
   };
 
   const handleMemberAction = (member: any) => {
@@ -172,11 +245,11 @@ export default function Family() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Category Breakdown</Text>
           {familyGroup.budget.categories.map((category, index) => {
-            const percentage = (category.spent / category.budget) * 100;
+            const percentage = category.budget > 0 ? (category.spent / category.budget) * 100 : 0;
             const isOverBudget = category.spent > category.budget;
             
             return (
-              <View key={index} style={styles.categoryCard}>
+              <View key={category.id} style={styles.categoryCard}>
                 <View style={styles.categoryHeader}>
                   <View style={styles.categoryInfo}>
                     <View style={[styles.categoryDot, { backgroundColor: category.color }]} />
@@ -285,6 +358,7 @@ export default function Family() {
         visible={showBudgetModal}
         onClose={() => setShowBudgetModal(false)}
         budget={familyGroup.budget}
+        onSave={handleBudgetSave}
       />
     </SafeAreaView>
   );
@@ -417,6 +491,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     color: colors.text,
+    marginBottom: 20, // Increased spacing between title and cards
   },
   inviteButton: {
     flexDirection: 'row',

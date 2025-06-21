@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,27 +7,37 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  Alert,
 } from 'react-native';
 import { X, Check, DollarSign, Plus, Minus } from 'lucide-react-native';
+import { FamilyBudget, FamilyBudgetCategory } from '@/types';
+import { useApp } from '@/contexts/AppContext';
 
 interface FamilyBudgetModalProps {
   visible: boolean;
   onClose: () => void;
-  budget: {
-    monthly: number;
-    categories: Array<{
-      name: string;
-      budget: number;
-      spent: number;
-      color: string;
-    }>;
-  };
+  budget: FamilyBudget;
+  onSave: (updatedBudget: { monthly: number; categories: FamilyBudgetCategory[] }) => void;
 }
 
-export default function FamilyBudgetModal({ visible, onClose, budget }: FamilyBudgetModalProps) {
+export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: FamilyBudgetModalProps) {
+  const { showGlobalAlert } = useApp();
   const [monthlyBudget, setMonthlyBudget] = useState(budget.monthly.toString());
-  const [categories, setCategories] = useState(budget.categories);
+  const [categories, setCategories] = useState<FamilyBudgetCategory[]>(budget.categories);
+
+  // Update local state when budget prop changes
+  useEffect(() => {
+    setMonthlyBudget(budget.monthly.toString());
+    setCategories(budget.categories);
+  }, [budget]);
+
+  const handleCategoryNameChange = (index: number, name: string) => {
+    const updatedCategories = [...categories];
+    updatedCategories[index] = {
+      ...updatedCategories[index],
+      name: name,
+    };
+    setCategories(updatedCategories);
+  };
 
   const handleCategoryBudgetChange = (index: number, value: string) => {
     const updatedCategories = [...categories];
@@ -39,7 +49,8 @@ export default function FamilyBudgetModal({ visible, onClose, budget }: FamilyBu
   };
 
   const addCategory = () => {
-    const newCategory = {
+    const newCategory: FamilyBudgetCategory = {
+      id: Date.now().toString(), // Generate unique ID
       name: 'New Category',
       budget: 0,
       spent: 0,
@@ -55,30 +66,64 @@ export default function FamilyBudgetModal({ visible, onClose, budget }: FamilyBu
 
   const handleSubmit = () => {
     if (!monthlyBudget) {
-      Alert.alert('Error', 'Please enter a monthly budget');
+      showGlobalAlert({
+        type: 'error',
+        title: 'Missing Budget',
+        message: 'Please enter a monthly budget amount.',
+      });
       return;
     }
 
     const totalBudget = parseFloat(monthlyBudget);
     if (isNaN(totalBudget) || totalBudget <= 0) {
-      Alert.alert('Error', 'Please enter a valid monthly budget');
+      showGlobalAlert({
+        type: 'error',
+        title: 'Invalid Budget',
+        message: 'Please enter a valid monthly budget amount.',
+      });
+      return;
+    }
+
+    // Validate category names
+    const invalidCategories = categories.filter(cat => !cat.name.trim());
+    if (invalidCategories.length > 0) {
+      showGlobalAlert({
+        type: 'error',
+        title: 'Invalid Category Names',
+        message: 'Please provide names for all categories.',
+      });
       return;
     }
 
     const categoryTotal = categories.reduce((sum, cat) => sum + cat.budget, 0);
     if (categoryTotal > totalBudget) {
-      Alert.alert('Error', 'Category budgets exceed the total monthly budget');
+      showGlobalAlert({
+        type: 'error',
+        title: 'Budget Exceeded',
+        message: 'Category budgets exceed the total monthly budget.',
+      });
       return;
     }
 
-    // Here you would typically update the budget via API
-    Alert.alert('Success', 'Budget updated successfully!', [
-      { text: 'OK', onPress: onClose }
-    ]);
+    // Save the updated budget
+    onSave({
+      monthly: totalBudget,
+      categories: categories.map(cat => ({
+        ...cat,
+        name: cat.name.trim()
+      }))
+    });
+
+    showGlobalAlert({
+      type: 'success',
+      title: 'Budget Updated',
+      message: 'Family budget has been updated successfully!',
+      onConfirm: onClose,
+    });
   };
 
   const totalCategoryBudget = categories.reduce((sum, cat) => sum + cat.budget, 0);
-  const remainingBudget = parseFloat(monthlyBudget) - totalCategoryBudget;
+  const remainingBudget = parseFloat(monthlyBudget || '0') - totalCategoryBudget;
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
@@ -142,11 +187,17 @@ export default function FamilyBudgetModal({ visible, onClose, budget }: FamilyBu
             </View>
 
             {categories.map((category, index) => (
-              <View key={index} style={styles.categoryCard}>
+              <View key={category.id} style={styles.categoryCard}>
                 <View style={styles.categoryHeader}>
                   <View style={styles.categoryInfo}>
                     <View style={[styles.categoryDot, { backgroundColor: category.color }]} />
-                    <Text style={styles.categoryName}>{category.name}</Text>
+                    <TextInput
+                      style={styles.categoryNameInput}
+                      value={category.name}
+                      onChangeText={(value) => handleCategoryNameChange(index, value)}
+                      placeholder="Category name"
+                      placeholderTextColor="#9CA3AF"
+                    />
                   </View>
                   <TouchableOpacity onPress={() => removeCategory(index)}>
                     <Minus size={16} color="#EF4444" />
@@ -314,6 +365,7 @@ const styles = StyleSheet.create({
   categoryInfo: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
   categoryDot: {
     width: 12,
@@ -321,10 +373,12 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginRight: 8,
   },
-  categoryName: {
+  categoryNameInput: {
     fontSize: 16,
     fontWeight: '600',
     color: '#111827',
+    flex: 1,
+    paddingVertical: 4,
   },
   categoryBudgetContainer: {
     flexDirection: 'row',

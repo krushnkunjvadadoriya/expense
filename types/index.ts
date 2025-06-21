@@ -90,6 +90,7 @@ export interface FamilyBudget {
 }
 
 export interface FamilyBudgetCategory {
+  id: string; // Added unique ID for proper identification
   name: string;
   budget: number;
   spent: number;
