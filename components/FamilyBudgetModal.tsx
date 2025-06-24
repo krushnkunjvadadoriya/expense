@@ -20,12 +20,12 @@ interface FamilyBudgetModalProps {
 }
 
 export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: FamilyBudgetModalProps) {
-  const { showGlobalAlert, getFamilyCategories, addCategory } = useApp();
+  const { showGlobalAlert, getCategories, addCategory } = useApp();
   const [monthlyBudget, setMonthlyBudget] = useState(budget.monthly.toString());
   const [categories, setCategories] = useState<FamilyBudgetCategory[]>(budget.categories);
 
-  // Get available family categories from the unified system
-  const availableFamilyCategories = getFamilyCategories('expense');
+  // Get available categories from the unified system (all are family scoped now)
+  const availableCategories = getCategories('expense');
 
   // Update local state when budget prop changes
   useEffect(() => {
@@ -52,7 +52,7 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
   };
 
   const addCategoryFromGlobal = (globalCategoryId: string) => {
-    const globalCategory = availableFamilyCategories.find(c => c.id === globalCategoryId);
+    const globalCategory = availableCategories.find(c => c.id === globalCategoryId);
     if (!globalCategory) return;
 
     // Check if category is already added
@@ -78,15 +78,14 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
   };
 
   const addNewCategory = async () => {
-    const newCategoryName = 'New Family Category';
+    const newCategoryName = 'New Category';
     
-    // Create a new global category with family scope
+    // Create a new global category
     const newGlobalCategory = {
       name: newCategoryName,
       type: 'expense' as const,
       color: '#6B7280',
       icon: 'circle',
-      scopes: ['family' as const],
     };
 
     try {
@@ -178,7 +177,7 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
   const remainingBudget = parseFloat(monthlyBudget || '0') - totalCategoryBudget;
 
   // Get categories that are not yet added to the budget
-  const availableToAdd = availableFamilyCategories.filter(
+  const availableToAdd = availableCategories.filter(
     globalCat => !categories.some(budgetCat => budgetCat.categoryId === globalCat.id)
   );
 
@@ -324,12 +323,13 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
 
           {/* Tips */}
           <View style={styles.tipsCard}>
-            <Text style={styles.tipsTitle}>💡 Family Budget Tips</Text>
+            <Text style={styles.tipsTitle}>💡 Budget Tips</Text>
             <Text style={styles.tipsText}>
-              • Categories are shared across personal and family budgets{'\n'}
+              • All categories are shared across the app{'\n'}
               • Set realistic budgets for each category{'\n'}
               • Review spending regularly with family members{'\n'}
-              • Adjust budgets monthly based on actual spending
+              • Adjust budgets monthly based on actual spending{'\n'}
+              • Use "Other" category for miscellaneous expenses
             </Text>
           </View>
         </ScrollView>

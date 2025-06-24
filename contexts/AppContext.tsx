@@ -50,18 +50,26 @@ const initialState: AppState = {
 };
 
 const defaultCategories: Category[] = [
-  { id: '1', name: 'Food & Dining', type: 'expense', color: '#EF4444', icon: 'utensils', scopes: ['personal', 'family'] },
-  { id: '2', name: 'Transportation', type: 'expense', color: '#4facfe', icon: 'car', scopes: ['personal', 'family'] },
-  { id: '3', name: 'Shopping', type: 'expense', color: '#8B5CF6', icon: 'shopping-bag', scopes: ['personal', 'family'] },
-  { id: '4', name: 'Entertainment', type: 'expense', color: '#F59E0B', icon: 'tv', scopes: ['personal', 'family'] },
-  { id: '5', name: 'Bills & Utilities', type: 'expense', color: '#4facfe', icon: 'receipt', scopes: ['personal', 'family'] },
-  { id: '6', name: 'Healthcare', type: 'expense', color: '#EF4444', icon: 'heart', scopes: ['personal'] },
-  { id: '7', name: 'Education', type: 'expense', color: '#6366F1', icon: 'book', scopes: ['personal'] },
-  { id: '8', name: 'Personal Care', type: 'expense', color: '#EC4899', icon: 'sparkles', scopes: ['personal'] },
-  { id: '9', name: 'Salary', type: 'income', color: '#4facfe', icon: 'briefcase', scopes: ['personal'] },
-  { id: '10', name: 'Freelance', type: 'income', color: '#2563EB', icon: 'laptop', scopes: ['personal'] },
-  { id: '11', name: 'Investment', type: 'income', color: '#1D4ED8', icon: 'trending-up', scopes: ['personal'] },
-  { id: '12', name: 'Family Income', type: 'income', color: '#059669', icon: 'users', scopes: ['family'] },
+  // Expense Categories
+  { id: '1', name: 'Food & Dining', type: 'expense', color: '#EF4444', icon: 'utensils', scopes: ['family'] },
+  { id: '2', name: 'Transportation', type: 'expense', color: '#3B82F6', icon: 'car', scopes: ['family'] },
+  { id: '3', name: 'Shopping', type: 'expense', color: '#8B5CF6', icon: 'shopping-bag', scopes: ['family'] },
+  { id: '4', name: 'Entertainment', type: 'expense', color: '#F59E0B', icon: 'tv', scopes: ['family'] },
+  { id: '5', name: 'Bills & Utilities', type: 'expense', color: '#4facfe', icon: 'receipt', scopes: ['family'] },
+  { id: '6', name: 'Healthcare', type: 'expense', color: '#EF4444', icon: 'heart', scopes: ['family'] },
+  { id: '7', name: 'Education', type: 'expense', color: '#6366F1', icon: 'book', scopes: ['family'] },
+  { id: '8', name: 'Personal Care', type: 'expense', color: '#EC4899', icon: 'sparkles', scopes: ['family'] },
+  { id: '9', name: 'Travel', type: 'expense', color: '#10B981', icon: 'plane', scopes: ['family'] },
+  { id: '10', name: 'Groceries', type: 'expense', color: '#059669', icon: 'shopping-cart', scopes: ['family'] },
+  { id: '11', name: 'Other', type: 'expense', color: '#6B7280', icon: 'more-horizontal', scopes: ['family'] },
+  
+  // Income Categories
+  { id: '12', name: 'Salary', type: 'income', color: '#4facfe', icon: 'briefcase', scopes: ['family'] },
+  { id: '13', name: 'Freelance', type: 'income', color: '#2563EB', icon: 'laptop', scopes: ['family'] },
+  { id: '14', name: 'Investment', type: 'income', color: '#1D4ED8', icon: 'trending-up', scopes: ['family'] },
+  { id: '15', name: 'Business', type: 'income', color: '#059669', icon: 'building', scopes: ['family'] },
+  { id: '16', name: 'Bonus', type: 'income', color: '#DC2626', icon: 'gift', scopes: ['family'] },
+  { id: '17', name: 'Other Income', type: 'income', color: '#6B7280', icon: 'more-horizontal', scopes: ['family'] },
 ];
 
 function appReducer(state: AppState, action: AppAction): AppState {
@@ -132,6 +140,7 @@ const AppContext = createContext<{
   calculateStats: () => void;
   showGlobalAlert: (alert: GlobalAlert) => void;
   hideGlobalAlert: () => void;
+  getCategories: (type?: 'expense' | 'income') => Category[];
   getPersonalCategories: (type?: 'expense' | 'income') => Category[];
   getFamilyCategories: (type?: 'expense' | 'income') => Category[];
 } | null>(null);
@@ -192,17 +201,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       if (categoriesData) {
         const savedCategories = JSON.parse(categoriesData);
-        // Migrate old categories to include scopes if they don't have them
+        // Migrate all existing categories to use family scope
         const migratedCategories = savedCategories.map((cat: any) => ({
           ...cat,
-          scopes: cat.scopes || ['personal'], // Default to personal scope for existing categories
+          scopes: ['family'], // Force all categories to use family scope
         }));
         dispatch({ type: 'SET_CATEGORIES', payload: migratedCategories });
         
         // Save migrated categories back to storage
-        if (JSON.stringify(migratedCategories) !== JSON.stringify(savedCategories)) {
-          await AsyncStorage.setItem('categories', JSON.stringify(migratedCategories));
-        }
+        await AsyncStorage.setItem('categories', JSON.stringify(migratedCategories));
       } else {
         dispatch({ type: 'SET_CATEGORIES', payload: defaultCategories });
         await AsyncStorage.setItem('categories', JSON.stringify(defaultCategories));
@@ -253,6 +260,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const category: Category = {
       ...categoryData,
       id: Date.now().toString(),
+      scopes: ['family'], // Always default to family scope
     };
 
     dispatch({ type: 'ADD_CATEGORY', payload: category });
@@ -262,10 +270,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateCategory = async (category: Category) => {
-    dispatch({ type: 'UPDATE_CATEGORY', payload: category });
+    // Ensure category always has family scope
+    const updatedCategory = {
+      ...category,
+      scopes: ['family'],
+    };
+    
+    dispatch({ type: 'UPDATE_CATEGORY', payload: updatedCategory });
     
     const updatedCategories = state.categories.map(c =>
-      c.id === category.id ? category : c
+      c.id === category.id ? updatedCategory : c
     );
     await AsyncStorage.setItem('categories', JSON.stringify(updatedCategories));
   };
@@ -349,20 +363,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'HIDE_ALERT' });
   };
 
-  const getPersonalCategories = (type?: 'expense' | 'income') => {
-    let categories = state.categories.filter(c => c.scopes.includes('personal'));
+  // Unified category retrieval - all categories are now family scoped
+  const getCategories = (type?: 'expense' | 'income') => {
+    let categories = state.categories; // All categories are family scoped now
     if (type) {
       categories = categories.filter(c => c.type === type);
     }
     return categories;
   };
 
+  // Legacy methods for backward compatibility - now just call getCategories
+  const getPersonalCategories = (type?: 'expense' | 'income') => {
+    return getCategories(type);
+  };
+
   const getFamilyCategories = (type?: 'expense' | 'income') => {
-    let categories = state.categories.filter(c => c.scopes.includes('family'));
-    if (type) {
-      categories = categories.filter(c => c.type === type);
-    }
-    return categories;
+    return getCategories(type);
   };
 
   return (
@@ -380,6 +396,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         calculateStats,
         showGlobalAlert,
         hideGlobalAlert,
+        getCategories,
         getPersonalCategories,
         getFamilyCategories,
       }}

@@ -22,7 +22,7 @@ interface AddTransactionModalProps {
 }
 
 export default function AddTransactionModal({ visible, onClose, transaction }: AddTransactionModalProps) {
-  const { addTransaction, updateTransaction, showGlobalAlert, getPersonalCategories } = useApp();
+  const { addTransaction, updateTransaction, showGlobalAlert, getCategories } = useApp();
   const { incrementTransactionCount } = useGuest();
   const [type, setType] = useState<'expense' | 'income'>('expense');
   const [amount, setAmount] = useState('');
@@ -31,8 +31,8 @@ export default function AddTransactionModal({ visible, onClose, transaction }: A
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
 
   const isEditing = !!transaction;
-  // Use unified categories filtered for personal scope
-  const categories = getPersonalCategories(type);
+  // Use unified categories - all are family scoped now
+  const categories = getCategories(type);
 
   // Pre-fill form when editing
   useEffect(() => {
@@ -348,7 +348,7 @@ export default function AddTransactionModal({ visible, onClose, transaction }: A
             {categories.length === 0 && (
               <View style={styles.noCategoriesContainer}>
                 <Text style={styles.noCategoriesText}>
-                  No {type} categories available for personal use.
+                  No {type} categories available.
                 </Text>
                 <Text style={styles.noCategoriesSubtext}>
                   Categories can be managed in the settings.
