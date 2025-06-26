@@ -14,6 +14,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { User, Mail, ArrowRight, ArrowLeft, Smartphone, Sparkles } from 'lucide-react-native';
 import { useGuest } from '@/contexts/GuestContext';
+import API from '@/config/api';
+import { useApp } from '@/contexts/AppContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function RegistrationForm() {
   const { email, mobile } = useLocalSearchParams<{ 
@@ -21,6 +24,7 @@ export default function RegistrationForm() {
     mobile?: string; 
   }>();
   const { convertToRegisteredUser } = useGuest();
+  const [isVerified, setIsVerified] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: email || '',
@@ -55,21 +59,46 @@ export default function RegistrationForm() {
     setIsLoading(true);
 
     try {
-      // Mock API call to save user data
-      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Convert from guest to registered user
-      convertToRegisteredUser();
-      
-      // Navigate to PIN setup with user data
-      router.push({
-        pathname: '/(auth)/setup-pin',
-        params: { 
-          email: formData.email,
-          mobile: formData.mobile,
+        const userId = await AsyncStorage.getItem('user_id');
+
+      if (!userId) {
+        Alert.alert('Error', 'User ID not found. Please try again.');
+        return;
+      }
+
+      const response = await fetch(`${API.API_BASE_URL}/registration`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: parseInt(userId),
           name: formData.name,
-        }
+          mobile_number: formData.mobile,
+        }),
       });
+
+      const data = await response.json();
+
+      if (!response.ok || data?.success === false) {
+        Alert.alert('Error', data?.message || 'Registration failed');
+        return;
+      }
+
+      const token = data?.data?.token;
+      const user = data?.data?.user;
+
+      if (token && user?.id) {
+        await AsyncStorage.setItem('auth_token', token);
+        await AsyncStorage.setItem('user_name', user.name);
+        await AsyncStorage.setItem('user_id', user.id.toString());
+      }
+
+      // convertToRegisteredUser();
+
+       // Update state to reflect success
+      setIsVerified(true);
+
+         router.replace('/(tabs)');
     } catch (error) {
       Alert.alert('Error', 'Failed to save your information. Please try again.');
     } finally {

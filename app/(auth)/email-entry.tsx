@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
+import API from '@/config/api';
 import {
   View,
   Text,
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -15,47 +15,80 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Mail, ArrowRight, Sparkles, ArrowLeft } from 'lucide-react-native';
 import { useGuest } from '@/contexts/GuestContext';
+import { useApp } from '@/contexts/AppContext';
 
 export default function EmailEntry() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const { convertToRegisteredUser } = useGuest();
-
+  const { addEMI, showGlobalAlert } = useApp();
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
 
-  const handleContinue = async () => {
-    if (!validateEmail(email)) {
-      Alert.alert('Invalid Email', 'Please enter a valid email address');
-      return;
-    }
+const handleContinue = async () => {
+  setErrorMessage('');
 
-    setIsLoading(true);
+  if (!validateEmail(email)) {
+    setErrorMessage('Please enter a valid email address.');
+    return;
+  }
 
-    try {
-      // Mock API call to send verification email
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Navigate to email verification (OTP step)
+  setIsLoading(true);
+
+  try {
+    const response = await fetch(`${API.API_BASE_URL}/email-send-otp`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    const contentType = response.headers.get('content-type');
+    const data = contentType && contentType.includes('application/json')
+      ? await response.json()
+      : {};
+
+    if (response.ok && data.success) {
       router.push({
         pathname: '/(auth)/email-verification',
-        params: { email }
+        params: { email },
       });
-    } catch (error) {
-      Alert.alert('Error', 'Failed to send verification email. Please try again.');
-    } finally {
-      setIsLoading(false);
+    } else if (response.status === 404) {
+      // ⚠️ Show model-style alert for 404
+      showGlobalAlert({
+        type: 'error',
+        title: 'Missing Information',
+        message: data?.message || 'The requested endpoint could not be found.',
+      });
+    } else {
+      // Other error
+      showGlobalAlert({
+        type: 'error',
+        title: 'Server Error',
+        message: data?.message || 'Unexpected server error occurred.',
+      });
     }
-  };
+  } catch (error) {
+    showGlobalAlert({
+      type: 'error',
+      title: 'Network Error',
+      message: 'Unable to reach the server. Please check your internet connection.',
+    });
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const handleGoogleSignIn = async () => {
-    Alert.alert('Google Sign In', 'Google authentication will be implemented here');
+    setErrorMessage('Google authentication not implemented yet.');
   };
 
   const handleAppleSignIn = async () => {
-    Alert.alert('Apple Sign In', 'Apple authentication will be implemented here');
+    setErrorMessage('Apple authentication not implemented yet.');
   };
 
   const handleBackToApp = () => {
@@ -64,28 +97,23 @@ export default function EmailEntry() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <ScrollView 
+        <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Header */}
           <View style={styles.header}>
-            <TouchableOpacity 
-              style={styles.backButton}
-              onPress={handleBackToApp}
-            >
+            <TouchableOpacity style={styles.backButton} onPress={handleBackToApp}>
               <ArrowLeft size={20} color="#6B7280" />
               <Text style={styles.backButtonText}>Back to App</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Hero Section */}
           <View style={styles.heroSection}>
             <View style={styles.backgroundGradient}>
               <View style={styles.heroContent}>
@@ -103,27 +131,27 @@ export default function EmailEntry() {
             </View>
           </View>
 
-          {/* Main Content */}
           <View style={styles.mainContent}>
-            {/* Welcome Message */}
             <View style={styles.welcomeSection}>
               <Text style={styles.welcomeTitle}>Create Your Account</Text>
-              <Text style={styles.welcomeSubtitle}>
-                Enter your email to get started
-              </Text>
+              <Text style={styles.welcomeSubtitle}>Enter your email to get started</Text>
             </View>
 
-            {/* Email Form */}
             <View style={styles.emailSection}>
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Email Address</Text>
-                <View style={[
-                  styles.emailInputContainer,
-                  email && validateEmail(email) && styles.emailInputValid,
-                  email && !validateEmail(email) && styles.emailInputInvalid
-                ]}>
+                <View
+                  style={[
+                    styles.emailInputContainer,
+                    email && validateEmail(email) && styles.emailInputValid,
+                    email && !validateEmail(email) && styles.emailInputInvalid,
+                  ]}
+                >
                   <View style={styles.inputIconContainer}>
-                    <Mail size={20} color={email && validateEmail(email) ? "#4facfe" : "#6B7280"} />
+                    <Mail
+                      size={20}
+                      color={email && validateEmail(email) ? '#4facfe' : '#6B7280'}
+                    />
                   </View>
                   <TextInput
                     style={styles.emailInput}
@@ -134,7 +162,6 @@ export default function EmailEntry() {
                     keyboardType="email-address"
                     autoCapitalize="none"
                     autoComplete="email"
-                    autoFocus={false}
                   />
                   {email && validateEmail(email) && (
                     <View style={styles.validIcon}>
@@ -142,25 +169,32 @@ export default function EmailEntry() {
                     </View>
                   )}
                 </View>
-                <Text style={styles.helperText}>
-                  We'll send you a secure verification code
-                </Text>
+
+                {errorMessage ? (
+                  <Text style={styles.errorText}>{errorMessage}</Text>
+                ) : (
+                  <Text style={styles.helperText}>
+                    We'll send you a secure verification code
+                  </Text>
+                )}
               </View>
 
               <TouchableOpacity
                 style={[
-                  styles.continueButton, 
-                  validateEmail(email) && styles.continueButtonActive
+                  styles.continueButton,
+                  validateEmail(email) && styles.continueButtonActive,
                 ]}
                 onPress={handleContinue}
                 disabled={!validateEmail(email) || isLoading}
                 activeOpacity={0.8}
               >
                 <View style={styles.continueButtonContent}>
-                  <Text style={[
-                    styles.continueButtonText, 
-                    validateEmail(email) && styles.continueButtonTextActive
-                  ]}>
+                  <Text
+                    style={[
+                      styles.continueButtonText,
+                      validateEmail(email) && styles.continueButtonTextActive,
+                    ]}
+                  >
                     {isLoading ? 'Sending verification...' : 'Continue with Email'}
                   </Text>
                   {validateEmail(email) && !isLoading && (
@@ -170,7 +204,6 @@ export default function EmailEntry() {
               </TouchableOpacity>
             </View>
 
-            {/* Divider */}
             <View style={styles.dividerContainer}>
               <View style={styles.divider}>
                 <View style={styles.dividerLine} />
@@ -181,22 +214,23 @@ export default function EmailEntry() {
               </View>
             </View>
 
-            {/* Social Sign In Buttons */}
             <View style={styles.socialContainer}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.socialButton}
                 onPress={handleGoogleSignIn}
                 activeOpacity={0.8}
               >
-                <Image 
-                  source={{ uri: 'https://images.pexels.com/photos/270404/pexels-photo-270404.jpeg?auto=compress&cs=tinysrgb&w=24&h=24&fit=crop' }}
+                <Image
+                  source={{
+                    uri: 'https://images.pexels.com/photos/270404/pexels-photo-270404.jpeg?auto=compress&cs=tinysrgb&w=24&h=24&fit=crop',
+                  }}
                   style={styles.socialIcon}
                 />
                 <Text style={styles.socialButtonText}>Sign in with Google</Text>
                 <ArrowRight size={16} color="#6B7280" />
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.socialButton}
                 onPress={handleAppleSignIn}
                 activeOpacity={0.8}
@@ -209,20 +243,18 @@ export default function EmailEntry() {
               </TouchableOpacity>
             </View>
 
-            {/* Security Badge */}
             <View style={styles.securityBadge}>
               <View style={styles.securityIcon}>
                 <Text style={styles.securityIconText}>🔒</Text>
               </View>
-              <Text style={styles.securityText}>
-                Your data is encrypted and secure
-              </Text>
+              <Text style={styles.securityText}>Your data is encrypted and secure</Text>
             </View>
 
-            {/* Footer */}
             <View style={styles.footer}>
               <Text style={styles.footerText}>
-                By continuing, you agree to our <Text style={styles.footerLink}>Terms of Service</Text> and <Text style={styles.footerLink}>Privacy Policy</Text>
+                By continuing, you agree to our{' '}
+                <Text style={styles.footerLink}>Terms of Service</Text> and{' '}
+                <Text style={styles.footerLink}>Privacy Policy</Text>
               </Text>
             </View>
           </View>
@@ -232,7 +264,15 @@ export default function EmailEntry() {
   );
 }
 
+
 const styles = StyleSheet.create({
+    errorText: {
+    fontSize: 14,
+    color: '#EF4444',
+    marginTop: 8,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
   container: {
     flex: 1,
     backgroundColor: '#F9FAFB',

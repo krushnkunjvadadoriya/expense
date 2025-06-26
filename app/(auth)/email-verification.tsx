@@ -11,6 +11,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Mail, ArrowLeft, RotateCcw, CircleCheck as CheckCircle } from 'lucide-react-native';
+import API from '@/config/api';
+import { useApp } from '@/contexts/AppContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function EmailVerification() {
   const { email } = useLocalSearchParams<{ email: string }>();
@@ -18,6 +21,7 @@ export default function EmailVerification() {
   const [isLoading, setIsLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(60);
   const [canResend, setCanResend] = useState(false);
+  const { showGlobalAlert } = useApp();
   const [isVerified, setIsVerified] = useState(false);
   const inputRefs = useRef<(TextInput | null)[]>([]);
 
@@ -38,18 +42,15 @@ export default function EmailVerification() {
   }, [resendTimer]);
 
   const handleOtpChange = (value: string, index: number) => {
-    if (value.length > 1) return; // Prevent multiple characters
-    
+    if (value.length > 1) return;
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
 
-    // Auto-focus next input
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
 
-    // Auto-verify when all digits are entered
     if (newOtp.every(digit => digit !== '') && newOtp.join('').length === 6) {
       handleVerifyOtp(newOtp.join(''));
     }
@@ -61,29 +62,64 @@ export default function EmailVerification() {
     }
   };
 
-  const handleVerifyOtp = async (otpCode: string) => {
+ const handleVerifyOtp = async (otpCode: string) => {
     setIsLoading(true);
-
     try {
-      // Mock OTP verification
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // For demo, accept any 6-digit OTP
-      if (otpCode.length === 6) {
-        setIsVerified(true);
-        
-        // Auto-navigate after verification to profile setup
-        setTimeout(() => {
-          router.push({
-            pathname: '/(auth)/registration-form',
-            params: { email: email || '' }
-          });
-        }, 2000);
+      const response = await fetch(`${API.API_BASE_URL}/otp-verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp: otpCode }),
+      });
+
+      let data = null;
+
+      try {
+        data = await response.json();
+      } catch (e) {
+        data = { success: false, message: 'Unexpected response from server.' };
+      }
+
+       if (data?.success) {
+        const token = data?.data?.token;
+        const user = data?.data?.user;
+
+       if (token && user?.id) {
+          await AsyncStorage.setItem('auth_token', token);
+          await AsyncStorage.setItem('user_name', user.name);
+          await AsyncStorage.setItem('user_id', user.id.toString());
+
+          setIsVerified(true);
+
+          // Redirect to main app
+          setTimeout(() => {
+            router.replace('/(tabs)');
+          }, 1000);
+        } else {
+           await AsyncStorage.setItem('user_id', user.id.toString());
+
+          setTimeout(() => {
+            router.push({
+              pathname: '/(auth)/registration-form',
+              params: { email: email || '' },
+            });
+          }, 1000);
+        }
+
       } else {
-        throw new Error('Invalid OTP');
+        showGlobalAlert({
+          type: 'error',
+          title: 'Invalid OTP',
+          message: data?.message || 'Please enter a valid code.',
+        });
+        setOtp(['', '', '', '', '', '']);
+        inputRefs.current[0]?.focus();
       }
     } catch (error) {
-      Alert.alert('Invalid OTP', 'Please check the code and try again.');
+      showGlobalAlert({
+        type: 'error',
+        title: 'Network Error',
+        message: 'Unable to verify OTP. Please try again later.',
+      });
       setOtp(['', '', '', '', '', '']);
       inputRefs.current[0]?.focus();
     } finally {
@@ -93,20 +129,39 @@ export default function EmailVerification() {
 
   const handleResendEmail = async () => {
     if (!canResend) return;
-
     setIsLoading(true);
     try {
-      // Mock resend email
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setResendTimer(60);
-      setCanResend(false);
-      setOtp(['', '', '', '', '', '']);
-      inputRefs.current[0]?.focus();
-      
-      Alert.alert('Email Sent', 'A new verification code has been sent to your inbox.');
+      const response = await fetch(`${API.API_BASE_URL}/resend-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setResendTimer(60);
+        setCanResend(false);
+        setOtp(['', '', '', '', '', '']);
+        inputRefs.current[0]?.focus();
+        Alert.alert('Email Sent', 'A new verification code has been sent to your inbox.');
+      } else {
+        showGlobalAlert({
+          type: 'error',
+          title: response.status === 404 ? 'Missing Information' : 'Error',
+          message:
+            data?.message ||
+            (response.status === 404
+              ? 'The requested endpoint could not be found.'
+              : 'Failed to resend the OTP.'),
+        });
+      }
     } catch (error) {
-      Alert.alert('Error', 'Failed to resend email. Please try again.');
+      showGlobalAlert({
+        type: 'error',
+        title: 'Network Error',
+        message: 'Unable to resend OTP. Please try again later.',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -137,46 +192,35 @@ export default function EmailVerification() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header */}
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <ArrowLeft size={24} color="#6B7280" />
           </TouchableOpacity>
         </View>
 
-        {/* Content */}
         <View style={styles.content}>
           <View style={styles.iconContainer}>
             <Mail size={48} color="#4facfe" />
           </View>
-          
           <Text style={styles.title}>Check Your Email</Text>
           <Text style={styles.subtitle}>
             We've sent a 6-digit verification code to{'\n'}
             <Text style={styles.emailText}>{formatEmail(email || '')}</Text>
           </Text>
 
-          {/* OTP Input */}
           <View style={styles.otpContainer}>
             {otp.map((digit, index) => (
               <TextInput
                 key={index}
-                ref={ref => inputRefs.current[index] = ref}
+                ref={ref => (inputRefs.current[index] = ref)}
                 style={[
                   styles.otpInput,
                   digit && styles.otpInputFilled,
-                  isLoading && styles.otpInputDisabled
+                  isLoading && styles.otpInputDisabled,
                 ]}
                 value={digit}
-                onChangeText={(value) => handleOtpChange(value, index)}
+                onChangeText={value => handleOtpChange(value, index)}
                 onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, index)}
                 keyboardType="numeric"
                 maxLength={1}
@@ -186,42 +230,36 @@ export default function EmailVerification() {
             ))}
           </View>
 
-          {/* Resend Section */}
           <View style={styles.resendContainer}>
             {canResend ? (
-              <TouchableOpacity 
-                style={styles.resendButton}
-                onPress={handleResendEmail}
-              >
+              <TouchableOpacity style={styles.resendButton} onPress={handleResendEmail}>
                 <RotateCcw size={16} color="#4facfe" />
                 <Text style={styles.resendButtonText}>Resend Code</Text>
               </TouchableOpacity>
             ) : (
-              <Text style={styles.timerText}>
-                Resend code in {resendTimer}s
-              </Text>
+              <Text style={styles.timerText}>Resend code in {resendTimer}s</Text>
             )}
           </View>
 
-          {/* Manual Verify Button */}
           <TouchableOpacity
             style={[
               styles.verifyButton,
-              otp.every(digit => digit !== '') && styles.verifyButtonActive
+              otp.every(digit => digit !== '') && styles.verifyButtonActive,
             ]}
             onPress={() => handleVerifyOtp(otp.join(''))}
             disabled={!otp.every(digit => digit !== '') || isLoading}
           >
-            <Text style={[
-              styles.verifyButtonText,
-              otp.every(digit => digit !== '') && styles.verifyButtonTextActive
-            ]}>
+            <Text
+              style={[
+                styles.verifyButtonText,
+                otp.every(digit => digit !== '') && styles.verifyButtonTextActive,
+              ]}
+            >
               {isLoading ? 'Verifying...' : 'Verify Code'}
             </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>
             Didn't receive the code? Check your spam folder or try resending.
