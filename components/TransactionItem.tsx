@@ -13,6 +13,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import * as Icons from 'lucide-react-native';
 import { CreditCard as Edit3, Trash2 } from 'lucide-react-native';
 import CustomAlert from '@/components/CustomAlert';
+import CustomAlert from '@/components/CustomAlert';
 
 interface TransactionItemProps {
   transaction: Transaction;
@@ -41,6 +42,7 @@ export default function TransactionItem({
   const { colors } = themeState.theme;
   const styles = createStyles(colors);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   
   const IconComponent = (Icons as any)[categoryIcon] || Icons.Circle;
   const translateX = useSharedValue(0);
@@ -58,14 +60,8 @@ export default function TransactionItem({
     closeSwipe();
     setTimeout(() => {
       onEdit?.(transaction);
-    }, 150);
-  };
-
-  const handleDelete = () => {
-    closeSwipe();
-    setTimeout(() => {
       setShowDeleteAlert(true);
-    }, 150);
+    onDelete?.(transaction);
   };
 
   const handleConfirmDelete = () => {
@@ -227,6 +223,18 @@ export default function TransactionItem({
           </View>
         </Animated.View>
       </GestureDetector>
+      
+      {/* Delete Confirmation Alert */}
+      <CustomAlert
+        visible={showDeleteAlert}
+        type="error"
+        title="Delete Transaction"
+        message={`Are you sure you want to delete this transaction?\n\n"${transaction.description}" - ${transaction.type === 'income' ? '+' : '-'}$${transaction.amount.toFixed(2)}`}
+        onClose={() => setShowDeleteAlert(false)}
+        onConfirm={handleConfirmDelete}
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
       
       {/* Delete Confirmation Alert */}
       <CustomAlert
