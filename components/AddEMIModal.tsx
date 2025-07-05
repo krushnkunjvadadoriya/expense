@@ -68,6 +68,41 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
     setTenureError('');
   };
 
+  // Function to validate and format numeric input (allows decimals)
+  const handleNumericChange = (text: string, setter: (value: string) => void, errorSetter: (error: string) => void) => {
+    // Remove any non-numeric characters except decimal point
+    let cleanedText = text.replace(/[^0-9.]/g, '');
+    
+    // Ensure only one decimal point
+    const decimalCount = (cleanedText.match(/\./g) || []).length;
+    if (decimalCount > 1) {
+      const firstDecimalIndex = cleanedText.indexOf('.');
+      cleanedText = cleanedText.substring(0, firstDecimalIndex + 1) + 
+                   cleanedText.substring(firstDecimalIndex + 1).replace(/\./g, '');
+    }
+    
+    // If starts with decimal point, prefix with 0
+    if (cleanedText.startsWith('.')) {
+      cleanedText = '0' + cleanedText;
+    }
+    
+    // Limit to 2 decimal places for principal and interest rate
+    const parts = cleanedText.split('.');
+    if (parts.length === 2 && parts[1].length > 2) {
+      cleanedText = parts[0] + '.' + parts[1].substring(0, 2);
+    }
+    
+    setter(cleanedText);
+    errorSetter('');
+  };
+
+  // Function to validate and format integer input (tenure)
+  const handleIntegerChange = (text: string, setter: (value: string) => void, errorSetter: (error: string) => void) => {
+    // Remove any non-numeric characters
+    const cleanedText = text.replace(/[^0-9]/g, '');
+    setter(cleanedText);
+    errorSetter('');
+  };
   const handleSubmit = () => {
     // Reset errors
     setNameError('');
@@ -197,10 +232,7 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
             <TextInput
               style={[styles.input, principalError && styles.inputError]}
               value={principal}
-              onChangeText={(text) => {
-                setPrincipal(text);
-                if (principalError) setPrincipalError('');
-              }}
+              onChangeText={(text) => handleNumericChange(text, setPrincipal, setPrincipalError)}
               placeholder="0"
               keyboardType="numeric"
               placeholderTextColor="#9CA3AF"
@@ -214,10 +246,7 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
             <TextInput
               style={[styles.input, interestRateError && styles.inputError]}
               value={interestRate}
-              onChangeText={(text) => {
-                setInterestRate(text);
-                if (interestRateError) setInterestRateError('');
-              }}
+              onChangeText={(text) => handleNumericChange(text, setInterestRate, setInterestRateError)}
               placeholder="0.0"
               keyboardType="numeric"
               placeholderTextColor="#9CA3AF"
@@ -231,10 +260,7 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
             <TextInput
               style={[styles.input, tenureError && styles.inputError]}
               value={tenure}
-              onChangeText={(text) => {
-                setTenure(text);
-                if (tenureError) setTenureError('');
-              }}
+              onChangeText={(text) => handleIntegerChange(text, setTenure, setTenureError)}
               placeholder="0"
               keyboardType="numeric"
               placeholderTextColor="#9CA3AF"

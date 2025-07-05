@@ -56,6 +56,32 @@ export default function Profile() {
     setEditingBudget(false);
   };
 
+  // Function to validate and format budget input
+  const handleBudgetInputChange = (text: string) => {
+    // Remove any non-numeric characters except decimal point
+    let cleanedText = text.replace(/[^0-9.]/g, '');
+    
+    // Ensure only one decimal point
+    const decimalCount = (cleanedText.match(/\./g) || []).length;
+    if (decimalCount > 1) {
+      const firstDecimalIndex = cleanedText.indexOf('.');
+      cleanedText = cleanedText.substring(0, firstDecimalIndex + 1) + 
+                   cleanedText.substring(firstDecimalIndex + 1).replace(/\./g, '');
+    }
+    
+    // If starts with decimal point, prefix with 0
+    if (cleanedText.startsWith('.')) {
+      cleanedText = '0' + cleanedText;
+    }
+    
+    // Limit to 2 decimal places
+    const parts = cleanedText.split('.');
+    if (parts.length === 2 && parts[1].length > 2) {
+      cleanedText = parts[0] + '.' + parts[1].substring(0, 2);
+    }
+    
+    setBudgetInput(cleanedText);
+  };
   const handleExportData = () => {
     showToast({
       type: 'info',
@@ -206,7 +232,7 @@ export default function Profile() {
                 <TextInput
                   style={styles.budgetInput}
                   value={budgetInput}
-                  onChangeText={setBudgetInput}
+                  onChangeText={handleBudgetInputChange}
                   keyboardType="numeric"
                   placeholder="0"
                   placeholderTextColor={colors.textTertiary}

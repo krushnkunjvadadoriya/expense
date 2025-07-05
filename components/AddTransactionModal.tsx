@@ -178,6 +178,33 @@ export default function AddTransactionModal({ visible, onClose, transaction }: A
     }
   };
 
+  // Function to validate and format amount input
+  const handleAmountChange = (text: string) => {
+    // Remove any non-numeric characters except decimal point
+    let cleanedText = text.replace(/[^0-9.]/g, '');
+    
+    // Ensure only one decimal point
+    const decimalCount = (cleanedText.match(/\./g) || []).length;
+    if (decimalCount > 1) {
+      const firstDecimalIndex = cleanedText.indexOf('.');
+      cleanedText = cleanedText.substring(0, firstDecimalIndex + 1) + 
+                   cleanedText.substring(firstDecimalIndex + 1).replace(/\./g, '');
+    }
+    
+    // If starts with decimal point, prefix with 0
+    if (cleanedText.startsWith('.')) {
+      cleanedText = '0' + cleanedText;
+    }
+    
+    // Limit to 2 decimal places
+    const parts = cleanedText.split('.');
+    if (parts.length === 2 && parts[1].length > 2) {
+      cleanedText = parts[0] + '.' + parts[1].substring(0, 2);
+    }
+    
+    setAmount(cleanedText);
+    if (amountError) setAmountError('');
+  };
   const getSelectedCategoryInfo = () => {
     return categories.find(c => c.name === selectedCategory);
   };
@@ -233,10 +260,7 @@ export default function AddTransactionModal({ visible, onClose, transaction }: A
             <TextInput
               style={[styles.amountInput, amountError && styles.inputError]}
               value={amount}
-              onChangeText={(text) => {
-                setAmount(text);
-                if (amountError) setAmountError('');
-              }}
+              onChangeText={handleAmountChange}
               placeholder="0.00"
               keyboardType="numeric"
               placeholderTextColor="#9CA3AF"

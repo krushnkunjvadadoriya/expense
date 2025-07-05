@@ -37,6 +37,33 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
     setMonthlyBudgetError('');
   }, [budget]);
 
+  // Function to validate and format numeric input
+  const handleNumericChange = (text: string, setter: (value: string) => void, errorSetter?: (error: string) => void) => {
+    // Remove any non-numeric characters except decimal point
+    let cleanedText = text.replace(/[^0-9.]/g, '');
+    
+    // Ensure only one decimal point
+    const decimalCount = (cleanedText.match(/\./g) || []).length;
+    if (decimalCount > 1) {
+      const firstDecimalIndex = cleanedText.indexOf('.');
+      cleanedText = cleanedText.substring(0, firstDecimalIndex + 1) + 
+                   cleanedText.substring(firstDecimalIndex + 1).replace(/\./g, '');
+    }
+    
+    // If starts with decimal point, prefix with 0
+    if (cleanedText.startsWith('.')) {
+      cleanedText = '0' + cleanedText;
+    }
+    
+    // Limit to 2 decimal places
+    const parts = cleanedText.split('.');
+    if (parts.length === 2 && parts[1].length > 2) {
+      cleanedText = parts[0] + '.' + parts[1].substring(0, 2);
+    }
+    
+    setter(cleanedText);
+    if (errorSetter) errorSetter('');
+  };
   const handleCategoryNameChange = (index: number, name: string) => {
     const updatedCategories = [...categories];
     updatedCategories[index] = {
@@ -47,10 +74,32 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
   };
 
   const handleCategoryBudgetChange = (index: number, value: string) => {
+    // Validate and format the input
+    let cleanedValue = value.replace(/[^0-9.]/g, '');
+    
+    // Ensure only one decimal point
+    const decimalCount = (cleanedValue.match(/\./g) || []).length;
+    if (decimalCount > 1) {
+      const firstDecimalIndex = cleanedValue.indexOf('.');
+      cleanedValue = cleanedValue.substring(0, firstDecimalIndex + 1) + 
+                    cleanedValue.substring(firstDecimalIndex + 1).replace(/\./g, '');
+    }
+    
+    // If starts with decimal point, prefix with 0
+    if (cleanedValue.startsWith('.')) {
+      cleanedValue = '0' + cleanedValue;
+    }
+    
+    // Limit to 2 decimal places
+    const parts = cleanedValue.split('.');
+    if (parts.length === 2 && parts[1].length > 2) {
+      cleanedValue = parts[0] + '.' + parts[1].substring(0, 2);
+    }
+    
     const updatedCategories = [...categories];
     updatedCategories[index] = {
       ...updatedCategories[index],
-      budget: parseFloat(value) || 0,
+      budget: parseFloat(cleanedValue) || 0,
     };
     setCategories(updatedCategories);
   };
@@ -197,10 +246,7 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
               <TextInput
                 style={[styles.budgetInput, monthlyBudgetError && styles.inputError]}
                 value={monthlyBudget}
-                onChangeText={(text) => {
-                  setMonthlyBudget(text);
-                  if (monthlyBudgetError) setMonthlyBudgetError('');
-                }}
+                onChangeText={(text) => handleNumericChange(text, setMonthlyBudget, setMonthlyBudgetError)}
                 placeholder="0.00"
                 keyboardType="numeric"
                 placeholderTextColor="#9CA3AF"
