@@ -41,9 +41,39 @@ export default function Dashboard() {
   const styles = createStyles(colors);
 
   const recentTransactions = state.transactions.slice(0, 5);
-  const upcomingEMIs = state.emis
-    .filter(emi => emi.status === 'active')
-    .slice(0, 3);
+  
+  // Get only the next upcoming EMI for each unique loan
+  const getUpcomingEMIs = () => {
+    const activeEMIs = state.emis.filter(emi => emi.status === 'active');
+    
+    // Group EMIs by loan name
+    const emiGroups = activeEMIs.reduce((groups, emi) => {
+      const loanName = emi.name;
+      if (!groups[loanName]) {
+        groups[loanName] = [];
+      }
+      groups[loanName].push(emi);
+      return groups;
+    }, {} as Record<string, typeof activeEMIs>);
+    
+    // For each loan, find the EMI with the earliest next due date
+    const upcomingEMIs = Object.values(emiGroups).map(emiGroup => {
+      return emiGroup.reduce((earliest, current) => {
+        const earliestDate = new Date(earliest.nextDueDate);
+        const currentDate = new Date(current.nextDueDate);
+        return currentDate < earliestDate ? current : earliest;
+      });
+    });
+    
+    // Sort by next due date (most imminent first)
+    return upcomingEMIs.sort((a, b) => {
+      const dateA = new Date(a.nextDueDate);
+      const dateB = new Date(b.nextDueDate);
+      return dateA.getTime() - dateB.getTime();
+    });
+  };
+  
+  const upcomingEMIs = getUpcomingEMIs();
 
   const onRefresh = async () => {
     setRefreshing(true);
