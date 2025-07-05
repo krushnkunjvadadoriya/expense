@@ -8,7 +8,7 @@ import {
   Platform,
   TouchableOpacity,
 } from 'react-native';
-import { CheckCircle, AlertCircle, Info, AlertTriangle, X } from 'lucide-react-native';
+import { CircleCheck as CheckCircle, CircleAlert as AlertCircle, Info, TriangleAlert as AlertTriangle, X } from 'lucide-react-native';
 import { Toast } from '@/types';
 
 interface GlobalToastProps {
