@@ -64,14 +64,10 @@ export default function InviteMemberModal({ visible, onClose }: InviteMemberModa
       showToast({
         type: 'success',
         message: `Invitation sent to ${email} successfully!`,
-      });
-      resetForm();
-      onClose();
-    } catch (error) {
       showToast({
-        type: 'error',
         message: 'Failed to send invitation. Please try again.',
-      });
+        message: 'Failed to send invitation. Please try again.',
+      onClose();
     } finally {
       setIsLoading(false);
     }
