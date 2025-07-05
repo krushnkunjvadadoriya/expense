@@ -20,9 +20,12 @@ interface FamilyBudgetModalProps {
 }
 
 export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: FamilyBudgetModalProps) {
-  const { showGlobalAlert, getCategories, addCategory } = useApp();
+  const { showToast, getCategories, addCategory } = useApp();
   const [monthlyBudget, setMonthlyBudget] = useState(budget.monthly.toString());
   const [categories, setCategories] = useState<FamilyBudgetCategory[]>(budget.categories);
+  
+  // Error states
+  const [monthlyBudgetError, setMonthlyBudgetError] = useState('');
 
   // Get available categories from the unified system (all are family scoped now)
   const availableCategories = getCategories('expense');
@@ -31,6 +34,7 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
   useEffect(() => {
     setMonthlyBudget(budget.monthly.toString());
     setCategories(budget.categories);
+    setMonthlyBudgetError('');
   }, [budget]);
 
   const handleCategoryNameChange = (index: number, name: string) => {
@@ -58,9 +62,8 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
     // Check if category is already added
     const existingCategory = categories.find(c => c.categoryId === globalCategoryId);
     if (existingCategory) {
-      showGlobalAlert({
+      showToast({
         type: 'warning',
-        title: 'Category Already Added',
         message: `${globalCategory.name} is already in your family budget.`,
       });
       return;
@@ -102,9 +105,8 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
       };
       setCategories([...categories, newBudgetCategory]);
     } catch (error) {
-      showGlobalAlert({
+      showToast({
         type: 'error',
-        title: 'Error',
         message: 'Failed to create new category. Please try again.',
       });
     }
@@ -116,31 +118,25 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
   };
 
   const handleSubmit = () => {
+    // Reset errors
+    setMonthlyBudgetError('');
+
     if (!monthlyBudget) {
-      showGlobalAlert({
-        type: 'error',
-        title: 'Missing Budget',
-        message: 'Please enter a monthly budget amount.',
-      });
+      setMonthlyBudgetError('Please enter a monthly budget amount');
       return;
     }
 
     const totalBudget = parseFloat(monthlyBudget);
     if (isNaN(totalBudget) || totalBudget <= 0) {
-      showGlobalAlert({
-        type: 'error',
-        title: 'Invalid Budget',
-        message: 'Please enter a valid monthly budget amount.',
-      });
+      setMonthlyBudgetError('Please enter a valid monthly budget amount');
       return;
     }
 
     // Validate category names
     const invalidCategories = categories.filter(cat => !cat.name.trim());
     if (invalidCategories.length > 0) {
-      showGlobalAlert({
+      showToast({
         type: 'error',
-        title: 'Invalid Category Names',
         message: 'Please provide names for all categories.',
       });
       return;
@@ -148,9 +144,8 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
 
     const categoryTotal = categories.reduce((sum, cat) => sum + cat.budget, 0);
     if (categoryTotal > totalBudget) {
-      showGlobalAlert({
+      showToast({
         type: 'error',
-        title: 'Budget Exceeded',
         message: 'Category budgets exceed the total monthly budget.',
       });
       return;
@@ -165,12 +160,11 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
       }))
     });
 
-    showGlobalAlert({
+    showToast({
       type: 'success',
-      title: 'Budget Updated',
-      message: 'Family budget has been updated successfully!',
-      onConfirm: onClose,
+      message: 'Family budget updated successfully!',
     });
+    onClose();
   };
 
   const totalCategoryBudget = categories.reduce((sum, cat) => sum + cat.budget, 0);
@@ -201,14 +195,18 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
             <View style={styles.budgetInputContainer}>
               <DollarSign size={20} color="#6B7280" />
               <TextInput
-                style={styles.budgetInput}
+                style={[styles.budgetInput, monthlyBudgetError && styles.inputError]}
                 value={monthlyBudget}
-                onChangeText={setMonthlyBudget}
+                onChangeText={(text) => {
+                  setMonthlyBudget(text);
+                  if (monthlyBudgetError) setMonthlyBudgetError('');
+                }}
                 placeholder="0.00"
                 keyboardType="numeric"
                 placeholderTextColor="#9CA3AF"
               />
             </View>
+            {monthlyBudgetError ? <Text style={styles.errorText}>{monthlyBudgetError}</Text> : null}
           </View>
 
           {/* Budget Summary */}
@@ -415,6 +413,16 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#111827',
     marginLeft: 12,
+  },
+  inputError: {
+    borderColor: '#EF4444',
+    backgroundColor: '#FEF2F2',
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#EF4444',
+    marginTop: 8,
+    fontWeight: '500',
   },
   summaryCard: {
     backgroundColor: '#FFFFFF',

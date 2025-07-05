@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { User, Settings, Bell, Download, CircleHelp as HelpCircle, Shield, Trash2, CreditCard as Edit3, Check, X, LogOut, Smartphone, Sun, Moon, Monitor } from 'lucide-react-native';
@@ -16,28 +15,38 @@ import { useGuest } from '@/contexts/GuestContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { router } from 'expo-router';
 import ChangePinModal from '@/components/ChangePinModal';
+import CustomAlert from '@/components/CustomAlert';
 
 export default function Profile() {
-  const { state, dispatch } = useApp();
+  const { state, dispatch, showToast } = useApp();
   const { logout, state: authState } = useAuth();
   const { isGuest } = useGuest();
   const { state: themeState, setColorScheme, toggleTheme } = useTheme();
   const [editingBudget, setEditingBudget] = useState(false);
   const [budgetInput, setBudgetInput] = useState(state.user?.monthlyBudget.toString() || '');
   const [showChangePinModal, setShowChangePinModal] = useState(false);
+  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+  const [showLogoutAlert, setShowLogoutAlert] = useState(false);
 
   const { colors } = themeState.theme;
 
   const handleBudgetSave = () => {
     const newBudget = parseFloat(budgetInput);
     if (isNaN(newBudget) || newBudget <= 0) {
-      Alert.alert('Error', 'Please enter a valid budget amount');
+      showToast({
+        type: 'error',
+        message: 'Please enter a valid budget amount',
+      });
       return;
     }
 
     if (state.user) {
       const updatedUser = { ...state.user, monthlyBudget: newBudget };
       dispatch({ type: 'SET_USER', payload: updatedUser });
+      showToast({
+        type: 'success',
+        message: 'Budget updated successfully!',
+      });
     }
     setEditingBudget(false);
   };
@@ -48,60 +57,42 @@ export default function Profile() {
   };
 
   const handleExportData = () => {
-    Alert.alert(
-      'Export Data',
-      'Export functionality will be available in a future update.',
-      [{ text: 'OK' }]
-    );
+    showToast({
+      type: 'info',
+      message: 'Export functionality will be available in a future update.',
+    });
   };
 
   const handleDeleteData = () => {
-    Alert.alert(
-      'Delete All Data',
-      'Are you sure you want to delete all your data? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            // Clear all data
-            dispatch({ type: 'SET_TRANSACTIONS', payload: [] });
-            dispatch({ type: 'SET_EMIS', payload: [] });
-            Alert.alert('Success', 'All data has been deleted');
-          },
-        },
-      ]
-    );
+    setShowDeleteAlert(true);
+  };
+
+  const handleConfirmDeleteData = () => {
+    // Clear all data
+    dispatch({ type: 'SET_TRANSACTIONS', payload: [] });
+    dispatch({ type: 'SET_EMIS', payload: [] });
+    showToast({
+      type: 'success',
+      message: 'All data has been deleted',
+    });
+    setShowDeleteAlert(false);
   };
 
   const handleLogout = () => {
     if (isGuest) {
-      Alert.alert(
-        'Create Account',
-        'You are currently using the app as a guest. Would you like to create an account to save your data?',
-        [
-          { text: 'Continue as Guest', style: 'cancel' },
-          {
-            text: 'Create Account',
-            onPress: () => router.push('/(auth)/email-entry'),
-          },
-        ]
-      );
+      setShowLogoutAlert(true);
     } else {
-      Alert.alert(
-        'Sign Out',
-        'Are you sure you want to sign out?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Sign Out',
-            style: 'destructive',
-            onPress: logout,
-          },
-        ]
-      );
+      setShowLogoutAlert(true);
     }
+  };
+
+  const handleConfirmLogout = () => {
+    if (isGuest) {
+      router.push('/(auth)/email-entry');
+    } else {
+      logout();
+    }
+    setShowLogoutAlert(false);
   };
 
   const formatCurrency = (amount: number) => {
@@ -370,6 +361,33 @@ export default function Profile() {
           onClose={() => setShowChangePinModal(false)}
         />
       )}
+      
+      {/* Delete Data Confirmation */}
+      <CustomAlert
+        visible={showDeleteAlert}
+        type="error"
+        title="Delete All Data"
+        message="Are you sure you want to delete all your data? This action cannot be undone."
+        onClose={() => setShowDeleteAlert(false)}
+        onConfirm={handleConfirmDeleteData}
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
+      
+      {/* Logout Confirmation */}
+      <CustomAlert
+        visible={showLogoutAlert}
+        type={isGuest ? "info" : "warning"}
+        title={isGuest ? "Create Account" : "Sign Out"}
+        message={isGuest 
+          ? "You are currently using the app as a guest. Would you like to create an account to save your data?"
+          : "Are you sure you want to sign out?"
+        }
+        onClose={() => setShowLogoutAlert(false)}
+        onConfirm={handleConfirmLogout}
+        confirmText={isGuest ? "Create Account" : "Sign Out"}
+        cancelText={isGuest ? "Continue as Guest" : "Cancel"}
+      />
     </SafeAreaView>
   );
 }

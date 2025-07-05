@@ -22,13 +22,18 @@ interface AddTransactionModalProps {
 }
 
 export default function AddTransactionModal({ visible, onClose, transaction }: AddTransactionModalProps) {
-  const { addTransaction, updateTransaction, showGlobalAlert, getCategories } = useApp();
+  const { addTransaction, updateTransaction, showToast, getCategories } = useApp();
   const { incrementTransactionCount } = useGuest();
   const [type, setType] = useState<'expense' | 'income'>('expense');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  
+  // Error states
+  const [amountError, setAmountError] = useState('');
+  const [descriptionError, setDescriptionError] = useState('');
+  const [categoryError, setCategoryError] = useState('');
 
   const isEditing = !!transaction;
   // Use unified categories - all are family scoped now
@@ -61,6 +66,9 @@ export default function AddTransactionModal({ visible, onClose, transaction }: A
     setDescription('');
     setSelectedCategory('');
     setDate(new Date().toISOString().split('T')[0]);
+    setAmountError('');
+    setDescriptionError('');
+    setCategoryError('');
   };
 
   const handleTypeChange = (newType: 'expense' | 'income') => {
@@ -84,31 +92,41 @@ export default function AddTransactionModal({ visible, onClose, transaction }: A
   };
 
   const handleSubmit = () => {
+    // Reset errors
+    setAmountError('');
+    setDescriptionError('');
+    setCategoryError('');
+    
+    let hasErrors = false;
+
     if (!amount || !description || !selectedCategory) {
-      showGlobalAlert({
-        type: 'error',
-        title: 'Missing Information',
-        message: 'Please fill in all fields to continue.',
-      });
+      if (!amount) {
+        setAmountError('Amount is required');
+        hasErrors = true;
+      }
+      if (!description.trim()) {
+        setDescriptionError('Description is required');
+        hasErrors = true;
+      }
+      if (!selectedCategory) {
+        setCategoryError('Please select a category');
+        hasErrors = true;
+      }
       return;
     }
 
     if (!description.trim()) {
-      showGlobalAlert({
-        type: 'error',
-        title: 'Invalid Description',
-        message: 'Please enter a valid description for this transaction.',
-      });
+      setDescriptionError('Please enter a valid description');
+      hasErrors = true;
+    }
+
+    if (hasErrors) {
       return;
     }
 
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) {
-      showGlobalAlert({
-        type: 'error',
-        title: 'Invalid Amount',
-        message: 'Please enter a valid amount greater than zero.',
-      });
+      setAmountError('Please enter a valid amount greater than zero');
       return;
     }
 
@@ -126,11 +144,9 @@ export default function AddTransactionModal({ visible, onClose, transaction }: A
         };
         
         updateTransaction(updatedTransaction);
-        showGlobalAlert({
+        showToast({
           type: 'success',
-          title: 'Transaction Updated',
-          message: 'Your transaction has been successfully updated.',
-          onConfirm: onClose,
+          message: 'Transaction updated successfully!',
         });
       } else {
         // Add new transaction
@@ -144,21 +160,19 @@ export default function AddTransactionModal({ visible, onClose, transaction }: A
 
         // Increment transaction count for guest users
         incrementTransactionCount();
-        showGlobalAlert({
+        showToast({
           type: 'success',
-          title: 'Transaction Added',
-          message: 'Your transaction has been successfully added.',
-          onConfirm: onClose,
+          message: 'Transaction added successfully!',
         });
       }
       
       if (!isEditing) {
         resetForm();
       }
+      onClose();
     } catch (error) {
-      showGlobalAlert({
+      showToast({
         type: 'error',
-        title: 'Error',
         message: `Failed to ${isEditing ? 'update' : 'add'} transaction. Please try again.`,
       });
     }
@@ -217,25 +231,33 @@ export default function AddTransactionModal({ visible, onClose, transaction }: A
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Amount *</Text>
             <TextInput
-              style={styles.amountInput}
+              style={[styles.amountInput, amountError && styles.inputError]}
               value={amount}
-              onChangeText={setAmount}
+              onChangeText={(text) => {
+                setAmount(text);
+                if (amountError) setAmountError('');
+              }}
               placeholder="0.00"
               keyboardType="numeric"
               placeholderTextColor="#9CA3AF"
             />
+            {amountError ? <Text style={styles.errorText}>{amountError}</Text> : null}
           </View>
 
           {/* Description */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Description *</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, descriptionError && styles.inputError]}
               value={description}
-              onChangeText={setDescription}
+              onChangeText={(text) => {
+                setDescription(text);
+                if (descriptionError) setDescriptionError('');
+              }}
               placeholder="Enter description"
               placeholderTextColor="#9CA3AF"
             />
+            {descriptionError ? <Text style={styles.errorText}>{descriptionError}</Text> : null}
           </View>
 
           {/* Date */}
@@ -281,6 +303,7 @@ export default function AddTransactionModal({ visible, onClose, transaction }: A
           {/* Category Selection */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Category *</Text>
+            {categoryError ? <Text style={styles.errorText}>{categoryError}</Text> : null}
             
             {/* Selected Category Display */}
             {selectedCategoryInfo && (
@@ -314,9 +337,12 @@ export default function AddTransactionModal({ visible, onClose, transaction }: A
                     style={[
                       styles.categoryButton,
                       isSelected && styles.categoryButtonActive,
-                      { borderColor: isSelected ? category.color : '#E5E7EB' }
+                      { borderColor: isSelected ? category.color : categoryError ? '#EF4444' : '#E5E7EB' }
                     ]}
-                    onPress={() => setSelectedCategory(category.name)}
+                    onPress={() => {
+                      setSelectedCategory(category.name);
+                      if (categoryError) setCategoryError('');
+                    }}
                     activeOpacity={0.7}
                   >
                     <View style={[
@@ -445,6 +471,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#E5E7EB',
+  },
+  inputError: {
+    borderColor: '#EF4444',
+    backgroundColor: '#FEF2F2',
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#EF4444',
+    marginTop: 8,
+    fontWeight: '500',
   },
   dateContainer: {
     position: 'relative',

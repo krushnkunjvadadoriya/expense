@@ -180,3 +180,10 @@ export interface GlobalAlert {
   cancelText?: string;
   autoHideDelay?: number;
 }
+
+// Toast types
+export interface Toast {
+  type: 'success' | 'error' | 'info' | 'warning';
+  message: string;
+  duration?: number;
+}

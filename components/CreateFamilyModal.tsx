@@ -10,6 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { X, Check, Users } from 'lucide-react-native';
+import { useApp } from '@/contexts/AppContext';
 
 interface CreateFamilyModalProps {
   visible: boolean;
@@ -17,40 +18,64 @@ interface CreateFamilyModalProps {
 }
 
 export default function CreateFamilyModal({ visible, onClose }: CreateFamilyModalProps) {
+  const { showToast } = useApp();
   const [familyName, setFamilyName] = useState('');
   const [description, setDescription] = useState('');
   const [monthlyBudget, setMonthlyBudget] = useState('');
+  
+  // Error states
+  const [familyNameError, setFamilyNameError] = useState('');
+  const [monthlyBudgetError, setMonthlyBudgetError] = useState('');
 
   const resetForm = () => {
     setFamilyName('');
     setDescription('');
     setMonthlyBudget('');
+    setFamilyNameError('');
+    setMonthlyBudgetError('');
   };
 
   const handleSubmit = () => {
+    // Reset errors
+    setFamilyNameError('');
+    setMonthlyBudgetError('');
+    
+    let hasErrors = false;
+
     if (!familyName || !monthlyBudget) {
-      Alert.alert('Error', 'Please fill in the required fields');
+      if (!familyName.trim()) {
+        setFamilyNameError('Family name is required');
+        hasErrors = true;
+      }
+      if (!monthlyBudget) {
+        setMonthlyBudgetError('Monthly budget is required');
+        hasErrors = true;
+      }
       return;
     }
 
     if (!familyName.trim()) {
-      Alert.alert('Error', 'Please enter a family name');
+      setFamilyNameError('Please enter a valid family name');
+      hasErrors = true;
+    }
+
+    if (hasErrors) {
       return;
     }
 
     const budget = parseFloat(monthlyBudget);
     if (isNaN(budget) || budget <= 0) {
-      Alert.alert('Error', 'Please enter a valid budget amount');
+      setMonthlyBudgetError('Please enter a valid budget amount greater than zero');
       return;
     }
 
     // Here you would typically create the family group via API
-    Alert.alert('Success', 'Family group created successfully!', [
-      { text: 'OK', onPress: () => {
-        resetForm();
-        onClose();
-      }}
-    ]);
+    showToast({
+      type: 'success',
+      message: 'Family group created successfully!',
+    });
+    resetForm();
+    onClose();
   };
 
   return (
@@ -76,12 +101,16 @@ export default function CreateFamilyModal({ visible, onClose }: CreateFamilyModa
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Family Name *</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, familyNameError && styles.inputError]}
               value={familyName}
-              onChangeText={setFamilyName}
+              onChangeText={(text) => {
+                setFamilyName(text);
+                if (familyNameError) setFamilyNameError('');
+              }}
               placeholder="e.g., The Smith Family"
               placeholderTextColor="#9CA3AF"
             />
+            {familyNameError ? <Text style={styles.errorText}>{familyNameError}</Text> : null}
           </View>
 
           {/* Description */}
@@ -102,13 +131,17 @@ export default function CreateFamilyModal({ visible, onClose }: CreateFamilyModa
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Monthly Budget *</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, monthlyBudgetError && styles.inputError]}
               value={monthlyBudget}
-              onChangeText={setMonthlyBudget}
+              onChangeText={(text) => {
+                setMonthlyBudget(text);
+                if (monthlyBudgetError) setMonthlyBudgetError('');
+              }}
               placeholder="0.00"
               keyboardType="numeric"
               placeholderTextColor="#9CA3AF"
             />
+            {monthlyBudgetError ? <Text style={styles.errorText}>{monthlyBudgetError}</Text> : null}
             <Text style={styles.helperText}>
               This will be the total monthly budget for your family group
             </Text>
@@ -182,6 +215,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#E5E7EB',
+  },
+  inputError: {
+    borderColor: '#EF4444',
+    backgroundColor: '#FEF2F2',
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#EF4444',
+    marginTop: 8,
+    fontWeight: '500',
   },
   textArea: {
     height: 80,

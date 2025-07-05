@@ -18,12 +18,18 @@ interface AddEMIModalProps {
 }
 
 export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
-  const { addEMI, showGlobalAlert } = useApp();
+  const { addEMI, showToast } = useApp();
   const [name, setName] = useState('');
   const [principal, setPrincipal] = useState('');
   const [interestRate, setInterestRate] = useState('');
   const [tenure, setTenure] = useState('');
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  
+  // Error states
+  const [nameError, setNameError] = useState('');
+  const [principalError, setPrincipalError] = useState('');
+  const [interestRateError, setInterestRateError] = useState('');
+  const [tenureError, setTenureError] = useState('');
 
   const calculateEMI = (p: number, r: number, n: number) => {
     const monthlyRate = r / (12 * 100);
@@ -56,24 +62,47 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
     setInterestRate('');
     setTenure('');
     setStartDate(new Date().toISOString().split('T')[0]);
+    setNameError('');
+    setPrincipalError('');
+    setInterestRateError('');
+    setTenureError('');
   };
 
   const handleSubmit = () => {
+    // Reset errors
+    setNameError('');
+    setPrincipalError('');
+    setInterestRateError('');
+    setTenureError('');
+    
+    let hasErrors = false;
+
     if (!name || !principal || !interestRate || !tenure) {
-      showGlobalAlert({
-        type: 'error',
-        title: 'Missing Information',
-        message: 'Please fill in all fields to continue.',
-      });
+      if (!name.trim()) {
+        setNameError('EMI name is required');
+        hasErrors = true;
+      }
+      if (!principal) {
+        setPrincipalError('Principal amount is required');
+        hasErrors = true;
+      }
+      if (!interestRate) {
+        setInterestRateError('Interest rate is required');
+        hasErrors = true;
+      }
+      if (!tenure) {
+        setTenureError('Tenure is required');
+        hasErrors = true;
+      }
       return;
     }
 
     if (!name.trim()) {
-      showGlobalAlert({
-        type: 'error',
-        title: 'Invalid EMI Name',
-        message: 'Please enter a valid name for this EMI.',
-      });
+      setNameError('Please enter a valid EMI name');
+      hasErrors = true;
+    }
+
+    if (hasErrors) {
       return;
     }
 
@@ -82,29 +111,17 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
     const n = parseInt(tenure);
 
     if (isNaN(p) || p <= 0) {
-      showGlobalAlert({
-        type: 'error',
-        title: 'Invalid Principal',
-        message: 'Please enter a valid principal amount greater than zero.',
-      });
+      setPrincipalError('Please enter a valid amount greater than zero');
       return;
     }
 
     if (isNaN(r) || r <= 0) {
-      showGlobalAlert({
-        type: 'error',
-        title: 'Invalid Interest Rate',
-        message: 'Please enter a valid interest rate greater than zero.',
-      });
+      setInterestRateError('Please enter a valid interest rate greater than zero');
       return;
     }
 
     if (isNaN(n) || n <= 0) {
-      showGlobalAlert({
-        type: 'error',
-        title: 'Invalid Tenure',
-        message: 'Please enter a valid tenure in months.',
-      });
+      setTenureError('Please enter a valid tenure in months');
       return;
     }
 
@@ -124,17 +141,15 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
         status: 'active',
       });
 
-      showGlobalAlert({
+      showToast({
         type: 'success',
-        title: 'EMI Added',
-        message: 'Your EMI has been successfully added.',
-        onConfirm: onClose,
+        message: 'EMI added successfully!',
       });
       resetForm();
+      onClose();
     } catch (error) {
-      showGlobalAlert({
+      showToast({
         type: 'error',
-        title: 'Error',
         message: 'Failed to add EMI. Please try again.',
       });
     }
@@ -164,51 +179,67 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>EMI Name *</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, nameError && styles.inputError]}
               value={name}
-              onChangeText={setName}
+              onChangeText={(text) => {
+                setName(text);
+                if (nameError) setNameError('');
+              }}
               placeholder="e.g., Home Loan, Car Loan"
               placeholderTextColor="#9CA3AF"
             />
+            {nameError ? <Text style={styles.errorText}>{nameError}</Text> : null}
           </View>
 
           {/* Principal Amount */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Principal Amount *</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, principalError && styles.inputError]}
               value={principal}
-              onChangeText={setPrincipal}
+              onChangeText={(text) => {
+                setPrincipal(text);
+                if (principalError) setPrincipalError('');
+              }}
               placeholder="0"
               keyboardType="numeric"
               placeholderTextColor="#9CA3AF"
             />
+            {principalError ? <Text style={styles.errorText}>{principalError}</Text> : null}
           </View>
 
           {/* Interest Rate */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Interest Rate (% per annum) *</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, interestRateError && styles.inputError]}
               value={interestRate}
-              onChangeText={setInterestRate}
+              onChangeText={(text) => {
+                setInterestRate(text);
+                if (interestRateError) setInterestRateError('');
+              }}
               placeholder="0.0"
               keyboardType="numeric"
               placeholderTextColor="#9CA3AF"
             />
+            {interestRateError ? <Text style={styles.errorText}>{interestRateError}</Text> : null}
           </View>
 
           {/* Tenure */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Tenure (months) *</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, tenureError && styles.inputError]}
               value={tenure}
-              onChangeText={setTenure}
+              onChangeText={(text) => {
+                setTenure(text);
+                if (tenureError) setTenureError('');
+              }}
               placeholder="0"
               keyboardType="numeric"
               placeholderTextColor="#9CA3AF"
             />
+            {tenureError ? <Text style={styles.errorText}>{tenureError}</Text> : null}
           </View>
 
           {/* Start Date */}
@@ -301,6 +332,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#E5E7EB',
+  },
+  inputError: {
+    borderColor: '#EF4444',
+    backgroundColor: '#FEF2F2',
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#EF4444',
+    marginTop: 8,
+    fontWeight: '500',
   },
   calculatorCard: {
     backgroundColor: '#FFFFFF',

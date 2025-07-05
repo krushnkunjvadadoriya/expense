@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Transaction, Category, EMI, User, MonthlyStats, CategoryStats, GlobalAlert } from '@/types';
+import { Transaction, Category, EMI, User, MonthlyStats, CategoryStats, Toast } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface AppState {
@@ -11,7 +11,7 @@ interface AppState {
   isLoading: boolean;
   monthlyStats: MonthlyStats;
   categoryStats: CategoryStats[];
-  currentAlert: GlobalAlert | null;
+  currentToast: Toast | null;
 }
 
 type AppAction =
@@ -29,8 +29,8 @@ type AppAction =
   | { type: 'UPDATE_EMI'; payload: EMI }
   | { type: 'SET_MONTHLY_STATS'; payload: MonthlyStats }
   | { type: 'SET_CATEGORY_STATS'; payload: CategoryStats[] }
-  | { type: 'SHOW_ALERT'; payload: GlobalAlert }
-  | { type: 'HIDE_ALERT' };
+  | { type: 'SHOW_TOAST'; payload: Toast }
+  | { type: 'HIDE_TOAST' };
 
 const initialState: AppState = {
   user: null,
@@ -46,7 +46,7 @@ const initialState: AppState = {
     transactionCount: 0,
   },
   categoryStats: [],
-  currentAlert: null,
+  currentToast: null,
 };
 
 const defaultCategories: Category[] = [
@@ -118,10 +118,10 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, monthlyStats: action.payload };
     case 'SET_CATEGORY_STATS':
       return { ...state, categoryStats: action.payload };
-    case 'SHOW_ALERT':
-      return { ...state, currentAlert: action.payload };
-    case 'HIDE_ALERT':
-      return { ...state, currentAlert: null };
+    case 'SHOW_TOAST':
+      return { ...state, currentToast: action.payload };
+    case 'HIDE_TOAST':
+      return { ...state, currentToast: null };
     default:
       return state;
   }
@@ -138,8 +138,8 @@ const AppContext = createContext<{
   addEMI: (emi: Omit<EMI, 'id'>) => void;
   updateEMI: (emi: EMI) => void;
   calculateStats: () => void;
-  showGlobalAlert: (alert: GlobalAlert) => void;
-  hideGlobalAlert: () => void;
+  showToast: (toast: Toast) => void;
+  hideToast: () => void;
   getCategories: (type?: 'expense' | 'income') => Category[];
   getPersonalCategories: (type?: 'expense' | 'income') => Category[];
   getFamilyCategories: (type?: 'expense' | 'income') => Category[];
@@ -355,12 +355,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'SET_CATEGORY_STATS', payload: categoryStats });
   };
 
-  const showGlobalAlert = (alert: GlobalAlert) => {
-    dispatch({ type: 'SHOW_ALERT', payload: alert });
+  const showToast = (toast: Toast) => {
+    dispatch({ type: 'SHOW_TOAST', payload: toast });
   };
 
-  const hideGlobalAlert = () => {
-    dispatch({ type: 'HIDE_ALERT' });
+  const hideToast = () => {
+    dispatch({ type: 'HIDE_TOAST' });
   };
 
   // Unified category retrieval - all categories are now family scoped
@@ -394,8 +394,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         addEMI,
         updateEMI,
         calculateStats,
-        showGlobalAlert,
-        hideGlobalAlert,
+        showToast,
+        hideToast,
         getCategories,
         getPersonalCategories,
         getFamilyCategories,

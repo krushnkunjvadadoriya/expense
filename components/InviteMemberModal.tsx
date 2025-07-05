@@ -17,7 +17,7 @@ interface InviteMemberModalProps {
 }
 
 export default function InviteMemberModal({ visible, onClose }: InviteMemberModalProps) {
-  const { showGlobalAlert } = useApp();
+  const { showToast } = useApp();
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<'member' | 'admin'>('member');
   const [message, setMessage] = useState('');
@@ -61,20 +61,16 @@ export default function InviteMemberModal({ visible, onClose }: InviteMemberModa
       // Mock API call to send invitation
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      showGlobalAlert({
+      showToast({
         type: 'success',
-        title: 'Invitation Sent',
-        message: `Invitation has been sent to ${email} successfully!`,
-        onConfirm: () => {
-          resetForm();
-          onClose();
-        },
+        message: `Invitation sent to ${email} successfully!`,
       });
+      resetForm();
+      onClose();
     } catch (error) {
-      showGlobalAlert({
+      showToast({
         type: 'error',
-        title: 'Failed to Send Invitation',
-        message: 'There was an error sending the invitation. Please try again.',
+        message: 'Failed to send invitation. Please try again.',
       });
     } finally {
       setIsLoading(false);

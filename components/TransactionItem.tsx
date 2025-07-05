@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -12,6 +12,7 @@ import { Transaction } from '@/types';
 import { useTheme } from '@/contexts/ThemeContext';
 import * as Icons from 'lucide-react-native';
 import { CreditCard as Edit3, Trash2 } from 'lucide-react-native';
+import CustomAlert from '@/components/CustomAlert';
 
 interface TransactionItemProps {
   transaction: Transaction;
@@ -39,6 +40,7 @@ export default function TransactionItem({
   const { state: themeState } = useTheme();
   const { colors } = themeState.theme;
   const styles = createStyles(colors);
+  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   
   const IconComponent = (Icons as any)[categoryIcon] || Icons.Circle;
   const translateX = useSharedValue(0);
@@ -62,19 +64,13 @@ export default function TransactionItem({
   const handleDelete = () => {
     closeSwipe();
     setTimeout(() => {
-      Alert.alert(
-        'Delete Transaction',
-        `Are you sure you want to delete this transaction?\n\n"${transaction.description}" - ${transaction.type === 'income' ? '+' : '-'}$${transaction.amount.toFixed(2)}`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Delete',
-            onPress: () => onDelete?.(transaction),
-            style: 'destructive'
-          },
-        ]
-      );
+      setShowDeleteAlert(true);
     }, 150);
+  };
+
+  const handleConfirmDelete = () => {
+    setShowDeleteAlert(false);
+    onDelete?.(transaction);
   };
 
   const closeSwipe = () => {
@@ -231,6 +227,18 @@ export default function TransactionItem({
           </View>
         </Animated.View>
       </GestureDetector>
+      
+      {/* Delete Confirmation Alert */}
+      <CustomAlert
+        visible={showDeleteAlert}
+        type="error"
+        title="Delete Transaction"
+        message={`Are you sure you want to delete this transaction?\n\n"${transaction.description}" - ${transaction.type === 'income' ? '+' : '-'}$${transaction.amount.toFixed(2)}`}
+        onClose={() => setShowDeleteAlert(false)}
+        onConfirm={handleConfirmDelete}
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
     </View>
   );
 }
