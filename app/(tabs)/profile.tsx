@@ -138,6 +138,44 @@ export default function Profile() {
     }
   };
 
+  // Function to determine font size based on savings amount
+  const getSavingsFontSize = (amount: number) => {
+    const absAmount = Math.abs(amount);
+    const amountString = absAmount.toString();
+    
+    if (absAmount >= 1000000) {
+      return 16; // Very large amounts (millions)
+    } else if (absAmount >= 100000) {
+      return 18; // Large amounts (hundreds of thousands)
+    } else if (absAmount >= 10000) {
+      return 20; // Medium amounts (tens of thousands)
+    } else {
+      return 22; // Default size for smaller amounts
+    }
+  };
+
+  // Function to format currency with proper sign handling
+  const formatCurrencyWithSign = (amount: number) => {
+    const isWholeNumber = amount % 1 === 0;
+    const absAmount = Math.abs(amount);
+    
+    let formattedAmount;
+    if (isWholeNumber) {
+      formattedAmount = `$${absAmount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+    } else {
+      formattedAmount = `$${absAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+    
+    // Add sign prefix
+    if (amount > 0) {
+      return `+${formattedAmount}`;
+    } else if (amount < 0) {
+      return `-${formattedAmount}`;
+    } else {
+      return formattedAmount;
+    }
+  };
+
   const formatMobile = (mobile: string) => {
     if (!mobile) return '';
     const cleaned = mobile.replace(/\D/g, '');
@@ -217,8 +255,20 @@ export default function Profile() {
               <Text style={styles.statLabel}>Categories</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={[styles.statValue, { color: state.monthlyStats.netSavings >= 0 ? '#4facfe' : '#EF4444' }]}>
-                {state.monthlyStats.netSavings >= 0 ? '+' : '-'}{formatCurrency(Math.abs(state.monthlyStats.netSavings))}
+              <Text 
+                style={[
+                  styles.statValue, 
+                  { 
+                    color: state.monthlyStats.netSavings >= 0 ? '#4facfe' : '#EF4444',
+                    fontSize: getSavingsFontSize(state.monthlyStats.netSavings),
+                    lineHeight: getSavingsFontSize(state.monthlyStats.netSavings) + 4,
+                  }
+                ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit={true}
+                minimumFontScale={0.6}
+              >
+                {formatCurrencyWithSign(state.monthlyStats.netSavings)}
               </Text>
               <Text style={styles.statLabel}>
                 {state.monthlyStats.netSavings >= 0 ? 'Savings' : 'Deficit'}
@@ -540,12 +590,11 @@ const createStyles = (colors: any) => StyleSheet.create({
     elevation: 2,
   },
   statValue: {
-    fontSize: 20,
-    lineHeight: 24,
     fontWeight: '700',
     color: colors.text,
     marginBottom: 4,
     textAlign: 'center',
+    width: '100%',
   },
   statLabel: {
     fontSize: 14,
