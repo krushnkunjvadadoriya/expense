@@ -7,6 +7,7 @@ import {
   Alert,
 } from 'react-native';
 import { MoveHorizontal as MoreHorizontal, CreditCard as Edit3, Trash2 } from 'lucide-react-native';
+import * as Icons from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Transaction } from '@/types';
 
@@ -66,7 +67,10 @@ export default function TransactionItem({
     <View style={styles.container}>
       <View style={styles.leftSection}>
         <View style={[styles.iconContainer, { backgroundColor: categoryColor + '20' }]}>
-          <Text style={styles.icon}>{categoryIcon}</Text>
+          {React.createElement((Icons as any)[categoryIcon || 'Circle'] || Icons.Circle, {
+            size: 20,
+            color: categoryColor
+          })}
         </View>
         <View style={styles.details}>
           <Text style={styles.description}>{transaction.description}</Text>
@@ -122,9 +126,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
-  },
-  icon: {
-    fontSize: 20,
   },
   details: {
     flex: 1,
