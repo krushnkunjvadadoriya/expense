@@ -103,8 +103,7 @@ const createStyles = (colors: any, backgroundColor?: string) => StyleSheet.creat
   value: {
     fontWeight: '700',
     marginBottom: 4,
-    textAlign: 'center',
-    width: '100%',
+    textAlign: 'left',
   },
   subtitle: {
     fontSize: 14,

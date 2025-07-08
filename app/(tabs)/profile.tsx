@@ -593,8 +593,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontWeight: '700',
     color: colors.text,
     marginBottom: 4,
-    textAlign: 'center',
-    width: '100%',
+    textAlign: 'left',
   },
   statLabel: {
     fontSize: 14,
