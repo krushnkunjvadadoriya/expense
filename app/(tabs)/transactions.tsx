@@ -73,6 +73,17 @@ export default function Transactions() {
     return { income, expenses, net: income - expenses };
   };
 
+  const formatCurrency = (amount: number) => {
+    // Check if the amount is a whole number
+    const isWholeNumber = amount % 1 === 0;
+    
+    if (isWholeNumber) {
+      return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+    } else {
+      return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+  };
+
   const handleEditTransaction = (transaction: Transaction) => {
     setEditingTransaction(transaction);
     setShowAddModal(true);
@@ -157,10 +168,10 @@ export default function Transactions() {
                   <Text style={styles.dateText}>{formatDateGroup(date)}</Text>
                   <View style={styles.dayTotalContainer}>
                     {dayTotal.income > 0 && (
-                      <Text style={styles.dayIncome}>+${dayTotal.income.toFixed(2)}</Text>
+                      <Text style={styles.dayIncome}>+{formatCurrency(dayTotal.income)}</Text>
                     )}
                     {dayTotal.expenses > 0 && (
-                      <Text style={styles.dayExpenses}>-${dayTotal.expenses.toFixed(2)}</Text>
+                      <Text style={styles.dayExpenses}>-{formatCurrency(dayTotal.expenses)}</Text>
                     )}
                   </View>
                 </View>

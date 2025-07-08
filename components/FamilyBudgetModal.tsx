@@ -219,6 +219,17 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
   const totalCategoryBudget = categories.reduce((sum, cat) => sum + cat.budget, 0);
   const remainingBudget = parseFloat(monthlyBudget || '0') - totalCategoryBudget;
 
+  const formatCurrency = (amount: number) => {
+    // Check if the amount is a whole number
+    const isWholeNumber = amount % 1 === 0;
+    
+    if (isWholeNumber) {
+      return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+    } else {
+      return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+  };
+
   // Get categories that are not yet added to the budget
   const availableToAdd = availableCategories.filter(
     globalCat => !categories.some(budgetCat => budgetCat.categoryId === globalCat.id)
@@ -259,11 +270,11 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
           <View style={styles.summaryCard}>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Total Budget:</Text>
-              <Text style={styles.summaryValue}>${parseFloat(monthlyBudget || '0').toFixed(2)}</Text>
+              <Text style={styles.summaryValue}>{formatCurrency(parseFloat(monthlyBudget || '0'))}</Text>
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Category Total:</Text>
-              <Text style={styles.summaryValue}>${totalCategoryBudget.toFixed(2)}</Text>
+              <Text style={styles.summaryValue}>{formatCurrency(totalCategoryBudget)}</Text>
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Remaining:</Text>
@@ -271,7 +282,7 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
                 styles.summaryValue,
                 { color: remainingBudget >= 0 ? '#4facfe' : '#EF4444' }
               ]}>
-                ${remainingBudget.toFixed(2)}
+                {formatCurrency(Math.abs(remainingBudget))}
               </Text>
             </View>
           </View>
@@ -346,10 +357,10 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
                 
                 <View style={styles.categoryStats}>
                   <Text style={styles.categorySpent}>
-                    Spent: ${category.spent.toFixed(2)}
+                    Spent: {formatCurrency(category.spent)}
                   </Text>
                   <Text style={styles.categoryRemaining}>
-                    Remaining: ${(category.budget - category.spent).toFixed(2)}
+                    Remaining: {formatCurrency(Math.abs(category.budget - category.spent))}
                   </Text>
                 </View>
               </View>

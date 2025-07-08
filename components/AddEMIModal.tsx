@@ -289,18 +289,24 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
               </View>
               <View style={styles.calculatorRow}>
                 <Text style={styles.calculatorLabel}>Monthly EMI:</Text>
-                <Text style={styles.calculatorValue}>${monthlyAmount.toFixed(2)}</Text>
+                <Text style={styles.calculatorValue}>
+                  ${monthlyAmount % 1 === 0 ? monthlyAmount.toLocaleString('en-US', { minimumFractionDigits: 0 }) : monthlyAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </Text>
               </View>
               <View style={styles.calculatorRow}>
                 <Text style={styles.calculatorLabel}>Total Amount:</Text>
                 <Text style={styles.calculatorValue}>
-                  ${(monthlyAmount * parseInt(tenure || '0')).toFixed(2)}
+                  ${((monthlyAmount * parseInt(tenure || '0')) % 1 === 0) ? 
+                    (monthlyAmount * parseInt(tenure || '0')).toLocaleString('en-US', { minimumFractionDigits: 0 }) : 
+                    (monthlyAmount * parseInt(tenure || '0')).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </Text>
               </View>
               <View style={styles.calculatorRow}>
                 <Text style={styles.calculatorLabel}>Total Interest:</Text>
                 <Text style={styles.calculatorValue}>
-                  ${((monthlyAmount * parseInt(tenure || '0')) - parseFloat(principal || '0')).toFixed(2)}
+                  ${(((monthlyAmount * parseInt(tenure || '0')) - parseFloat(principal || '0')) % 1 === 0) ? 
+                    ((monthlyAmount * parseInt(tenure || '0')) - parseFloat(principal || '0')).toLocaleString('en-US', { minimumFractionDigits: 0 }) : 
+                    ((monthlyAmount * parseInt(tenure || '0')) - parseFloat(principal || '0')).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </Text>
               </View>
             </View>

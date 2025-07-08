@@ -33,7 +33,14 @@ export default function TransactionItem({
   const styles = createStyles(colors);
 
   const formatCurrency = (amount: number) => {
-    return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    // Check if the amount is a whole number
+    const isWholeNumber = amount % 1 === 0;
+    
+    if (isWholeNumber) {
+      return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+    } else {
+      return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
   };
 
   const formatDate = (dateString: string) => {

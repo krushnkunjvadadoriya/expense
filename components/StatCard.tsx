@@ -23,6 +23,26 @@ export default function StatCard({
   const { colors } = themeState.theme;
   const styles = createStyles(colors, backgroundColor);
 
+  // Determine font size based on value length for better fitting
+  const getValueFontSize = (value: string) => {
+    const valueLength = value.length;
+    
+    if (valueLength > 12) {
+      return 14; // Very small for extremely long values
+    } else if (valueLength > 10) {
+      return 16; // Small for long values
+    } else if (valueLength > 8) {
+      return 18; // Medium-small for medium-long values
+    } else {
+      return 20; // Default size for normal values
+    }
+  };
+
+  const dynamicValueStyle = {
+    fontSize: getValueFontSize(value),
+    lineHeight: getValueFontSize(value) + 2,
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -32,10 +52,10 @@ export default function StatCard({
         <Text style={styles.title} numberOfLines={1}>{title}</Text>
       </View>
       <Text 
-        style={[styles.value, { color }]} 
+        style={[styles.value, { color }, dynamicValueStyle]} 
         numberOfLines={1}
         adjustsFontSizeToFit={true}
-        minimumFontScale={0.7}
+        minimumFontScale={0.5}
       >
         {value}
       </Text>
@@ -81,11 +101,10 @@ const createStyles = (colors: any, backgroundColor?: string) => StyleSheet.creat
     flex: 1,
   },
   value: {
-    fontSize: 20,
-    lineHeight: 24,
     fontWeight: '700',
     marginBottom: 4,
-    flexShrink: 1, // Allow text to shrink if needed
+    textAlign: 'center',
+    width: '100%',
   },
   subtitle: {
     fontSize: 14,
