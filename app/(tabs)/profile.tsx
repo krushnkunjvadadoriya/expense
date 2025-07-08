@@ -211,7 +211,7 @@ export default function Profile() {
             </View>
             <View style={styles.statCard}>
               <Text style={[styles.statValue, { color: state.monthlyStats.netSavings >= 0 ? '#4facfe' : '#EF4444' }]}>
-                {formatCurrency(Math.abs(state.monthlyStats.netSavings))}
+                {state.monthlyStats.netSavings >= 0 ? '+' : '-'}{formatCurrency(Math.abs(state.monthlyStats.netSavings))}
               </Text>
               <Text style={styles.statLabel}>
                 {state.monthlyStats.netSavings >= 0 ? 'Savings' : 'Deficit'}
@@ -533,10 +533,12 @@ const createStyles = (colors: any) => StyleSheet.create({
     elevation: 2,
   },
   statValue: {
-    fontSize: 24,
+    fontSize: 20,
+    lineHeight: 24,
     fontWeight: '700',
     color: colors.text,
     marginBottom: 4,
+    textAlign: 'center',
   },
   statLabel: {
     fontSize: 14,
