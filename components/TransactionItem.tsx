@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import { MoreHorizontal, Edit3, Trash2 } from 'lucide-react-native';
+import { MoveHorizontal as MoreHorizontal, CreditCard as Edit3, Trash2 } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Transaction } from '@/types';
 
