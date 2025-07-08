@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { User, Settings, Bell, Download, CircleHelp as HelpCircle, Shield, Trash2, CreditCard as Edit3, Check, X, LogOut, Smartphone, Sun, Moon, Monitor } from 'lucide-react-native';
+import { User, Settings, Bell, Download, CircleHelp as HelpCircle, Shield, Trash2, Pencil, Check, X, LogOut, Smartphone, Sun, Moon, Monitor } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGuest } from '@/contexts/GuestContext';
@@ -18,7 +19,7 @@ import ChangePinModal from '@/components/ChangePinModal';
 import CustomAlert from '@/components/CustomAlert';
 
 export default function Profile() {
-  const { state, dispatch, showToast } = useApp();
+  const { state, dispatch, showToast, calculateStats } = useApp();
   const { logout, state: authState } = useAuth();
   const { isGuest } = useGuest();
   const { state: themeState, setColorScheme, toggleTheme } = useTheme();
@@ -43,6 +44,12 @@ export default function Profile() {
     if (state.user) {
       const updatedUser = { ...state.user, monthlyBudget: newBudget };
       dispatch({ type: 'SET_USER', payload: updatedUser });
+      
+      // Recalculate stats with the new budget
+      setTimeout(() => {
+        calculateStats();
+      }, 100);
+      
       showToast({
         type: 'success',
         message: 'Budget updated successfully!',
@@ -222,7 +229,7 @@ export default function Profile() {
               <Text style={styles.budgetLabel}>Monthly Budget</Text>
               {!editingBudget && (
                 <TouchableOpacity onPress={() => setEditingBudget(true)}>
-                  <Edit3 size={16} color={colors.textTertiary} />
+                  <Pencil size={16} color={colors.textTertiary} />
                 </TouchableOpacity>
               )}
             </View>
