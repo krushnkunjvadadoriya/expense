@@ -66,7 +66,7 @@ export default function TransactionItem({
   return (
     <View style={styles.container}>
       <View style={styles.leftSection}>
-        <View style={[styles.iconContainer, { backgroundColor: categoryColor + '20' }]}>
+        <View style={[styles.iconContainer, { backgroundColor: categoryColor + '10' }]}>
           {React.createElement((Icons as any)[categoryIcon || 'Circle'] || Icons.Circle, {
             size: 20,
             color: categoryColor
