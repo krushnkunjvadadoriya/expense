@@ -283,6 +283,13 @@ export default function Dashboard() {
         onClose={handleCloseModal}
         editingTransaction={editingTransaction}
       />
+      </TouchableOpacity>
+
+      <AddTransactionModal
+        visible={showAddModal}
+        onClose={handleCloseModal}
+        editingTransaction={editingTransaction}
+      />
     </SafeAreaView>
   );
 }
