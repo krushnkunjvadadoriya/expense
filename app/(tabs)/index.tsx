@@ -281,13 +281,7 @@ export default function Dashboard() {
       <AddTransactionModal
         visible={showAddModal}
         onClose={handleCloseModal}
-        editingTransaction={editingTransaction}
-      />
-
-      <AddTransactionModal
-        visible={showAddModal}
-        onClose={handleCloseModal}
-        editingTransaction={editingTransaction}
+        transaction={editingTransaction}
       />
     </SafeAreaView>
   );

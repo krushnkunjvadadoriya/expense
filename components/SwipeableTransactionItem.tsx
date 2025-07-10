@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Animated,
   PanResponder,
-  Dimensions,
 } from 'react-native';
 import { CreditCard as Edit3, Trash2 } from 'lucide-react-native';
 import * as Icons from 'lucide-react-native';
@@ -21,8 +20,9 @@ interface SwipeableTransactionItemProps {
   onDelete?: (transaction: Transaction) => void;
 }
 
-const SWIPE_THRESHOLD = 80;
+const SWIPE_THRESHOLD = 60;
 const ACTION_WIDTH = 80;
+const TOTAL_ACTION_WIDTH = ACTION_WIDTH * 2; // Two actions
 
 export default function SwipeableTransactionItem({
   transaction,
@@ -36,7 +36,6 @@ export default function SwipeableTransactionItem({
   const styles = createStyles(colors);
 
   const translateX = useRef(new Animated.Value(0)).current;
-  const lastOffset = useRef(0);
 
   const formatCurrency = (amount: number) => {
     const isWholeNumber = amount % 1 === 0;
@@ -60,50 +59,57 @@ export default function SwipeableTransactionItem({
     Animated.spring(translateX, {
       toValue: 0,
       useNativeDriver: true,
-      tension: 100,
+      tension: 120,
       friction: 8,
     }).start();
-    lastOffset.current = 0;
   };
 
   const snapToActions = () => {
-    const snapValue = -ACTION_WIDTH * 2; // Two actions
     Animated.spring(translateX, {
-      toValue: snapValue,
+      toValue: -TOTAL_ACTION_WIDTH,
       useNativeDriver: true,
-      tension: 100,
+      tension: 120,
       friction: 8,
     }).start();
-    lastOffset.current = snapValue;
   };
 
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (evt, gestureState) => {
-        // Only respond to horizontal swipes
+        // Only respond to horizontal swipes with sufficient movement
         return Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 10;
       },
       onPanResponderGrant: () => {
-        translateX.setOffset(lastOffset.current);
-        translateX.setValue(0);
+        // Stop any ongoing animation
+        translateX.stopAnimation();
       },
       onPanResponderMove: (evt, gestureState) => {
-        // Only allow left swipe (negative dx)
-        if (gestureState.dx <= 0) {
-          const maxSwipe = -ACTION_WIDTH * 2;
-          const newValue = Math.max(gestureState.dx, maxSwipe);
-          translateX.setValue(newValue);
-        }
+        // Allow both left and right swipes, but clamp the values
+        let newValue = gestureState.dx;
+        
+        // Clamp between 0 (closed) and -TOTAL_ACTION_WIDTH (fully open)
+        newValue = Math.max(-TOTAL_ACTION_WIDTH, Math.min(0, newValue));
+        
+        translateX.setValue(newValue);
       },
       onPanResponderRelease: (evt, gestureState) => {
-        translateX.flattenOffset();
+        const currentValue = gestureState.dx;
+        const velocity = gestureState.vx;
         
-        if (gestureState.dx < -SWIPE_THRESHOLD) {
-          // Snap to show actions
+        // Determine snap direction based on position and velocity
+        if (velocity < -0.5 || currentValue < -SWIPE_THRESHOLD) {
+          // Snap to show actions (swipe left or fast left swipe)
           snapToActions();
-        } else {
-          // Snap back to original position
+        } else if (velocity > 0.5 || currentValue > -SWIPE_THRESHOLD) {
+          // Snap back to closed position (swipe right or not far enough left)
           resetPosition();
+        } else {
+          // Default to closest position
+          if (Math.abs(currentValue) > TOTAL_ACTION_WIDTH / 2) {
+            snapToActions();
+          } else {
+            resetPosition();
+          }
         }
       },
     })
@@ -159,8 +165,12 @@ export default function SwipeableTransactionItem({
             <IconComponent size={20} color={categoryColor} />
           </View>
           <View style={styles.details}>
-            <Text style={styles.description}>{transaction.description}</Text>
-            <Text style={styles.category}>{transaction.category}</Text>
+            <Text style={styles.description} numberOfLines={1}>
+              {transaction.description}
+            </Text>
+            <Text style={styles.category} numberOfLines={1}>
+              {transaction.category}
+            </Text>
             <Text style={styles.date}>{formatDate(transaction.date)}</Text>
           </View>
         </View>
@@ -198,7 +208,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     top: 0,
     bottom: 0,
     flexDirection: 'row',
-    width: ACTION_WIDTH * 2,
+    width: TOTAL_ACTION_WIDTH,
   },
   actionButton: {
     width: ACTION_WIDTH,
@@ -230,6 +240,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    marginRight: 12,
   },
   iconContainer: {
     width: 40,
@@ -259,6 +270,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   rightSection: {
     alignItems: 'flex-end',
+    justifyContent: 'center',
   },
   amount: {
     fontSize: 16,
