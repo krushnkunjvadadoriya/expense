@@ -275,6 +275,14 @@ export default function Dashboard() {
         }}
         activeOpacity={0.8}
       >
+        <Plus size={24} color="#fff" />
+      </TouchableOpacity>
+
+      <AddTransactionModal
+        visible={showAddModal}
+        onClose={handleCloseModal}
+        editingTransaction={editingTransaction}
+      />
     </SafeAreaView>
   );
 }
