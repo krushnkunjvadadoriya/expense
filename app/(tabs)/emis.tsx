@@ -322,11 +322,17 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flex: 1,
   },
   emiName: {
     fontSize: 18,
     fontWeight: '700',
     color: colors.text,
+  },
+  emiActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   payButton: {
     paddingHorizontal: 16,
@@ -337,6 +343,14 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+  moreButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.borderLight,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   completedBadge: {
     paddingHorizontal: 12,

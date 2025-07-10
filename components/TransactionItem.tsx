@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
 import { MoveHorizontal as MoreHorizontal, CreditCard as Edit3, Trash2 } from 'lucide-react-native';
 import * as Icons from 'lucide-react-native';
@@ -17,6 +16,7 @@ interface TransactionItemProps {
   categoryIcon?: string;
   onEdit?: (transaction: Transaction) => void;
   onDelete?: (transaction: Transaction) => void;
+  onMorePress?: (transaction: Transaction) => void;
   showActions?: boolean;
 }
 
@@ -26,6 +26,7 @@ export default function TransactionItem({
   categoryIcon = '💰',
   onEdit,
   onDelete,
+  onMorePress,
   showActions = false,
 }: TransactionItemProps) {
   const { state: themeState } = useTheme();
@@ -52,22 +53,7 @@ export default function TransactionItem({
   };
 
   const handleMorePress = () => {
-    Alert.alert(
-      'Transaction Actions',
-      'What would you like to do?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Edit',
-          onPress: () => onEdit?.(transaction),
-        },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => onDelete?.(transaction),
-        },
-      ]
-    );
+    onMorePress?.(transaction);
   };
 
   return (

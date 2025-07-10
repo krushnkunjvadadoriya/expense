@@ -27,6 +27,7 @@ type AppAction =
   | { type: 'SET_EMIS'; payload: EMI[] }
   | { type: 'ADD_EMI'; payload: EMI }
   | { type: 'UPDATE_EMI'; payload: EMI }
+  | { type: 'DELETE_EMI'; payload: string }
   | { type: 'SET_MONTHLY_STATS'; payload: MonthlyStats }
   | { type: 'SET_CATEGORY_STATS'; payload: CategoryStats[] }
   | { type: 'SHOW_TOAST'; payload: Toast }
@@ -114,6 +115,11 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         emis: state.emis.map(e => (e.id === action.payload.id ? action.payload : e)),
       };
+    case 'DELETE_EMI':
+      return {
+        ...state,
+        emis: state.emis.filter(e => e.id !== action.payload),
+      };
     case 'SET_MONTHLY_STATS':
       return { ...state, monthlyStats: action.payload };
     case 'SET_CATEGORY_STATS':
@@ -137,6 +143,7 @@ const AppContext = createContext<{
   updateCategory: (category: Category) => void;
   addEMI: (emi: Omit<EMI, 'id'>) => void;
   updateEMI: (emi: EMI) => void;
+  deleteEMI: (id: string) => void;
   calculateStats: () => void;
   showToast: (toast: Toast) => void;
   hideToast: () => void;
@@ -303,6 +310,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem('emis', JSON.stringify(updatedEMIs));
   };
 
+  const deleteEMI = async (id: string) => {
+    dispatch({ type: 'DELETE_EMI', payload: id });
+    
+    const updatedEMIs = state.emis.filter(e => e.id !== id);
+    await AsyncStorage.setItem('emis', JSON.stringify(updatedEMIs));
+  };
+
   const calculateStats = () => {
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
@@ -393,6 +407,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         updateCategory,
         addEMI,
         updateEMI,
+        deleteEMI,
         calculateStats,
         showToast,
         hideToast,

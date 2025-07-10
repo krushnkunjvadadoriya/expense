@@ -16,6 +16,8 @@ import {
   Plus,
   Bell,
   Calendar,
+  Edit3,
+  Trash2,
 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useApp } from '@/contexts/AppContext';
@@ -27,6 +29,7 @@ import StatCard from '@/components/StatCard';
 import TransactionItem from '@/components/TransactionItem';
 import AddTransactionModal from '@/components/AddTransactionModal';
 import GuestModeIndicator from '@/components/GuestModeIndicator';
+import BottomSheet, { BottomSheetAction } from '@/components/BottomSheet';
 
 export default function Dashboard() {
   const { state, calculateStats, deleteTransaction } = useApp();
@@ -36,6 +39,8 @@ export default function Dashboard() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [showBottomSheet, setShowBottomSheet] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
   const { colors } = themeState.theme;
   const styles = createStyles(colors);
@@ -129,6 +134,32 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Error deleting transaction:', error);
     }
+  };
+
+  const handleTransactionMorePress = (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+    setShowBottomSheet(true);
+  };
+
+  const getTransactionActions = (): BottomSheetAction[] => {
+    if (!selectedTransaction) return [];
+    
+    return [
+      {
+        id: 'edit',
+        title: 'Edit Transaction',
+        icon: Edit3,
+        color: '#4facfe',
+        onPress: () => handleEditTransaction(selectedTransaction),
+      },
+      {
+        id: 'delete',
+        title: 'Delete Transaction',
+        icon: Trash2,
+        destructive: true,
+        onPress: () => handleDeleteTransaction(selectedTransaction),
+      },
+    ];
   };
 
   const handleCloseModal = () => {
@@ -225,6 +256,7 @@ export default function Dashboard() {
                   categoryIcon={category?.icon}
                   onEdit={handleEditTransaction}
                   onDelete={handleDeleteTransaction}
+                  onMorePress={handleTransactionMorePress}
                   showActions={true}
                 />
               );
@@ -290,6 +322,17 @@ export default function Dashboard() {
         visible={showAddModal}
         onClose={handleCloseModal}
         transaction={editingTransaction}
+      />
+
+      <BottomSheet
+        visible={showBottomSheet}
+        onClose={() => {
+          setShowBottomSheet(false);
+          setSelectedTransaction(null);
+        }}
+        title="Transaction Options"
+        subtitle={selectedTransaction?.description}
+        actions={getTransactionActions()}
       />
     </SafeAreaView>
   );

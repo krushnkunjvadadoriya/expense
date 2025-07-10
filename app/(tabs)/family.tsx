@@ -9,20 +9,23 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Users, Plus, Settings, Crown, UserPlus, DollarSign, TrendingUp, TrendingDown, Calendar, MoveVertical as MoreVertical } from 'lucide-react-native';
+import { Users, Plus, Settings, Crown, UserPlus, DollarSign, TrendingUp, TrendingDown, Calendar, MoveVertical as MoreVertical, Edit3, Trash2, User } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { FamilyGroup, FamilyBudgetCategory } from '@/types';
 import CreateFamilyModal from '../../components/CreateFamilyModal';
 import InviteMemberModal from '../../components/InviteMemberModal';
 import FamilyBudgetModal from '../../components/FamilyBudgetModal';
+import BottomSheet, { BottomSheetAction } from '@/components/BottomSheet';
 
 export default function Family() {
-  const { state, getFamilyCategories } = useApp();
+  const { state, getFamilyCategories, showToast } = useApp();
   const { state: themeState } = useTheme();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showBudgetModal, setShowBudgetModal] = useState(false);
+  const [showBottomSheet, setShowBottomSheet] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<any>(null);
 
   const { colors } = themeState.theme;
   const styles = createStyles(colors);
@@ -191,15 +194,49 @@ export default function Family() {
   };
 
   const handleMemberAction = (member: any) => {
-    Alert.alert(
-      'Member Actions',
-      `What would you like to do with ${member.name}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'View Profile', onPress: () => {} },
-        { text: 'Remove Member', style: 'destructive', onPress: () => {} },
-      ]
-    );
+    setSelectedMember(member);
+    setShowBottomSheet(true);
+  };
+
+  const handleViewProfile = (member: any) => {
+    showToast({
+      type: 'info',
+      message: 'Member profiles will be available in a future update.',
+    });
+  };
+
+  const handleRemoveMember = (member: any) => {
+    showToast({
+      type: 'info',
+      message: 'Member management will be available in a future update.',
+    });
+  };
+
+  const getMemberActions = (): BottomSheetAction[] => {
+    if (!selectedMember) return [];
+    
+    const actions: BottomSheetAction[] = [
+      {
+        id: 'view',
+        title: 'View Profile',
+        icon: User,
+        color: '#4facfe',
+        onPress: () => handleViewProfile(selectedMember),
+      },
+    ];
+
+    // Only show remove option if not admin or if current user is admin
+    if (selectedMember.role !== 'admin') {
+      actions.push({
+        id: 'remove',
+        title: 'Remove Member',
+        icon: Trash2,
+        destructive: true,
+        onPress: () => handleRemoveMember(selectedMember),
+      });
+    }
+
+    return actions;
   };
 
   if (!familyGroup) {
@@ -421,6 +458,17 @@ export default function Family() {
         onClose={() => setShowBudgetModal(false)}
         budget={familyGroup.budget}
         onSave={handleBudgetSave}
+      />
+
+      <BottomSheet
+        visible={showBottomSheet}
+        onClose={() => {
+          setShowBottomSheet(false);
+          setSelectedMember(null);
+        }}
+        title="Member Options"
+        subtitle={selectedMember?.name}
+        actions={getMemberActions()}
       />
     </SafeAreaView>
   );
