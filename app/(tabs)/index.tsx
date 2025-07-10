@@ -283,7 +283,6 @@ export default function Dashboard() {
         onClose={handleCloseModal}
         editingTransaction={editingTransaction}
       />
-      </TouchableOpacity>
 
       <AddTransactionModal
         visible={showAddModal}
