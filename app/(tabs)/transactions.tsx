@@ -8,7 +8,7 @@ import {
   TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Search, Filter, Plus, Edit3, Trash2 } from 'lucide-react-native';
+import { Search, Filter, Plus, CreditCard as Edit3, Trash2 } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Transaction } from '@/types';
@@ -236,17 +236,6 @@ export default function Transactions() {
         visible={showAddModal}
         onClose={handleCloseModal}
         transaction={editingTransaction}
-      />
-
-      <BottomSheet
-        visible={showBottomSheet}
-        onClose={() => {
-          setShowBottomSheet(false);
-          setSelectedTransaction(null);
-        }}
-        title="Transaction Options"
-        subtitle={selectedTransaction?.description}
-        actions={getTransactionActions()}
       />
     </SafeAreaView>
   );
