@@ -19,7 +19,7 @@ import StatCard from '@/components/StatCard';
 import TransactionItem from '@/components/TransactionItem';
 import AddTransactionModal from '@/components/AddTransactionModal';
 import GuestModeIndicator from '@/components/GuestModeIndicator';
-import BottomSheet, { BottomSheetAction } from '@/components/BottomSheet';
+import SwipeableTransactionItem from '@/components/SwipeableTransactionItem';
 
 export default function Dashboard() {
   const { state, calculateStats, deleteTransaction } = useApp();
@@ -29,8 +29,6 @@ export default function Dashboard() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [showBottomSheet, setShowBottomSheet] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
   const { colors } = themeState.theme;
   const styles = createStyles(colors);
@@ -126,32 +124,6 @@ export default function Dashboard() {
     }
   };
 
-  const handleTransactionMorePress = (transaction: Transaction) => {
-    setSelectedTransaction(transaction);
-    setShowBottomSheet(true);
-  };
-
-  const getTransactionActions = (): BottomSheetAction[] => {
-    if (!selectedTransaction) return [];
-    
-    return [
-      {
-        id: 'edit',
-        title: 'Edit Transaction',
-        icon: Edit3,
-        color: '#4facfe',
-        onPress: () => handleEditTransaction(selectedTransaction),
-      },
-      {
-        id: 'delete',
-        title: 'Delete Transaction',
-        icon: Trash2,
-        destructive: true,
-        onPress: () => handleDeleteTransaction(selectedTransaction),
-      },
-    ];
-  };
-
   const handleCloseModal = () => {
     setShowAddModal(false);
     setEditingTransaction(null);
@@ -239,14 +211,13 @@ export default function Dashboard() {
             recentTransactions.map(transaction => {
               const category = state.categories.find(c => c.name === transaction.category);
               return (
-                <TransactionItem
+                <SwipeableTransactionItem
                   key={transaction.id}
                   transaction={transaction}
                   categoryColor={category?.color}
                   categoryIcon={category?.icon}
                   onEdit={handleEditTransaction}
                   onDelete={handleDeleteTransaction}
-                  showActions={true}
                 />
               );
             })
@@ -304,14 +275,6 @@ export default function Dashboard() {
         }}
         activeOpacity={0.8}
       >
-        <Plus size={24} color="#FFFFFF" />
-      </TouchableOpacity>
-
-      <AddTransactionModal
-        visible={showAddModal}
-        onClose={handleCloseModal}
-        transaction={editingTransaction}
-      />
     </SafeAreaView>
   );
 }
