@@ -14,7 +14,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Transaction } from '@/types';
 import TransactionItem from '@/components/TransactionItem';
 import AddTransactionModal from '@/components/AddTransactionModal';
-import BottomSheet, { BottomSheetAction } from '@/components/BottomSheet';
+import SwipeableTransactionItem from '@/components/SwipeableTransactionItem';
 
 export default function Transactions() {
   const { state, deleteTransaction } = useApp();
@@ -23,8 +23,6 @@ export default function Transactions() {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
-  const [showBottomSheet, setShowBottomSheet] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
   const { colors } = themeState.theme;
   const styles = createStyles(colors);
@@ -98,32 +96,6 @@ export default function Transactions() {
     } catch (error) {
       console.error('Error deleting transaction:', error);
     }
-  };
-
-  const handleTransactionMorePress = (transaction: Transaction) => {
-    setSelectedTransaction(transaction);
-    setShowBottomSheet(true);
-  };
-
-  const getTransactionActions = (): BottomSheetAction[] => {
-    if (!selectedTransaction) return [];
-    
-    return [
-      {
-        id: 'edit',
-        title: 'Edit Transaction',
-        icon: Edit3,
-        color: '#4facfe',
-        onPress: () => handleEditTransaction(selectedTransaction),
-      },
-      {
-        id: 'delete',
-        title: 'Delete Transaction',
-        icon: Trash2,
-        destructive: true,
-        onPress: () => handleDeleteTransaction(selectedTransaction),
-      },
-    ];
   };
 
   const handleCloseModal = () => {
@@ -208,14 +180,13 @@ export default function Transactions() {
                 {transactions.map(transaction => {
                   const category = state.categories.find(c => c.name === transaction.category);
                   return (
-                    <TransactionItem
+                    <SwipeableTransactionItem
                       key={transaction.id}
                       transaction={transaction}
                       categoryColor={category?.color}
                       categoryIcon={category?.icon}
                       onEdit={handleEditTransaction}
                       onDelete={handleDeleteTransaction}
-                      showActions={true}
                     />
                   );
                 })}
