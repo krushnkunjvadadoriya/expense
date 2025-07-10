@@ -8,17 +8,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  DollarSign,
-  TrendingUp,
-  TrendingDown,
-  PiggyBank,
-  Plus,
-  Bell,
-  Calendar,
-  Edit3,
-  Trash2,
-} from 'lucide-react-native';
+import { DollarSign, TrendingUp, TrendingDown, PiggyBank, Plus, Bell, Calendar, CreditCard as Edit3, Trash2 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useApp } from '@/contexts/AppContext';
 import { useGuest } from '@/contexts/GuestContext';
@@ -256,7 +246,6 @@ export default function Dashboard() {
                   categoryIcon={category?.icon}
                   onEdit={handleEditTransaction}
                   onDelete={handleDeleteTransaction}
-                  onMorePress={handleTransactionMorePress}
                   showActions={true}
                 />
               );
@@ -322,17 +311,6 @@ export default function Dashboard() {
         visible={showAddModal}
         onClose={handleCloseModal}
         transaction={editingTransaction}
-      />
-
-      <BottomSheet
-        visible={showBottomSheet}
-        onClose={() => {
-          setShowBottomSheet(false);
-          setSelectedTransaction(null);
-        }}
-        title="Transaction Options"
-        subtitle={selectedTransaction?.description}
-        actions={getTransactionActions()}
       />
     </SafeAreaView>
   );
