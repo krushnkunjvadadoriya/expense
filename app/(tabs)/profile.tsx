@@ -209,7 +209,21 @@ export default function Profile() {
             <User size={32} color="#4facfe" />
           </View>
           <View style={styles.userInfo}>
-            <Text style={styles.userName}>{getUserDisplayName()}</Text>
+            <View style={styles.userNameAndPlan}>
+              <Text style={styles.userName}>{getUserDisplayName()}</Text>
+              {/* Plan Badge */}
+              <View style={[
+                styles.planBadge,
+                { backgroundColor: isGuest ? '#FEF3C7' : '#DBEAFE' }
+              ]}>
+                <Text style={[
+                  styles.planText,
+                  { color: isGuest ? '#92400E' : '#1E40AF' }
+                ]}>
+                  {isGuest ? 'Free Plan' : 'Premium Plan'}
+                </Text>
+              </View>
+            </View>
             {!isGuest && (
               <View style={styles.contactInfo}>
                 {authState.user?.mobile && (
@@ -235,19 +249,6 @@ export default function Profile() {
                 <Text style={styles.createAccountText}>Create Account to Save Data</Text>
               </TouchableOpacity>
             )}
-          </View>
-          
-          {/* Plan Badge */}
-          <View style={[
-            styles.planBadge,
-            { backgroundColor: isGuest ? '#FEF3C7' : '#DBEAFE' }
-          ]}>
-            <Text style={[
-              styles.planText,
-              { color: isGuest ? '#92400E' : '#1E40AF' }
-            ]}>
-              {isGuest ? 'Free Plan' : 'Premium Plan'}
-            </Text>
           </View>
         </View>
 
@@ -559,6 +560,11 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     color: colors.text,
+  },
+  userNameAndPlan: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 8,
   },
   contactInfo: {
@@ -591,9 +597,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
-    alignSelf: 'flex-start',
-    marginTop: 8,
-    marginBottom: 8,
   },
   planText: {
     fontSize: 12,
