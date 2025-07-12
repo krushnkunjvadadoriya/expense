@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { X, Check, Calendar, ChevronDown } from 'lucide-react-native';
 import * as Icons from 'lucide-react-native';
+import DatePicker from '@/components/DatePicker';
 import { useApp } from '@/contexts/AppContext';
 import { useGuest } from '@/contexts/GuestContext';
 import { Transaction } from '@/types';
@@ -400,46 +401,18 @@ export default function AddTransactionModal({ visible, onClose, transaction }: A
           </View>
         </ScrollView>
 
-        {/* Date Picker Modal */}
-        <Modal
+        {/* Date Picker */}
+        <DatePicker
           visible={showDatePicker}
-          transparent={true}
-          animationType="slide"
-          onRequestClose={() => setShowDatePicker(false)}
-        >
-          <View style={styles.datePickerOverlay}>
-            <View style={styles.datePickerContainer}>
-              <View style={styles.datePickerHeader}>
-                <Text style={styles.datePickerTitle}>Select Date</Text>
-                <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                  <X size={24} color="#6B7280" />
-                </TouchableOpacity>
-              </View>
-              <ScrollView style={styles.datePickerScroll}>
-                {generateDateOptions().map((dateOption) => (
-                  <TouchableOpacity
-                    key={dateOption}
-                    style={[
-                      styles.dateOption,
-                      dateOption === date && styles.dateOptionSelected
-                    ]}
-                    onPress={() => handleDateSelect(dateOption)}
-                  >
-                    <Text style={[
-                      styles.dateOptionText,
-                      dateOption === date && styles.dateOptionTextSelected
-                    ]}>
-                      {formatDateForDisplay(dateOption)}
-                    </Text>
-                    {dateOption === new Date().toISOString().split('T')[0] && (
-                      <Text style={styles.todayLabel}>Today</Text>
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          </View>
-        </Modal>
+          onClose={() => setShowDatePicker(false)}
+          selectedDate={date}
+          onDateSelect={(selectedDate) => {
+            setDate(selectedDate);
+            setShowDatePicker(false);
+          }}
+          title="Select Transaction Date"
+          maxDate={new Date().toISOString().split('T')[0]}
+        />
       </View>
     </Modal>
   );
@@ -666,61 +639,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#9CA3AF',
     textAlign: 'center',
-  },
-  datePickerOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  datePickerContainer: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '70%',
-  },
-  datePickerHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  datePickerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  datePickerScroll: {
-    maxHeight: 400,
-  },
-  dateOption: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  dateOptionSelected: {
-    backgroundColor: '#EFF6FF',
-  },
-  dateOptionText: {
-    fontSize: 16,
-    color: '#111827',
-    fontWeight: '500',
-  },
-  dateOptionTextSelected: {
-    color: '#4facfe',
-    fontWeight: '600',
-  },
-  todayLabel: {
-    fontSize: 12,
-    color: '#4facfe',
-    fontWeight: '600',
-    backgroundColor: '#EFF6FF',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
   },
 });

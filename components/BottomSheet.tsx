@@ -43,12 +43,12 @@ export default function BottomSheet({ visible, onClose, title, actions }: Bottom
       Animated.parallel([
         Animated.timing(translateY, {
           toValue: 0,
-          duration: 300,
+          duration: 500,
           useNativeDriver: true,
         }),
         Animated.timing(opacity, {
           toValue: 1,
-          duration: 300,
+          duration: 500,
           useNativeDriver: true,
         }),
       ]).start();
@@ -57,12 +57,12 @@ export default function BottomSheet({ visible, onClose, title, actions }: Bottom
       Animated.parallel([
         Animated.timing(translateY, {
           toValue: screenHeight,
-          duration: 250,
+          duration: 400,
           useNativeDriver: true,
         }),
         Animated.timing(opacity, {
           toValue: 0,
-          duration: 250,
+          duration: 400,
           useNativeDriver: true,
         }),
       ]).start();

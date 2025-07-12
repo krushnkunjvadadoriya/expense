@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
-import { MoveHorizontal as MoreHorizontal } from 'lucide-react-native';
 import * as Icons from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Transaction } from '@/types';
@@ -85,10 +84,6 @@ export default function TransactionItem({
         ]}>
           {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
         </Text>
-        
-        <View style={styles.moreButton}>
-          <MoreHorizontal size={20} color={colors.textTertiary} />
-        </View>
       </View>
     </TouchableOpacity>
   );
@@ -146,10 +141,5 @@ const createStyles = (colors: any) => StyleSheet.create({
   amount: {
     fontSize: 16,
     fontWeight: '700',
-    marginBottom: 4,
-  },
-  moreButton: {
-    padding: 8,
-    marginLeft: 8,
   },
 });
