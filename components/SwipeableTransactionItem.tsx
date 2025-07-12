@@ -76,9 +76,9 @@ export default function SwipeableTransactionItem({
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (evt, gestureState) => {
+      onMoveShouldSetPanResponderCapture: (evt, gestureState) => {
         // Only respond to horizontal swipes with sufficient movement
-        return Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 2 && Math.abs(gestureState.dx) > 10;
+        return Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 2 && Math.abs(gestureState.dx) > 15;
       },
       onPanResponderGrant: () => {
         // Stop any ongoing animation
