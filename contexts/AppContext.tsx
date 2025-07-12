@@ -268,7 +268,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const addCategory = async (categoryData: Omit<Category, 'id'>) => {
     const category: Category = {
       ...categoryData,
-      id: Date.now().toString(),
+      id: Date.now().toString() + Math.random().toString(36).substring(2),
       scopes: ['family'], // Always default to family scope
       isDefault: false, // User-created categories are never default
     };
