@@ -20,9 +20,9 @@ interface AddCategoryModalProps {
 }
 
 const availableColors = [
-  '#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', 
+  '#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6',
   '#EC4899', '#6366F1', '#14B8A6', '#F97316', '#84CC16',
-  '#06B6D4', '#8B5CF6', '#F59E0B', '#EF4444', '#6B7280'
+  '#06B6D4', '#7C3AED', '#D946EF', '#F43F5E', '#6B7280'
 ];
 
 const availableIcons = [
