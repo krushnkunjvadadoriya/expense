@@ -201,6 +201,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
+    width: '100%',
   },
   actionsContainer: {
     position: 'absolute',
