@@ -10,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Plus, Lock, CreditCard as Edit3, Trash2 } from 'lucide-react-native';
 import * as Icons from 'lucide-react-native';
 import { router } from 'expo-router';
+import AddCategoryModal from '@/components/AddCategoryModal';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Category } from '@/types';
@@ -18,6 +19,7 @@ export default function Categories() {
   const { state, deleteCategory, showToast } = useApp();
   const { state: themeState } = useTheme();
   const [selectedType, setSelectedType] = useState<'expense' | 'income'>('expense');
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const { colors } = themeState.theme;
   const styles = createStyles(colors);
@@ -70,11 +72,7 @@ export default function Categories() {
   };
 
   const handleAddCategory = () => {
-    // TODO: Navigate to add category modal
-    showToast({
-      type: 'info',
-      message: 'Add category functionality coming soon!',
-    });
+    setShowAddModal(true);
   };
 
   const renderCategoryItem = (category: Category) => {
@@ -211,6 +209,11 @@ export default function Categories() {
           )}
         </View>
       </ScrollView>
+
+      <AddCategoryModal
+        visible={showAddModal}
+        onClose={() => setShowAddModal(false)}
+      />
     </SafeAreaView>
   );
 }
