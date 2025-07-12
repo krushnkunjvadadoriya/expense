@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { User, Settings, Bell, Download, CircleHelp as HelpCircle, Shield, Trash2, Pencil, Check, X, LogOut, Smartphone, Sun, Moon, Monitor, CreditCard } from 'lucide-react-native';
+import { User, Settings, Bell, Download, CircleHelp as HelpCircle, Shield, Trash2, Pencil, Check, X, LogOut, Smartphone, Sun, Moon, Monitor, CreditCard, Tag } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGuest } from '@/contexts/GuestContext';
@@ -430,6 +431,17 @@ export default function Profile() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Settings</Text>
           <View style={styles.menuContainer}>
+            <TouchableOpacity style={styles.menuItem} onPress={() => {
+              // TODO: Navigate to category management page
+              showToast({
+                type: 'info',
+                message: 'Category management page coming soon!',
+              });
+            }}>
+              <Tag size={20} color={colors.textTertiary} />
+              <Text style={styles.menuItemText}>Manage Categories</Text>
+            </TouchableOpacity>
+            
             <TouchableOpacity style={styles.menuItem} onPress={() => {
               // TODO: Navigate to subscription page
               showToast({
