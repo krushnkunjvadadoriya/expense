@@ -26,6 +26,10 @@ export default function Categories() {
   const defaultCategories = filteredCategories.filter(category => category.isDefault);
   const userCategories = filteredCategories.filter(category => !category.isDefault);
 
+  // Get actual counts for each type (not filtered by selectedType)
+  const expenseCount = state.categories.filter(c => c.type === 'expense').length;
+  const incomeCount = state.categories.filter(c => c.type === 'income').length;
+
   const handleEditCategory = (category: Category) => {
     if (category.isDefault) {
       showToast({
@@ -95,23 +99,6 @@ export default function Categories() {
             <Text style={styles.categoryType}>{category.type}</Text>
           </View>
         </View>
-        
-        {!category.isDefault && (
-          <View style={styles.categoryActions}>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => handleEditCategory(category)}
-            >
-              <Edit3 size={16} color="#4facfe" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => handleDeleteCategory(category)}
-            >
-              <Trash2 size={16} color="#EF4444" />
-            </TouchableOpacity>
-          </View>
-        )}
       </View>
     );
   };
@@ -145,7 +132,7 @@ export default function Categories() {
             styles.filterButtonText,
             selectedType === 'expense' && styles.filterButtonTextActive
           ]}>
-            Expenses ({filteredCategories.filter(c => c.type === 'expense').length})
+            Expenses ({expenseCount})
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -156,7 +143,7 @@ export default function Categories() {
             styles.filterButtonText,
             selectedType === 'income' && styles.filterButtonTextActive
           ]}>
-            Income ({filteredCategories.filter(c => c.type === 'income').length})
+            Income ({incomeCount})
           </Text>
         </TouchableOpacity>
       </View>
@@ -181,7 +168,39 @@ export default function Categories() {
           </Text>
           
           {userCategories.length > 0 ? (
-            userCategories.map(renderCategoryItem)
+            userCategories.map(category => (
+              <View key={category.id} style={styles.categoryItem}>
+                <View style={styles.categoryInfo}>
+                  <View style={[styles.categoryIcon, { backgroundColor: category.color + '20' }]}>
+                    {React.createElement((Icons as any)[category.icon] || Icons.Circle, {
+                      size: 24,
+                      color: category.color
+                    })}
+                  </View>
+                  <View style={styles.categoryDetails}>
+                    <View style={styles.categoryHeader}>
+                      <Text style={styles.categoryName}>{category.name}</Text>
+                    </View>
+                    <Text style={styles.categoryType}>{category.type}</Text>
+                  </View>
+                </View>
+                
+                <View style={styles.categoryActions}>
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => handleEditCategory(category)}
+                  >
+                    <Edit3 size={16} color="#4facfe" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => handleDeleteCategory(category)}
+                  >
+                    <Trash2 size={16} color="#EF4444" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))
           ) : (
             <View style={styles.emptyState}>
               <Text style={styles.emptyStateText}>No custom categories yet</Text>
