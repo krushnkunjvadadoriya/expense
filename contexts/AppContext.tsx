@@ -215,10 +215,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           scopes: ['family'], // Force all categories to use family scope
           isDefault: cat.isDefault || false, // Ensure isDefault is set
         }));
-        dispatch({ type: 'SET_CATEGORIES', payload: migratedCategories });
+        
+        // Deduplicate categories by ID to prevent React key conflicts
+        const uniqueCategories = migratedCategories.filter((category: Category, index: number, self: Category[]) => 
+          index === self.findIndex(c => c.id === category.id)
+        );
+        
+        dispatch({ type: 'SET_CATEGORIES', payload: uniqueCategories });
         
         // Save migrated categories back to storage
-        await AsyncStorage.setItem('categories', JSON.stringify(migratedCategories));
+        await AsyncStorage.setItem('categories', JSON.stringify(uniqueCategories));
       } else {
         dispatch({ type: 'SET_CATEGORIES', payload: defaultCategories });
         await AsyncStorage.setItem('categories', JSON.stringify(defaultCategories));
