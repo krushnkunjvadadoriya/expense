@@ -236,6 +236,19 @@ export default function Profile() {
               </TouchableOpacity>
             )}
           </View>
+          
+          {/* Plan Badge */}
+          <View style={[
+            styles.planBadge,
+            { backgroundColor: isGuest ? '#FEF3C7' : '#DBEAFE' }
+          ]}>
+            <Text style={[
+              styles.planText,
+              { color: isGuest ? '#92400E' : '#1E40AF' }
+            ]}>
+              {isGuest ? 'Free Plan' : 'Premium Plan'}
+            </Text>
+          </View>
         </View>
 
         {/* Statistics */}
@@ -316,20 +329,6 @@ export default function Profile() {
             )}
             
             <View style={styles.budgetProgress}>
-          
-          {/* Plan Badge */}
-          <View style={[
-            styles.planBadge,
-            { backgroundColor: isGuest ? '#FEF3C7' : '#DBEAFE' }
-          ]}>
-            <Text style={[
-              styles.planText,
-              { color: isGuest ? '#92400E' : '#1E40AF' }
-            ]}>
-              {isGuest ? 'Free Plan' : 'Premium Plan'}
-            </Text>
-          </View>
-          
               <View style={styles.budgetProgressBar}>
                 <View 
                   style={[
