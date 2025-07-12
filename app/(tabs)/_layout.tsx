@@ -64,6 +64,12 @@ export default function TabLayout() {
             tabBarIcon: ({ size, color }) => <User size={size} color={color} />,
           }}
         />
+        <Tabs.Screen
+          name="categories"
+          options={{
+            href: null, // Hide from tab bar
+          }}
+        />
       </Tabs>
     </AuthGuard>
   );

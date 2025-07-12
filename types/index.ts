@@ -17,6 +17,7 @@ export interface Category {
   icon: string;
   budget?: number;
   scopes: ('personal' | 'family')[];
+  isDefault?: boolean;
 }
 
 export interface EMI {

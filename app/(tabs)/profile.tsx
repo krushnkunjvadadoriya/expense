@@ -431,11 +431,7 @@ export default function Profile() {
           <Text style={styles.sectionTitle}>Settings</Text>
           <View style={styles.menuContainer}>
             <TouchableOpacity style={styles.menuItem} onPress={() => {
-              // TODO: Navigate to category management page
-              showToast({
-                type: 'info',
-                message: 'Category management page coming soon!',
-              });
+              router.push('/(tabs)/categories');
             }}>
               <Tag size={20} color={colors.textTertiary} />
               <Text style={styles.menuItemText}>Manage Categories</Text>
