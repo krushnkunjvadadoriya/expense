@@ -59,8 +59,8 @@ export default function SwipeableTransactionItem({
     Animated.spring(translateX, {
       toValue: 0,
       useNativeDriver: true,
-      tension: 120,
-      friction: 8,
+      tension: 80,
+      friction: 15,
     }).start();
   };
 
@@ -68,14 +68,14 @@ export default function SwipeableTransactionItem({
     Animated.spring(translateX, {
       toValue: -TOTAL_ACTION_WIDTH,
       useNativeDriver: true,
-      tension: 120,
-      friction: 8,
+      tension: 80,
+      friction: 15,
     }).start();
   };
 
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponder: () => false,
       onMoveShouldSetPanResponder: (evt, gestureState) => {
         // Only respond to horizontal swipes with sufficient movement
         return Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 2 && Math.abs(gestureState.dx) > 10;
