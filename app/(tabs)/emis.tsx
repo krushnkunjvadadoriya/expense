@@ -8,7 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Plus, Calendar, DollarSign, Clock, CircleAlert as AlertCircle } from 'lucide-react-native';
+import { Plus, Calendar, DollarSign, Clock, CircleAlert as AlertCircle, Trash2 } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import AddEMIModal from '@/components/AddEMIModal';
