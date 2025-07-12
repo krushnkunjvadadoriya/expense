@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Plus, Lock, Edit3, Trash2 } from 'lucide-react-native';
+import { ArrowLeft, Plus, Lock, CreditCard as Edit3, Trash2 } from 'lucide-react-native';
 import * as Icons from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useApp } from '@/contexts/AppContext';
