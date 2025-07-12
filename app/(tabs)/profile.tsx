@@ -8,7 +8,6 @@ import {
   TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { User, Settings, Bell, Download, CircleHelp as HelpCircle, Shield, Trash2, Pencil, Check, X, LogOut, Smartphone, Sun, Moon, Monitor, CreditCard } from 'lucide-react-native';
 import { User, Settings, Bell, Download, CircleHelp as HelpCircle, Shield, Trash2, Pencil, Check, X, LogOut, Smartphone, Sun, Moon, Monitor, CreditCard, Tag } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
