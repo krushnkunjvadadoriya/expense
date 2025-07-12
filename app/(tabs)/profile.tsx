@@ -316,6 +316,20 @@ export default function Profile() {
             )}
             
             <View style={styles.budgetProgress}>
+          
+          {/* Plan Badge */}
+          <View style={[
+            styles.planBadge,
+            { backgroundColor: isGuest ? '#FEF3C7' : '#DBEAFE' }
+          ]}>
+            <Text style={[
+              styles.planText,
+              { color: isGuest ? '#92400E' : '#1E40AF' }
+            ]}>
+              {isGuest ? 'Free Plan' : 'Premium Plan'}
+            </Text>
+          </View>
+          
               <View style={styles.budgetProgressBar}>
                 <View 
                   style={[
@@ -572,6 +586,18 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+  planBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  planText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   statsContainer: {
     padding: 20,
