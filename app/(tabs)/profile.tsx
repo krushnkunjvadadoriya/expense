@@ -579,7 +579,8 @@ const createStyles = (colors: any) => StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
-    alignSelf: 'flex-start',
+    width: '100%',
+    alignItems: 'center',
   },
   createAccountText: {
     fontSize: 12,
