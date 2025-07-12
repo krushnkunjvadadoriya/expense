@@ -235,6 +235,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     backgroundColor: colors.surface,
     padding: 16,
     minHeight: 80,
+    width: '100%',
   },
   leftSection: {
     flexDirection: 'row',
