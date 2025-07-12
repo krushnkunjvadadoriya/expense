@@ -15,7 +15,7 @@ import AddEMIModal from '@/components/AddEMIModal';
 import CustomAlert from '@/components/CustomAlert';
 
 export default function EMIs() {
-  const { state, updateEMI } = useApp();
+  const { state, updateEMI, showToast } = useApp();
   const { state: themeState } = useTheme();
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
