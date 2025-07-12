@@ -15,6 +15,7 @@ import { Transaction } from '@/types';
 import TransactionItem from '@/components/TransactionItem';
 import AddTransactionModal from '@/components/AddTransactionModal';
 import BottomSheet, { BottomSheetAction } from '@/components/BottomSheet';
+import CustomAlert from '@/components/CustomAlert';
 
 export default function Transactions() {
   const { state, deleteTransaction } = useApp();
@@ -25,6 +26,8 @@ export default function Transactions() {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [showActionSheet, setShowActionSheet] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
 
   const { colors } = themeState.theme;
   const styles = createStyles(colors);
@@ -93,11 +96,35 @@ export default function Transactions() {
   };
 
   const handleDeleteTransaction = async (transaction: Transaction) => {
+    setTransactionToDelete(transaction);
+    setShowDeleteConfirm(true);
+    setShowActionSheet(false);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!transactionToDelete) return;
+    
     try {
-      await deleteTransaction(transaction.id);
+      await deleteTransaction(transactionToDelete.id);
+      showToast({
+        type: 'success',
+        message: 'Transaction deleted successfully!',
+      });
     } catch (error) {
       console.error('Error deleting transaction:', error);
+      showToast({
+        type: 'error',
+        message: 'Failed to delete transaction. Please try again.',
+      });
+    } finally {
+      setShowDeleteConfirm(false);
+      setTransactionToDelete(null);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(false);
+    setTransactionToDelete(null);
   };
 
   const handleTransactionPress = (transaction: Transaction) => {
@@ -250,6 +277,17 @@ export default function Transactions() {
         onClose={handleCloseActionSheet}
         title="Transaction Actions"
         actions={actionSheetActions}
+      />
+
+      <CustomAlert
+        visible={showDeleteConfirm}
+        type="warning"
+        title="Delete Transaction"
+        message={`Are you sure you want to delete "${transactionToDelete?.description}"? This action cannot be undone.`}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        confirmText="Delete"
+        cancelText="Cancel"
       />
     </SafeAreaView>
   );

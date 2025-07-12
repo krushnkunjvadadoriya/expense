@@ -65,7 +65,11 @@ export default function BottomSheet({ visible, onClose, title, actions }: Bottom
           duration: 400,
           useNativeDriver: true,
         }),
-      ]).start();
+      ]).start(() => {
+        // Reset animation values to initial state after hide animation completes
+        translateY.setValue(screenHeight);
+        opacity.setValue(0);
+      });
     }
   }, [visible]);
 

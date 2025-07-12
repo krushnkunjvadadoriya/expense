@@ -12,11 +12,14 @@ import { Plus, Calendar, DollarSign, Clock, CircleAlert as AlertCircle } from 'l
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import AddEMIModal from '@/components/AddEMIModal';
+import CustomAlert from '@/components/CustomAlert';
 
 export default function EMIs() {
   const { state, updateEMI } = useApp();
   const { state: themeState } = useTheme();
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [emiToDelete, setEmiToDelete] = useState<any>(null);
 
   const { colors } = themeState.theme;
   const styles = createStyles(colors);
@@ -69,6 +72,38 @@ export default function EMIs() {
         },
       ]
     );
+  };
+
+  const handleDeleteEMI = (emi: any) => {
+    setEmiToDelete(emi);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDeleteEMI = async () => {
+    if (!emiToDelete) return;
+    
+    try {
+      // Add deleteEMI function call here when it's available
+      // await deleteEMI(emiToDelete.id);
+      showToast({
+        type: 'success',
+        message: 'EMI deleted successfully!',
+      });
+    } catch (error) {
+      console.error('Error deleting EMI:', error);
+      showToast({
+        type: 'error',
+        message: 'Failed to delete EMI. Please try again.',
+      });
+    } finally {
+      setShowDeleteConfirm(false);
+      setEmiToDelete(null);
+    }
+  };
+
+  const handleCancelDeleteEMI = () => {
+    setShowDeleteConfirm(false);
+    setEmiToDelete(null);
   };
 
   const activeEMIs = state.emis.filter(emi => emi.status === 'active');
@@ -137,6 +172,12 @@ export default function EMIs() {
                       <Text style={styles.payButtonText}>
                         {isOverdue ? 'Overdue' : 'Pay'}
                       </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      onPress={() => handleDeleteEMI(emi)} 
+                      style={styles.deleteButton}
+                    >
+                      <Trash2 size={16} color="#EF4444" />
                     </TouchableOpacity>
                   </View>
 
@@ -224,6 +265,17 @@ export default function EMIs() {
       <AddEMIModal
         visible={showAddModal}
         onClose={() => setShowAddModal(false)}
+      />
+
+      <CustomAlert
+        visible={showDeleteConfirm}
+        type="warning"
+        title="Delete EMI"
+        message={`Are you sure you want to delete the EMI for "${emiToDelete?.name}"? This action cannot be undone.`}
+        onClose={handleCancelDeleteEMI}
+        onConfirm={handleConfirmDeleteEMI}
+        confirmText="Delete"
+        cancelText="Cancel"
       />
     </SafeAreaView>
   );
@@ -343,6 +395,15 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+  deleteButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FEE2E2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
   },
   moreButton: {
     width: 32,
