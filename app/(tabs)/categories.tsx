@@ -27,8 +27,8 @@ export default function Categories() {
   const userCategories = filteredCategories.filter(category => !category.isDefault);
 
   // Get actual counts for each type (not filtered by selectedType)
-  const expenseCount = state.categories.filter(c => c.type === 'expense').length;
-  const incomeCount = state.categories.filter(c => c.type === 'income').length;
+  const expenseCount = state.categories.filter(c => c.type === 'expense').length; // Correctly counts all expense categories
+  const incomeCount = state.categories.filter(c => c.type === 'income').length;   // Correctly counts all income categories
 
   const handleEditCategory = (category: Category) => {
     if (category.isDefault) {
@@ -155,7 +155,7 @@ export default function Categories() {
             <Text style={styles.sectionTitle}>Default Categories</Text>
             <Text style={styles.sectionSubtitle}>
               These categories are provided by the system and cannot be modified
-            </Text>
+          </Text> {/* No edit/delete actions for default categories */}
             {defaultCategories.map(renderCategoryItem)}
           </View>
         )}
