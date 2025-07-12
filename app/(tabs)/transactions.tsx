@@ -67,9 +67,9 @@ export default function Transactions() {
     if (date === yesterday) return 'Yesterday';
     
     return new Date(date).toLocaleDateString('en-US', {
-      weekday: 'long',
       month: 'short',
       day: 'numeric',
+      year: 'numeric',
     });
   };
 
