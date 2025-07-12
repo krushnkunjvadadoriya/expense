@@ -246,7 +246,7 @@ export default function Profile() {
                 style={styles.createAccountButton}
                 onPress={() => router.push('/(auth)/email-entry')}
               >
-                <Text style={styles.createAccountText}>Create Account to Save Data</Text>
+                <Text style={styles.createAccountText}>Save Your Data</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -582,14 +582,15 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   createAccountButton: {
     backgroundColor: '#4facfe',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     borderRadius: 12,
     width: '100%',
     alignItems: 'center',
+    marginTop: 8,
   },
   createAccountText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
     color: '#FFFFFF',
   },
