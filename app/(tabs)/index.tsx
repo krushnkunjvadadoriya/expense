@@ -19,7 +19,7 @@ import StatCard from '@/components/StatCard';
 import TransactionItem from '@/components/TransactionItem';
 import AddTransactionModal from '@/components/AddTransactionModal';
 import GuestModeIndicator from '@/components/GuestModeIndicator';
-import SwipeableTransactionItem from '@/components/SwipeableTransactionItem';
+import BottomSheet, { BottomSheetAction } from '@/components/BottomSheet';
 
 export default function Dashboard() {
   const { state, calculateStats, deleteTransaction } = useApp();
@@ -29,6 +29,8 @@ export default function Dashboard() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [showActionSheet, setShowActionSheet] = useState(false);
 
   const { colors } = themeState.theme;
   const styles = createStyles(colors);
@@ -124,6 +126,16 @@ export default function Dashboard() {
     }
   };
 
+  const handleTransactionPress = (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+    setShowActionSheet(true);
+  };
+
+  const handleCloseActionSheet = () => {
+    setShowActionSheet(false);
+    setSelectedTransaction(null);
+  };
+
   const handleCloseModal = () => {
     setShowAddModal(false);
     setEditingTransaction(null);
@@ -132,6 +144,31 @@ export default function Dashboard() {
   const handleSeeAllTransactions = () => {
     router.push('/(tabs)/transactions');
   };
+
+  const actionSheetActions: BottomSheetAction[] = [
+    {
+      id: 'edit',
+      title: 'Edit Transaction',
+      icon: Edit3,
+      color: '#4facfe',
+      onPress: () => {
+        if (selectedTransaction) {
+          handleEditTransaction(selectedTransaction);
+        }
+      },
+    },
+    {
+      id: 'delete',
+      title: 'Delete Transaction',
+      icon: Trash2,
+      color: '#EF4444',
+      onPress: () => {
+        if (selectedTransaction) {
+          handleDeleteTransaction(selectedTransaction);
+        }
+      },
+    },
+  ];
 
   return (
     <SafeAreaView style={styles.container}>
@@ -211,13 +248,12 @@ export default function Dashboard() {
             recentTransactions.map(transaction => {
               const category = state.categories.find(c => c.name === transaction.category);
               return (
-                <SwipeableTransactionItem
+                <TransactionItem
                   key={transaction.id}
                   transaction={transaction}
                   categoryColor={category?.color}
                   categoryIcon={category?.icon}
-                  onEdit={handleEditTransaction}
-                  onDelete={handleDeleteTransaction}
+                  onMorePress={handleTransactionPress}
                 />
               );
             })
@@ -282,6 +318,13 @@ export default function Dashboard() {
         visible={showAddModal}
         onClose={handleCloseModal}
         transaction={editingTransaction}
+      />
+
+      <BottomSheet
+        visible={showActionSheet}
+        onClose={handleCloseActionSheet}
+        title="Transaction Actions"
+        actions={actionSheetActions}
       />
     </SafeAreaView>
   );

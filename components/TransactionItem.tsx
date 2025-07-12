@@ -5,7 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
-import { MoveHorizontal as MoreHorizontal, CreditCard as Edit3, Trash2 } from 'lucide-react-native';
+import { MoveHorizontal as MoreHorizontal } from 'lucide-react-native';
 import * as Icons from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Transaction } from '@/types';
@@ -17,7 +17,6 @@ interface TransactionItemProps {
   onEdit?: (transaction: Transaction) => void;
   onDelete?: (transaction: Transaction) => void;
   onMorePress?: (transaction: Transaction) => void;
-  showActions?: boolean;
 }
 
 export default function TransactionItem({
@@ -27,7 +26,6 @@ export default function TransactionItem({
   onEdit,
   onDelete,
   onMorePress,
-  showActions = false,
 }: TransactionItemProps) {
   const { state: themeState } = useTheme();
   const { colors } = themeState.theme;
@@ -53,11 +51,17 @@ export default function TransactionItem({
   };
 
   const handleMorePress = () => {
-    onMorePress?.(transaction);
+    if (onMorePress) {
+      onMorePress(transaction);
+    }
   };
 
   return (
-    <View style={styles.container}>
+    <TouchableOpacity 
+      style={styles.container}
+      onPress={handleMorePress}
+      activeOpacity={0.7}
+    >
       <View style={styles.leftSection}>
         <View style={[styles.iconContainer, { backgroundColor: categoryColor + '10' }]}>
           {React.createElement((Icons as any)[categoryIcon || 'Circle'] || Icons.Circle, {
@@ -82,13 +86,11 @@ export default function TransactionItem({
           {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
         </Text>
         
-        {showActions && (
-          <TouchableOpacity onPress={handleMorePress} style={styles.moreButton}>
-            <MoreHorizontal size={20} color={colors.textTertiary} />
-          </TouchableOpacity>
-        )}
+        <View style={styles.moreButton}>
+          <MoreHorizontal size={20} color={colors.textTertiary} />
+        </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -147,6 +149,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     marginBottom: 4,
   },
   moreButton: {
-    padding: 4,
+    padding: 8,
+    marginLeft: 8,
   },
 });

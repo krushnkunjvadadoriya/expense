@@ -9,7 +9,7 @@ import {
   ScrollView,
   Platform,
 } from 'react-native';
-import { X, Check, Calculator } from 'lucide-react-native';
+import { X, Check, Calculator, Calendar, ChevronDown } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 
 interface AddEMIModalProps {
@@ -24,6 +24,7 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
   const [interestRate, setInterestRate] = useState('');
   const [tenure, setTenure] = useState('');
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   
   // Error states
   const [nameError, setNameError] = useState('');
@@ -66,6 +67,35 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
     setPrincipalError('');
     setInterestRateError('');
     setTenureError('');
+  };
+
+  const formatDateForDisplay = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const handleDateSelect = (selectedDate: string) => {
+    setStartDate(selectedDate);
+    setShowDatePicker(false);
+  };
+
+  const generateDateOptions = () => {
+    const dates = [];
+    const today = new Date();
+    
+    // Add today and next 30 days
+    for (let i = 0; i < 31; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      dates.push(date.toISOString().split('T')[0]);
+    }
+    
+    return dates;
   };
 
   // Function to validate and format numeric input (allows decimals)
@@ -271,13 +301,16 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
           {/* Start Date */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Start Date</Text>
-            <TextInput
-              style={styles.input}
-              value={startDate}
-              onChangeText={setStartDate}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor="#9CA3AF"
-            />
+            <TouchableOpacity
+              style={styles.dateButton}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <Calendar size={20} color="#6B7280" />
+              <Text style={styles.dateButtonText}>
+                {formatDateForDisplay(startDate)}
+              </Text>
+              <ChevronDown size={20} color="#6B7280" />
+            </TouchableOpacity>
           </View>
 
           {/* EMI Calculator */}
@@ -312,6 +345,47 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
             </View>
           )}
         </ScrollView>
+
+        {/* Date Picker Modal */}
+        <Modal
+          visible={showDatePicker}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setShowDatePicker(false)}
+        >
+          <View style={styles.datePickerOverlay}>
+            <View style={styles.datePickerContainer}>
+              <View style={styles.datePickerHeader}>
+                <Text style={styles.datePickerTitle}>Select Start Date</Text>
+                <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                  <X size={24} color="#6B7280" />
+                </TouchableOpacity>
+              </View>
+              <ScrollView style={styles.datePickerScroll}>
+                {generateDateOptions().map((dateOption) => (
+                  <TouchableOpacity
+                    key={dateOption}
+                    style={[
+                      styles.dateOption,
+                      dateOption === startDate && styles.dateOptionSelected
+                    ]}
+                    onPress={() => handleDateSelect(dateOption)}
+                  >
+                    <Text style={[
+                      styles.dateOptionText,
+                      dateOption === startDate && styles.dateOptionTextSelected
+                    ]}>
+                      {formatDateForDisplay(dateOption)}
+                    </Text>
+                    {dateOption === new Date().toISOString().split('T')[0] && (
+                      <Text style={styles.todayLabel}>Today</Text>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
       </View>
     </Modal>
   );
@@ -375,6 +449,24 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontWeight: '500',
   },
+  dateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    justifyContent: 'space-between',
+  },
+  dateButtonText: {
+    fontSize: 16,
+    color: '#111827',
+    fontWeight: '500',
+    flex: 1,
+    marginLeft: 12,
+  },
   calculatorCard: {
     backgroundColor: '#FFFFFF',
     padding: 20,
@@ -412,5 +504,61 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#111827',
+  },
+  datePickerOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  datePickerContainer: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '70%',
+  },
+  datePickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  datePickerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  datePickerScroll: {
+    maxHeight: 400,
+  },
+  dateOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  dateOptionSelected: {
+    backgroundColor: '#EFF6FF',
+  },
+  dateOptionText: {
+    fontSize: 16,
+    color: '#111827',
+    fontWeight: '500',
+  },
+  dateOptionTextSelected: {
+    color: '#4facfe',
+    fontWeight: '600',
+  },
+  todayLabel: {
+    fontSize: 12,
+    color: '#4facfe',
+    fontWeight: '600',
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
 });
