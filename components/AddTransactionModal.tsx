@@ -83,7 +83,6 @@ export default function AddTransactionModal({ visible, onClose, transaction }: A
   const formatDateForDisplay = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
-      weekday: 'short',
       year: 'numeric',
       month: 'short',
       day: 'numeric',
