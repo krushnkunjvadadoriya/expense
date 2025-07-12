@@ -18,7 +18,7 @@ import BottomSheet, { BottomSheetAction } from '@/components/BottomSheet';
 import CustomAlert from '@/components/CustomAlert';
 
 export default function Transactions() {
-  const { state, deleteTransaction } = useApp();
+  const { state, deleteTransaction, showToast } = useApp();
   const { state: themeState } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
