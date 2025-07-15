@@ -8,16 +8,21 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Plus, Calendar, DollarSign, Clock, CircleAlert as AlertCircle, Trash2 } from 'lucide-react-native';
+import { Plus, Calendar, DollarSign, Clock, CircleAlert as AlertCircle, Trash2, MoreVertical, CreditCard as Edit3 } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { EMI } from '@/types';
 import AddEMIModal from '@/components/AddEMIModal';
 import CustomAlert from '@/components/CustomAlert';
+import BottomSheet, { BottomSheetAction } from '@/components/BottomSheet';
 
 export default function EMIs() {
   const { state, updateEMI, showToast } = useApp();
   const { state: themeState } = useTheme();
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingEMI, setEditingEMI] = useState<EMI | null>(null);
+  const [selectedEMI, setSelectedEMI] = useState<EMI | null>(null);
+  const [showActionSheet, setShowActionSheet] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [emiToDelete, setEmiToDelete] = useState<any>(null);
 
@@ -68,15 +73,31 @@ export default function EMIs() {
             }
 
             updateEMI(updatedEMI);
+            showToast({
+              type: 'success',
+              message: 'EMI payment recorded successfully!',
+            });
           },
         },
       ]
     );
   };
 
+  const handleEMIActionPress = (emi: EMI) => {
+    setSelectedEMI(emi);
+    setShowActionSheet(true);
+  };
+
+  const handleEditEMI = (emi: EMI) => {
+    setEditingEMI(emi);
+    setShowAddModal(true);
+    setShowActionSheet(false);
+  };
+
   const handleDeleteEMI = (emi: any) => {
     setEmiToDelete(emi);
     setShowDeleteConfirm(true);
+    setShowActionSheet(false);
   };
 
   const handleConfirmDeleteEMI = async () => {
@@ -106,12 +127,57 @@ export default function EMIs() {
     setEmiToDelete(null);
   };
 
+  const handleCloseActionSheet = () => {
+    setShowActionSheet(false);
+    setSelectedEMI(null);
+  };
+
+  const handleCloseModal = () => {
+    setShowAddModal(false);
+    setEditingEMI(null);
+  };
+
   const activeEMIs = state.emis.filter(emi => emi.status === 'active');
   const completedEMIs = state.emis.filter(emi => emi.status === 'completed');
 
   const totalMonthlyEMI = activeEMIs.reduce((sum, emi) => sum + emi.monthlyAmount, 0);
   const totalOutstanding = activeEMIs.reduce((sum, emi) => sum + emi.remainingAmount, 0);
 
+  const actionSheetActions: BottomSheetAction[] = [
+    {
+      id: 'pay',
+      title: 'Pay EMI',
+      icon: DollarSign,
+      color: selectedEMI?.status === 'active' ? '#4facfe' : '#6B7280',
+      onPress: () => {
+        if (selectedEMI && selectedEMI.status === 'active') {
+          handlePayEMI(selectedEMI);
+        }
+      },
+    },
+    {
+      id: 'edit',
+      title: 'Edit EMI',
+      icon: Edit3,
+      color: '#4facfe',
+      onPress: () => {
+        if (selectedEMI) {
+          handleEditEMI(selectedEMI);
+        }
+      },
+    },
+    {
+      id: 'delete',
+      title: 'Delete EMI',
+      icon: Trash2,
+      color: '#EF4444',
+      onPress: () => {
+        if (selectedEMI) {
+          handleDeleteEMI(selectedEMI);
+        }
+      },
+    },
+  ];
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -119,7 +185,10 @@ export default function EMIs() {
         <Text style={styles.title}>EMIs</Text>
         <TouchableOpacity
           style={styles.addButton}
-          onPress={() => setShowAddModal(true)}
+          onPress={() => {
+            setEditingEMI(null);
+            setShowAddModal(true);
+          }}
         >
           <Plus size={20} color="#FFFFFF" />
         </TouchableOpacity>
@@ -163,21 +232,10 @@ export default function EMIs() {
                       )}
                     </View>
                     <TouchableOpacity
-                      style={[
-                        styles.payButton,
-                        { backgroundColor: isOverdue ? '#EF4444' : '#4facfe' }
-                      ]}
-                      onPress={() => handlePayEMI(emi)}
+                      style={styles.moreButton}
+                      onPress={() => handleEMIActionPress(emi)}
                     >
-                      <Text style={styles.payButtonText}>
-                        {isOverdue ? 'Overdue' : 'Pay'}
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      onPress={() => handleDeleteEMI(emi)} 
-                      style={styles.deleteButton}
-                    >
-                      <Trash2 size={16} color="#EF4444" />
+                      <MoreVertical size={20} color={colors.textTertiary} />
                     </TouchableOpacity>
                   </View>
 
@@ -254,7 +312,10 @@ export default function EMIs() {
             </Text>
             <TouchableOpacity
               style={styles.emptyStateButton}
-              onPress={() => setShowAddModal(true)}
+              onPress={() => {
+                setEditingEMI(null);
+                setShowAddModal(true);
+              }}
             >
               <Text style={styles.emptyStateButtonText}>Add EMI</Text>
             </TouchableOpacity>
@@ -264,7 +325,15 @@ export default function EMIs() {
 
       <AddEMIModal
         visible={showAddModal}
-        onClose={() => setShowAddModal(false)}
+        onClose={handleCloseModal}
+        emi={editingEMI}
+      />
+
+      <BottomSheet
+        visible={showActionSheet}
+        onClose={handleCloseActionSheet}
+        title="EMI Actions"
+        actions={actionSheetActions}
       />
 
       <CustomAlert
@@ -385,25 +454,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-  },
-  payButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  payButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  deleteButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#FEE2E2',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 8,
   },
   moreButton: {
     width: 32,
