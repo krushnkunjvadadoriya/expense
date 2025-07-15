@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,14 +12,16 @@ import {
 import { X, Check, Calculator, Calendar, ChevronDown } from 'lucide-react-native';
 import DatePicker from '@/components/DatePicker';
 import { useApp } from '@/contexts/AppContext';
+import { EMI } from '@/types';
 
 interface AddEMIModalProps {
   visible: boolean;
   onClose: () => void;
+  emi?: EMI | null;
 }
 
-export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
-  const { addEMI, showToast } = useApp();
+export default function AddEMIModal({ visible, onClose, emi }: AddEMIModalProps) {
+  const { addEMI, updateEMI, showToast } = useApp();
   const [name, setName] = useState('');
   const [principal, setPrincipal] = useState('');
   const [interestRate, setInterestRate] = useState('');
@@ -32,6 +34,22 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
   const [principalError, setPrincipalError] = useState('');
   const [interestRateError, setInterestRateError] = useState('');
   const [tenureError, setTenureError] = useState('');
+
+  const isEditing = !!emi;
+
+  // Pre-fill form when editing
+  useEffect(() => {
+    if (emi && visible) {
+      setName(emi.name);
+      setPrincipal(emi.principal.toString());
+      setInterestRate(emi.interestRate.toString());
+      setTenure(emi.tenure.toString());
+      setStartDate(emi.startDate);
+    } else if (!emi && visible) {
+      // Reset form for new EMI
+      resetForm();
+    }
+  }, [emi, visible]);
 
   const calculateEMI = (p: number, r: number, n: number) => {
     const monthlyRate = r / (12 * 100);
@@ -133,6 +151,7 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
     setter(cleanedText);
     errorSetter('');
   };
+
   const handleSubmit = () => {
     // Reset errors
     setNameError('');
@@ -193,29 +212,56 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
     try {
       const monthlyAmount = calculateEMI(p, r, n);
 
-      addEMI({
-        name: name.trim(),
-        principal: p,
-        interestRate: r,
-        tenure: n,
-        monthlyAmount,
-        startDate,
-        nextDueDate: getNextDueDate(),
-        totalPaid: 0,
-        remainingAmount: p,
-        status: 'active',
-      });
+      if (isEditing && emi) {
+        // Update existing EMI
+        const updatedEMI: EMI = {
+          ...emi,
+          name: name.trim(),
+          principal: p,
+          interestRate: r,
+          tenure: n,
+          monthlyAmount,
+          startDate,
+          nextDueDate: getNextDueDate(),
+          // Keep existing payment data
+          totalPaid: emi.totalPaid,
+          remainingAmount: emi.remainingAmount,
+          status: emi.status,
+        };
+        
+        updateEMI(updatedEMI);
+        showToast({
+          type: 'success',
+          message: 'EMI updated successfully!',
+        });
+      } else {
+        // Add new EMI
+        addEMI({
+          name: name.trim(),
+          principal: p,
+          interestRate: r,
+          tenure: n,
+          monthlyAmount,
+          startDate,
+          nextDueDate: getNextDueDate(),
+          totalPaid: 0,
+          remainingAmount: p,
+          status: 'active',
+        });
+        showToast({
+          type: 'success',
+          message: 'EMI added successfully!',
+        });
+      }
 
-      showToast({
-        type: 'success',
-        message: 'EMI added successfully!',
-      });
-      resetForm();
+      if (!isEditing) {
+        resetForm();
+      }
       onClose();
     } catch (error) {
       showToast({
         type: 'error',
-        message: 'Failed to add EMI. Please try again.',
+        message: `Failed to ${isEditing ? 'update' : 'add'} EMI. Please try again.`,
       });
     }
   };
@@ -233,7 +279,7 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <X size={24} color="#6B7280" />
           </TouchableOpacity>
-          <Text style={styles.title}>Add EMI</Text>
+          <Text style={styles.title}>{isEditing ? 'Edit EMI' : 'Add EMI'}</Text>
           <TouchableOpacity onPress={handleSubmit} style={styles.saveButton}>
             <Check size={24} color="#4facfe" />
           </TouchableOpacity>

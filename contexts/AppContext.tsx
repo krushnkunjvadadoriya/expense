@@ -319,6 +319,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateEMI = async (emi: EMI) => {
+    const updatedEMI = { ...emi, updatedAt: new Date().toISOString() };
     dispatch({ type: 'UPDATE_EMI', payload: emi });
     
     const updatedEMIs = state.emis.map(e => (e.id === emi.id ? emi : e));
