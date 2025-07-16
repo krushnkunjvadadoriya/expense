@@ -11,6 +11,7 @@ import {
 import { X, Check, DollarSign, Plus, Minus } from 'lucide-react-native';
 import { FamilyBudget, FamilyBudgetCategory } from '@/types';
 import { useApp } from '@/contexts/AppContext';
+import CustomAlert from '@/components/CustomAlert';
 
 interface FamilyBudgetModalProps {
   visible: boolean;
@@ -24,6 +25,12 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
   const [monthlyBudget, setMonthlyBudget] = useState(budget.monthly.toString());
   const [categories, setCategories] = useState<FamilyBudgetCategory[]>(budget.categories);
   
+  // Local alert state
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertTitle, setAlertTitle] = useState('');
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertType, setAlertType] = useState<'error' | 'success' | 'info' | 'warning'>('error');
+  
   // Error states
   const [monthlyBudgetError, setMonthlyBudgetError] = useState('');
 
@@ -35,6 +42,7 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
     setMonthlyBudget(budget.monthly.toString());
     setCategories(budget.categories);
     setMonthlyBudgetError('');
+    setShowAlert(false);
   }, [budget]);
 
   // Function to validate and format numeric input
@@ -184,19 +192,19 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
     // Validate category names
     const invalidCategories = categories.filter(cat => !cat.name.trim());
     if (invalidCategories.length > 0) {
-      showToast({
-        type: 'error',
-        message: 'Please provide names for all categories.',
-      });
+      setAlertTitle('Validation Error');
+      setAlertMessage('Please provide names for all categories.');
+      setAlertType('error');
+      setShowAlert(true);
       return;
     }
 
     const categoryTotal = categories.reduce((sum, cat) => sum + cat.budget, 0);
     if (categoryTotal > totalBudget) {
-      showToast({
-        type: 'error',
-        message: 'Category budgets exceed the total monthly budget.',
-      });
+      setAlertTitle('Budget Error');
+      setAlertMessage('Category budgets exceed the total monthly budget.');
+      setAlertType('error');
+      setShowAlert(true);
       return;
     }
 
@@ -389,6 +397,16 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
           </View>
         </ScrollView>
       </View>
+
+      {/* Local Alert */}
+      <CustomAlert
+        visible={showAlert}
+        type={alertType}
+        title={alertTitle}
+        message={alertMessage}
+        onClose={() => setShowAlert(false)}
+        confirmText="OK"
+      />
     </Modal>
   );
 }
