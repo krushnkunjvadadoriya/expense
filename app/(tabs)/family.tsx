@@ -9,13 +9,15 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Users, Plus, Settings, Crown, UserPlus, DollarSign, TrendingUp, TrendingDown, Calendar, MoveVertical as MoreVertical } from 'lucide-react-native';
+import { Users, Plus, Settings, Crown, UserPlus, DollarSign, TrendingUp, TrendingDown, Calendar, MoveVertical as MoreVertical, CreditCard as Edit3, Trash2, User } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { formatAmount } from '@/utils/currency';
 import { FamilyGroup, FamilyBudgetCategory } from '@/types';
 import CreateFamilyModal from '../../components/CreateFamilyModal';
 import InviteMemberModal from '../../components/InviteMemberModal';
 import FamilyBudgetModal from '../../components/FamilyBudgetModal';
+import BottomSheet, { BottomSheetAction } from '@/components/BottomSheet';
 
 export default function Family() {
   const { state, getFamilyCategories } = useApp();
@@ -26,6 +28,7 @@ export default function Family() {
 
   const { colors } = themeState.theme;
   const styles = createStyles(colors);
+  const userCurrency = state.user?.currency || 'INR';
 
   // Initialize family group with proper structure and persistence
   const [familyGroup, setFamilyGroup] = useState<FamilyGroup>({
@@ -154,10 +157,6 @@ export default function Family() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-  };
-
   const getBudgetUsedPercentage = () => {
     return familyGroup.budget.monthly > 0 ? (familyGroup.budget.spent / familyGroup.budget.monthly) * 100 : 0;
   };
@@ -206,7 +205,7 @@ export default function Family() {
           <Users size={64} color={colors.textTertiary} />
           <Text style={styles.emptyStateTitle}>No Family Group</Text>
           <Text style={styles.emptyStateSubtext}>
-            Create or join a family group to start sharing budgets and expenses
+             {formatAmount(familyGroup.budget.monthly - familyGroup.budget.spent, userCurrency)}
           </Text>
           <TouchableOpacity
             style={styles.createButton}
@@ -250,12 +249,12 @@ export default function Family() {
           <View style={styles.budgetStats}>
             <View style={styles.budgetStatItem}>
               <DollarSign size={24} color="#4facfe" />
-              <Text style={styles.budgetStatValue}>{formatCurrency(familyGroup.budget.monthly)}</Text>
+              <Text style={styles.budgetStatValue}>{formatAmount(familyGroup.budget.monthly, userCurrency)}</Text>
               <Text style={styles.budgetStatLabel}>Total Budget</Text>
             </View>
             <View style={styles.budgetStatItem}>
               <TrendingDown size={24} color="#EF4444" />
-              <Text style={styles.budgetStatValue}>{formatCurrency(familyGroup.budget.spent)}</Text>
+             <Text style={styles.budgetStatValue}>{formatAmount(familyGroup.budget.spent, userCurrency)}</Text>
               <Text style={styles.budgetStatLabel}>Spent</Text>
             </View>
             <View style={styles.budgetStatItem}>
@@ -308,6 +307,9 @@ export default function Family() {
                     ]}>
                       {formatCurrency(category.spent)} / {formatCurrency(category.budget)}
                     </Text>
+                    ]}>
+                      {formatAmount(category.spent, userCurrency)} / {formatAmount(category.budget, userCurrency)}
+                    </Text>
                   </View>
                   <View style={styles.categoryProgressBar}>
                     <View 
@@ -322,7 +324,7 @@ export default function Family() {
                   </View>
                   {isOverBudget && (
                     <Text style={styles.overBudgetText}>
-                      Over budget by {formatCurrency(category.spent - category.budget)}
+                      Over budget by {formatAmount(category.spent - category.budget, userCurrency)}
                     </Text>
                   )}
                 </View>

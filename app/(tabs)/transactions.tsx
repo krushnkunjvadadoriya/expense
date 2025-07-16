@@ -8,23 +8,31 @@ import {
   TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Search, Filter, Plus } from 'lucide-react-native';
+import { Search, Filter, Plus, CreditCard as Edit3, Trash2 } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { formatAmount } from '@/utils/currency';
 import { Transaction } from '@/types';
 import TransactionItem from '@/components/TransactionItem';
 import AddTransactionModal from '@/components/AddTransactionModal';
+import BottomSheet, { BottomSheetAction } from '@/components/BottomSheet';
+import CustomAlert from '@/components/CustomAlert';
 
 export default function Transactions() {
-  const { state, deleteTransaction } = useApp();
+  const { state, deleteTransaction, showToast } = useApp();
   const { state: themeState } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [showActionSheet, setShowActionSheet] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
 
   const { colors } = themeState.theme;
   const styles = createStyles(colors);
+  const userCurrency = state.user?.currency || 'INR';
 
   const filteredTransactions = state.transactions.filter(transaction => {
     const matchesSearch = transaction.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -61,9 +69,9 @@ export default function Transactions() {
     if (date === yesterday) return 'Yesterday';
     
     return new Date(date).toLocaleDateString('en-US', {
-      weekday: 'long',
       month: 'short',
       day: 'numeric',
+      year: 'numeric',
     });
   };
 
@@ -79,17 +87,76 @@ export default function Transactions() {
   };
 
   const handleDeleteTransaction = async (transaction: Transaction) => {
+    setTransactionToDelete(transaction);
+    setShowDeleteConfirm(true);
+    setShowActionSheet(false);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!transactionToDelete) return;
+    
     try {
-      await deleteTransaction(transaction.id);
+      await deleteTransaction(transactionToDelete.id);
+      showToast({
+        type: 'success',
+        message: 'Transaction deleted successfully!',
+      });
     } catch (error) {
       console.error('Error deleting transaction:', error);
+      showToast({
+        type: 'error',
+        message: 'Failed to delete transaction. Please try again.',
+      });
+    } finally {
+      setShowDeleteConfirm(false);
+      setTransactionToDelete(null);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(false);
+    setTransactionToDelete(null);
+  };
+
+  const handleTransactionPress = (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+    setShowActionSheet(true);
+  };
+
+  const handleCloseActionSheet = () => {
+    setShowActionSheet(false);
+    setSelectedTransaction(null);
   };
 
   const handleCloseModal = () => {
     setShowAddModal(false);
     setEditingTransaction(null);
   };
+
+  const actionSheetActions: BottomSheetAction[] = [
+    {
+      id: 'edit',
+      title: 'Edit Transaction',
+      icon: Edit3,
+      color: '#4facfe',
+      onPress: () => {
+        if (selectedTransaction) {
+          handleEditTransaction(selectedTransaction);
+        }
+      },
+    },
+    {
+      id: 'delete',
+      title: 'Delete Transaction',
+      icon: Trash2,
+      color: '#EF4444',
+      onPress: () => {
+        if (selectedTransaction) {
+          handleDeleteTransaction(selectedTransaction);
+        }
+      },
+    },
+  ];
 
   return (
     <SafeAreaView style={styles.container}>
@@ -157,10 +224,10 @@ export default function Transactions() {
                   <Text style={styles.dateText}>{formatDateGroup(date)}</Text>
                   <View style={styles.dayTotalContainer}>
                     {dayTotal.income > 0 && (
-                      <Text style={styles.dayIncome}>+${dayTotal.income.toFixed(2)}</Text>
+                      <Text style={styles.dayIncome}>+{formatAmount(dayTotal.income, userCurrency)}</Text>
                     )}
                     {dayTotal.expenses > 0 && (
-                      <Text style={styles.dayExpenses}>-${dayTotal.expenses.toFixed(2)}</Text>
+                      <Text style={styles.dayExpenses}>-{formatAmount(dayTotal.expenses, userCurrency)}</Text>
                     )}
                   </View>
                 </View>
@@ -173,9 +240,7 @@ export default function Transactions() {
                       transaction={transaction}
                       categoryColor={category?.color}
                       categoryIcon={category?.icon}
-                      onEdit={handleEditTransaction}
-                      onDelete={handleDeleteTransaction}
-                      showActions={true}
+                      onMorePress={handleTransactionPress}
                     />
                   );
                 })}
@@ -196,6 +261,24 @@ export default function Transactions() {
         visible={showAddModal}
         onClose={handleCloseModal}
         transaction={editingTransaction}
+      />
+
+      <BottomSheet
+        visible={showActionSheet}
+        onClose={handleCloseActionSheet}
+        title="Transaction Actions"
+        actions={actionSheetActions}
+      />
+
+      <CustomAlert
+        visible={showDeleteConfirm}
+        type="warning"
+        title="Delete Transaction"
+        message={`Are you sure you want to delete "${transactionToDelete?.description}"? This action cannot be undone.`}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        confirmText="Delete"
+        cancelText="Cancel"
       />
     </SafeAreaView>
   );

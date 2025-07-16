@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { X, Check, DollarSign, Plus, Minus } from 'lucide-react-native';
 import { FamilyBudget, FamilyBudgetCategory } from '@/types';
+import { formatAmount } from '@/utils/currency';
 import { useApp } from '@/contexts/AppContext';
 
 interface FamilyBudgetModalProps {
@@ -20,19 +21,55 @@ interface FamilyBudgetModalProps {
 }
 
 export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: FamilyBudgetModalProps) {
-  const { showGlobalAlert, getCategories, addCategory } = useApp();
+  const { showToast, getCategories, addCategory, state } = useApp();
   const [monthlyBudget, setMonthlyBudget] = useState(budget.monthly.toString());
   const [categories, setCategories] = useState<FamilyBudgetCategory[]>(budget.categories);
+  
+  // Error states
+  const [monthlyBudgetError, setMonthlyBudgetError] = useState('');
+  const [categoryError, setCategoryError] = useState('');
+  const [budgetError, setBudgetError] = useState('');
 
   // Get available categories from the unified system (all are family scoped now)
   const availableCategories = getCategories('expense');
+  const userCurrency = state.user?.currency || 'INR';
 
   // Update local state when budget prop changes
   useEffect(() => {
     setMonthlyBudget(budget.monthly.toString());
     setCategories(budget.categories);
+    setMonthlyBudgetError('');
+    setCategoryError('');
+    setBudgetError('');
   }, [budget]);
 
+  // Function to validate and format numeric input
+  const handleNumericChange = (text: string, setter: (value: string) => void, errorSetter?: (error: string) => void) => {
+    // Remove any non-numeric characters except decimal point
+    let cleanedText = text.replace(/[^0-9.]/g, '');
+    
+    // Ensure only one decimal point
+    const decimalCount = (cleanedText.match(/\./g) || []).length;
+    if (decimalCount > 1) {
+      const firstDecimalIndex = cleanedText.indexOf('.');
+      cleanedText = cleanedText.substring(0, firstDecimalIndex + 1) + 
+                   cleanedText.substring(firstDecimalIndex + 1).replace(/\./g, '');
+    }
+    
+    // If starts with decimal point, prefix with 0
+    if (cleanedText.startsWith('.')) {
+      cleanedText = '0' + cleanedText;
+    }
+    
+    // Limit to 2 decimal places
+    const parts = cleanedText.split('.');
+    if (parts.length === 2 && parts[1].length > 2) {
+      cleanedText = parts[0] + '.' + parts[1].substring(0, 2);
+    }
+    
+    setter(cleanedText);
+    if (errorSetter) errorSetter('');
+  };
   const handleCategoryNameChange = (index: number, name: string) => {
     const updatedCategories = [...categories];
     updatedCategories[index] = {
@@ -43,10 +80,32 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
   };
 
   const handleCategoryBudgetChange = (index: number, value: string) => {
+    // Validate and format the input
+    let cleanedValue = value.replace(/[^0-9.]/g, '');
+    
+    // Ensure only one decimal point
+    const decimalCount = (cleanedValue.match(/\./g) || []).length;
+    if (decimalCount > 1) {
+      const firstDecimalIndex = cleanedValue.indexOf('.');
+      cleanedValue = cleanedValue.substring(0, firstDecimalIndex + 1) + 
+                    cleanedValue.substring(firstDecimalIndex + 1).replace(/\./g, '');
+    }
+    
+    // If starts with decimal point, prefix with 0
+    if (cleanedValue.startsWith('.')) {
+      cleanedValue = '0' + cleanedValue;
+    }
+    
+    // Limit to 2 decimal places
+    const parts = cleanedValue.split('.');
+    if (parts.length === 2 && parts[1].length > 2) {
+      cleanedValue = parts[0] + '.' + parts[1].substring(0, 2);
+    }
+    
     const updatedCategories = [...categories];
     updatedCategories[index] = {
       ...updatedCategories[index],
-      budget: parseFloat(value) || 0,
+      budget: parseFloat(cleanedValue) || 0,
     };
     setCategories(updatedCategories);
   };
@@ -58,9 +117,8 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
     // Check if category is already added
     const existingCategory = categories.find(c => c.categoryId === globalCategoryId);
     if (existingCategory) {
-      showGlobalAlert({
+      showToast({
         type: 'warning',
-        title: 'Category Already Added',
         message: `${globalCategory.name} is already in your family budget.`,
       });
       return;
@@ -102,9 +160,8 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
       };
       setCategories([...categories, newBudgetCategory]);
     } catch (error) {
-      showGlobalAlert({
+      showToast({
         type: 'error',
-        title: 'Error',
         message: 'Failed to create new category. Please try again.',
       });
     }
@@ -116,43 +173,32 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
   };
 
   const handleSubmit = () => {
+    // Reset errors
+    setMonthlyBudgetError('');
+    setCategoryError('');
+    setBudgetError('');
+
     if (!monthlyBudget) {
-      showGlobalAlert({
-        type: 'error',
-        title: 'Missing Budget',
-        message: 'Please enter a monthly budget amount.',
-      });
+      setMonthlyBudgetError('Please enter a monthly budget amount');
       return;
     }
 
     const totalBudget = parseFloat(monthlyBudget);
     if (isNaN(totalBudget) || totalBudget <= 0) {
-      showGlobalAlert({
-        type: 'error',
-        title: 'Invalid Budget',
-        message: 'Please enter a valid monthly budget amount.',
-      });
+      setMonthlyBudgetError('Please enter a valid monthly budget amount');
       return;
     }
 
     // Validate category names
     const invalidCategories = categories.filter(cat => !cat.name.trim());
     if (invalidCategories.length > 0) {
-      showGlobalAlert({
-        type: 'error',
-        title: 'Invalid Category Names',
-        message: 'Please provide names for all categories.',
-      });
+      setCategoryError('Please provide names for all categories.');
       return;
     }
 
     const categoryTotal = categories.reduce((sum, cat) => sum + cat.budget, 0);
     if (categoryTotal > totalBudget) {
-      showGlobalAlert({
-        type: 'error',
-        title: 'Budget Exceeded',
-        message: 'Category budgets exceed the total monthly budget.',
-      });
+      setBudgetError('Category budgets exceed the total monthly budget.');
       return;
     }
 
@@ -165,12 +211,11 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
       }))
     });
 
-    showGlobalAlert({
+    showToast({
       type: 'success',
-      title: 'Budget Updated',
-      message: 'Family budget has been updated successfully!',
-      onConfirm: onClose,
+      message: 'Family budget updated successfully!',
     });
+    onClose();
   };
 
   const totalCategoryBudget = categories.reduce((sum, cat) => sum + cat.budget, 0);
@@ -182,7 +227,7 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
   );
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
+    <Modal visible={visible} animationType="slide" transparent={true}>
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
@@ -194,6 +239,20 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
           </TouchableOpacity>
         </View>
 
+        {/* Category Error */}
+        {categoryError ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{categoryError}</Text>
+          </View>
+        ) : null}
+
+        {/* Budget Error */}
+        {budgetError ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{budgetError}</Text>
+          </View>
+        ) : null}
+
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {/* Monthly Budget */}
           <View style={styles.section}>
@@ -201,25 +260,26 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
             <View style={styles.budgetInputContainer}>
               <DollarSign size={20} color="#6B7280" />
               <TextInput
-                style={styles.budgetInput}
+                style={[styles.budgetInput, monthlyBudgetError && styles.inputError]}
                 value={monthlyBudget}
-                onChangeText={setMonthlyBudget}
+                onChangeText={(text) => handleNumericChange(text, setMonthlyBudget, setMonthlyBudgetError)}
                 placeholder="0.00"
                 keyboardType="numeric"
                 placeholderTextColor="#9CA3AF"
               />
             </View>
+            {monthlyBudgetError ? <Text style={styles.errorText}>{monthlyBudgetError}</Text> : null}
           </View>
 
           {/* Budget Summary */}
           <View style={styles.summaryCard}>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Total Budget:</Text>
-              <Text style={styles.summaryValue}>${parseFloat(monthlyBudget || '0').toFixed(2)}</Text>
+              <Text style={styles.summaryValue}>{formatAmount(parseFloat(monthlyBudget || '0'), userCurrency)}</Text>
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Category Total:</Text>
-              <Text style={styles.summaryValue}>${totalCategoryBudget.toFixed(2)}</Text>
+              <Text style={styles.summaryValue}>{formatAmount(totalCategoryBudget, userCurrency)}</Text>
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Remaining:</Text>
@@ -227,7 +287,7 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
                 styles.summaryValue,
                 { color: remainingBudget >= 0 ? '#4facfe' : '#EF4444' }
               ]}>
-                ${remainingBudget.toFixed(2)}
+                {formatAmount(Math.abs(remainingBudget), userCurrency)}
               </Text>
             </View>
           </View>
@@ -302,10 +362,10 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
                 
                 <View style={styles.categoryStats}>
                   <Text style={styles.categorySpent}>
-                    Spent: ${category.spent.toFixed(2)}
+                    Spent: {formatAmount(category.spent, userCurrency)}
                   </Text>
                   <Text style={styles.categoryRemaining}>
-                    Remaining: ${(category.budget - category.spent).toFixed(2)}
+                    Remaining: {formatAmount(Math.abs(category.budget - category.spent), userCurrency)}
                   </Text>
                 </View>
               </View>
@@ -334,6 +394,7 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
           </View>
         </ScrollView>
       </View>
+
     </Modal>
   );
 }
@@ -415,6 +476,24 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#111827',
     marginLeft: 12,
+  },
+  inputError: {
+    borderColor: '#EF4444',
+    backgroundColor: '#FEF2F2',
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#EF4444',
+    marginTop: 8,
+    fontWeight: '500',
+  },
+  errorContainer: {
+    backgroundColor: '#FEF2F2',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#FECACA',
   },
   summaryCard: {
     backgroundColor: '#FFFFFF',

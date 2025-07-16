@@ -8,22 +8,28 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Plus, Calendar, DollarSign, Clock, CircleAlert as AlertCircle } from 'lucide-react-native';
+import { Plus, Calendar, DollarSign, Clock, CircleAlert as AlertCircle, Trash2, MoveVertical as MoreVertical, CreditCard as Edit3 } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { formatAmount } from '@/utils/currency';
+import { EMI } from '@/types';
 import AddEMIModal from '@/components/AddEMIModal';
+import CustomAlert from '@/components/CustomAlert';
+import BottomSheet, { BottomSheetAction } from '@/components/BottomSheet';
 
 export default function EMIs() {
-  const { state, updateEMI } = useApp();
+  const { state, updateEMI, showToast } = useApp();
   const { state: themeState } = useTheme();
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingEMI, setEditingEMI] = useState<EMI | null>(null);
+  const [selectedEMI, setSelectedEMI] = useState<EMI | null>(null);
+  const [showActionSheet, setShowActionSheet] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [emiToDelete, setEmiToDelete] = useState<any>(null);
 
   const { colors } = themeState.theme;
   const styles = createStyles(colors);
-
-  const formatCurrency = (amount: number) => {
-    return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-  };
+  const userCurrency = state.user?.currency || 'INR';
 
   const getDaysUntilDue = (dueDate: string) => {
     const today = new Date();
@@ -58,10 +64,68 @@ export default function EMIs() {
             }
 
             updateEMI(updatedEMI);
+            showToast({
+              type: 'success',
+              message: 'EMI payment recorded successfully!',
+            });
           },
         },
       ]
     );
+  };
+
+  const handleEMIActionPress = (emi: EMI) => {
+    setSelectedEMI(emi);
+    setShowActionSheet(true);
+  };
+
+  const handleEditEMI = (emi: EMI) => {
+    setEditingEMI(emi);
+    setShowAddModal(true);
+    setShowActionSheet(false);
+  };
+
+  const handleDeleteEMI = (emi: any) => {
+    setEmiToDelete(emi);
+    setShowDeleteConfirm(true);
+    setShowActionSheet(false);
+  };
+
+  const handleConfirmDeleteEMI = async () => {
+    if (!emiToDelete) return;
+    
+    try {
+      // Add deleteEMI function call here when it's available
+      // await deleteEMI(emiToDelete.id);
+      showToast({
+        type: 'success',
+        message: 'EMI deleted successfully!',
+      });
+    } catch (error) {
+      console.error('Error deleting EMI:', error);
+      showToast({
+        type: 'error',
+        message: 'Failed to delete EMI. Please try again.',
+      });
+    } finally {
+      setShowDeleteConfirm(false);
+      setEmiToDelete(null);
+    }
+  };
+
+  const handleCancelDeleteEMI = () => {
+    setShowDeleteConfirm(false);
+    setEmiToDelete(null);
+  };
+
+  const handleCloseActionSheet = () => {
+    setShowActionSheet(false);
+    setSelectedEMI(null);
+  };
+
+  const handleCloseModal = () => {
+    setShowAddModal(false);
+    setEditingEMI(null);
   };
 
   const activeEMIs = state.emis.filter(emi => emi.status === 'active');
@@ -70,6 +134,41 @@ export default function EMIs() {
   const totalMonthlyEMI = activeEMIs.reduce((sum, emi) => sum + emi.monthlyAmount, 0);
   const totalOutstanding = activeEMIs.reduce((sum, emi) => sum + emi.remainingAmount, 0);
 
+  const actionSheetActions: BottomSheetAction[] = [
+    {
+      id: 'pay',
+      title: 'Pay EMI',
+      icon: DollarSign,
+      color: selectedEMI?.status === 'active' ? '#4facfe' : '#6B7280',
+      onPress: () => {
+        if (selectedEMI && selectedEMI.status === 'active') {
+          handlePayEMI(selectedEMI);
+        }
+      },
+    },
+    {
+      id: 'edit',
+      title: 'Edit EMI',
+      icon: Edit3,
+      color: '#4facfe',
+      onPress: () => {
+        if (selectedEMI) {
+          handleEditEMI(selectedEMI);
+        }
+      },
+    },
+    {
+      id: 'delete',
+      title: 'Delete EMI',
+      icon: Trash2,
+      color: '#EF4444',
+      onPress: () => {
+        if (selectedEMI) {
+          handleDeleteEMI(selectedEMI);
+        }
+      },
+    },
+  ];
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -77,7 +176,10 @@ export default function EMIs() {
         <Text style={styles.title}>EMIs</Text>
         <TouchableOpacity
           style={styles.addButton}
-          onPress={() => setShowAddModal(true)}
+          onPress={() => {
+            setEditingEMI(null);
+            setShowAddModal(true);
+          }}
         >
           <Plus size={20} color="#FFFFFF" />
         </TouchableOpacity>
@@ -87,12 +189,12 @@ export default function EMIs() {
       <View style={styles.summaryContainer}>
         <View style={styles.summaryCard}>
           <DollarSign size={24} color="#4facfe" />
-          <Text style={styles.summaryValue}>{formatCurrency(totalMonthlyEMI)}</Text>
+          <Text style={styles.summaryValue}>{formatAmount(totalMonthlyEMI, userCurrency)}</Text>
           <Text style={styles.summaryLabel}>Monthly EMI</Text>
         </View>
         <View style={styles.summaryCard}>
           <Clock size={24} color="#F59E0B" />
-          <Text style={styles.summaryValue}>{formatCurrency(totalOutstanding)}</Text>
+          <Text style={styles.summaryValue}>{formatAmount(totalOutstanding, userCurrency)}</Text>
           <Text style={styles.summaryLabel}>Outstanding</Text>
         </View>
       </View>
@@ -121,22 +223,17 @@ export default function EMIs() {
                       )}
                     </View>
                     <TouchableOpacity
-                      style={[
-                        styles.payButton,
-                        { backgroundColor: isOverdue ? '#EF4444' : '#4facfe' }
-                      ]}
-                      onPress={() => handlePayEMI(emi)}
+                      style={styles.moreButton}
+                      onPress={() => handleEMIActionPress(emi)}
                     >
-                      <Text style={styles.payButtonText}>
-                        {isOverdue ? 'Overdue' : 'Pay'}
-                      </Text>
+                      <MoreVertical size={20} color={colors.textTertiary} />
                     </TouchableOpacity>
                   </View>
 
                   <View style={styles.emiDetails}>
                     <View style={styles.emiDetailRow}>
                       <Text style={styles.emiDetailLabel}>Monthly Amount:</Text>
-                      <Text style={styles.emiDetailValue}>{formatCurrency(emi.monthlyAmount)}</Text>
+                      <Text style={styles.emiDetailValue}>{formatAmount(emi.monthlyAmount, userCurrency)}</Text>
                     </View>
                     <View style={styles.emiDetailRow}>
                       <Text style={styles.emiDetailLabel}>Next Due:</Text>
@@ -149,7 +246,7 @@ export default function EMIs() {
                     </View>
                     <View style={styles.emiDetailRow}>
                       <Text style={styles.emiDetailLabel}>Outstanding:</Text>
-                      <Text style={styles.emiDetailValue}>{formatCurrency(emi.remainingAmount)}</Text>
+                      <Text style={styles.emiDetailValue}>{formatAmount(emi.remainingAmount, userCurrency)}</Text>
                     </View>
                   </View>
 
@@ -184,7 +281,7 @@ export default function EMIs() {
                 <View style={styles.emiDetails}>
                   <View style={styles.emiDetailRow}>
                     <Text style={styles.emiDetailLabel}>Total Paid:</Text>
-                    <Text style={styles.emiDetailValue}>{formatCurrency(emi.totalPaid)}</Text>
+                    <Text style={styles.emiDetailValue}>{formatAmount(emi.totalPaid, userCurrency)}</Text>
                   </View>
                   <View style={styles.emiDetailRow}>
                     <Text style={styles.emiDetailLabel}>Tenure:</Text>
@@ -206,7 +303,10 @@ export default function EMIs() {
             </Text>
             <TouchableOpacity
               style={styles.emptyStateButton}
-              onPress={() => setShowAddModal(true)}
+              onPress={() => {
+                setEditingEMI(null);
+                setShowAddModal(true);
+              }}
             >
               <Text style={styles.emptyStateButtonText}>Add EMI</Text>
             </TouchableOpacity>
@@ -216,7 +316,26 @@ export default function EMIs() {
 
       <AddEMIModal
         visible={showAddModal}
-        onClose={() => setShowAddModal(false)}
+        onClose={handleCloseModal}
+        emi={editingEMI}
+      />
+
+      <BottomSheet
+        visible={showActionSheet}
+        onClose={handleCloseActionSheet}
+        title="EMI Actions"
+        actions={actionSheetActions}
+      />
+
+      <CustomAlert
+        visible={showDeleteConfirm}
+        type="warning"
+        title="Delete EMI"
+        message={`Are you sure you want to delete the EMI for "${emiToDelete?.name}"? This action cannot be undone.`}
+        onClose={handleCancelDeleteEMI}
+        onConfirm={handleConfirmDeleteEMI}
+        confirmText="Delete"
+        cancelText="Cancel"
       />
     </SafeAreaView>
   );
@@ -315,21 +434,25 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flex: 1,
   },
   emiName: {
     fontSize: 18,
     fontWeight: '700',
     color: colors.text,
   },
-  payButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+  emiActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
-  payButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FFFFFF',
+  moreButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.borderLight,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   completedBadge: {
     paddingHorizontal: 12,

@@ -8,25 +8,20 @@ import {
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  DollarSign,
-  TrendingUp,
-  TrendingDown,
-  PiggyBank,
-  Plus,
-  Bell,
-  Calendar,
-} from 'lucide-react-native';
+import { DollarSign, TrendingUp, TrendingDown, PiggyBank, Plus, Bell, Calendar, CreditCard as Edit3, Trash2 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useApp } from '@/contexts/AppContext';
 import { useGuest } from '@/contexts/GuestContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { formatAmount } from '@/utils/currency';
 import { Transaction } from '@/types';
 import StatCard from '@/components/StatCard';
 import TransactionItem from '@/components/TransactionItem';
 import AddTransactionModal from '@/components/AddTransactionModal';
 import GuestModeIndicator from '@/components/GuestModeIndicator';
+import BottomSheet, { BottomSheetAction } from '@/components/BottomSheet';
+import CustomAlert from '@/components/CustomAlert';
 
 export default function Dashboard() {
   const { state, calculateStats, deleteTransaction } = useApp();
@@ -36,23 +31,54 @@ export default function Dashboard() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [showActionSheet, setShowActionSheet] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
 
   const { colors } = themeState.theme;
   const styles = createStyles(colors);
 
   const recentTransactions = state.transactions.slice(0, 5);
-  const upcomingEMIs = state.emis
-    .filter(emi => emi.status === 'active')
-    .slice(0, 3);
+  const userCurrency = state.user?.currency || 'INR';
+  
+  // Get only the next upcoming EMI for each unique loan
+  const getUpcomingEMIs = () => {
+    const activeEMIs = state.emis.filter(emi => emi.status === 'active');
+    
+    // Group EMIs by loan name
+    const emiGroups = activeEMIs.reduce((groups, emi) => {
+      const loanName = emi.name;
+      if (!groups[loanName]) {
+        groups[loanName] = [];
+      }
+      groups[loanName].push(emi);
+      return groups;
+    }, {} as Record<string, typeof activeEMIs>);
+    
+    // For each loan, find the EMI with the earliest next due date
+    const upcomingEMIs = Object.values(emiGroups).map(emiGroup => {
+      return emiGroup.reduce((earliest, current) => {
+        const earliestDate = new Date(earliest.nextDueDate);
+        const currentDate = new Date(current.nextDueDate);
+        return currentDate < earliestDate ? current : earliest;
+      });
+    });
+    
+    // Sort by next due date (most imminent first)
+    return upcomingEMIs.sort((a, b) => {
+      const dateA = new Date(a.nextDueDate);
+      const dateB = new Date(b.nextDueDate);
+      return dateA.getTime() - dateB.getTime();
+    });
+  };
+  
+  const upcomingEMIs = getUpcomingEMIs();
 
   const onRefresh = async () => {
     setRefreshing(true);
     calculateStats();
     setTimeout(() => setRefreshing(false), 1000);
-  };
-
-  const formatCurrency = (amount: number) => {
-    return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
   };
 
   const getDaysUntilDue = (dueDate: string) => {
@@ -87,11 +113,45 @@ export default function Dashboard() {
   };
 
   const handleDeleteTransaction = async (transaction: Transaction) => {
+    setTransactionToDelete(transaction);
+    setShowDeleteConfirm(true);
+    setShowActionSheet(false);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!transactionToDelete) return;
+    
     try {
-      await deleteTransaction(transaction.id);
+      await deleteTransaction(transactionToDelete.id);
+      showToast({
+        type: 'success',
+        message: 'Transaction deleted successfully!',
+      });
     } catch (error) {
       console.error('Error deleting transaction:', error);
+      showToast({
+        type: 'error',
+        message: 'Failed to delete transaction. Please try again.',
+      });
+    } finally {
+      setShowDeleteConfirm(false);
+      setTransactionToDelete(null);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(false);
+    setTransactionToDelete(null);
+  };
+
+  const handleTransactionPress = (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+    setShowActionSheet(true);
+  };
+
+  const handleCloseActionSheet = () => {
+    setShowActionSheet(false);
+    setSelectedTransaction(null);
   };
 
   const handleCloseModal = () => {
@@ -102,6 +162,31 @@ export default function Dashboard() {
   const handleSeeAllTransactions = () => {
     router.push('/(tabs)/transactions');
   };
+
+  const actionSheetActions: BottomSheetAction[] = [
+    {
+      id: 'edit',
+      title: 'Edit Transaction',
+      icon: Edit3,
+      color: '#4facfe',
+      onPress: () => {
+        if (selectedTransaction) {
+          handleEditTransaction(selectedTransaction);
+        }
+      },
+    },
+    {
+      id: 'delete',
+      title: 'Delete Transaction',
+      icon: Trash2,
+      color: '#EF4444',
+      onPress: () => {
+        if (selectedTransaction) {
+          handleDeleteTransaction(selectedTransaction);
+        }
+      },
+    },
+  ];
 
   return (
     <SafeAreaView style={styles.container}>
@@ -130,7 +215,7 @@ export default function Dashboard() {
         <View style={styles.statsContainer}>
           <StatCard
             title="Total Balance"
-            value={formatCurrency(state.monthlyStats.netSavings)}
+            value={formatAmount(state.monthlyStats.netSavings, userCurrency)}
             subtitle="This month"
             icon={DollarSign}
             color="#4facfe"
@@ -141,7 +226,7 @@ export default function Dashboard() {
             <View style={styles.statCardHalf}>
               <StatCard
                 title="Income"
-                value={formatCurrency(state.monthlyStats.totalIncome)}
+                value={formatAmount(state.monthlyStats.totalIncome, userCurrency)}
                 icon={TrendingUp}
                 color="#4facfe"
                 backgroundColor={colors.surface}
@@ -150,7 +235,7 @@ export default function Dashboard() {
             <View style={styles.statCardHalf}>
               <StatCard
                 title="Expenses"
-                value={formatCurrency(state.monthlyStats.totalExpenses)}
+                value={formatAmount(state.monthlyStats.totalExpenses, userCurrency)}
                 icon={TrendingDown}
                 color="#EF4444"
                 backgroundColor={colors.surface}
@@ -161,7 +246,7 @@ export default function Dashboard() {
           <StatCard
             title="Budget Used"
             value={`${state.monthlyStats.budgetUsed.toFixed(2)}%`}
-            subtitle={`${formatCurrency(state.monthlyStats.totalExpenses)} of ${formatCurrency(state.user?.monthlyBudget || 0)}`}
+           subtitle={`${formatAmount(state.monthlyStats.totalExpenses, userCurrency)} of ${formatAmount(state.user?.monthlyBudget || 0, userCurrency)}`}
             icon={PiggyBank}
             color={state.monthlyStats.budgetUsed > 80 ? '#EF4444' : '#4facfe'}
             backgroundColor={colors.surface}
@@ -186,9 +271,7 @@ export default function Dashboard() {
                   transaction={transaction}
                   categoryColor={category?.color}
                   categoryIcon={category?.icon}
-                  onEdit={handleEditTransaction}
-                  onDelete={handleDeleteTransaction}
-                  showActions={true}
+                  onMorePress={handleTransactionPress}
                 />
               );
             })
@@ -219,7 +302,7 @@ export default function Dashboard() {
                     <Text style={styles.emiName}>{emi.name}</Text>
                   </View>
                   <View style={styles.emiDetails}>
-                    <Text style={styles.emiAmount}>{formatCurrency(emi.monthlyAmount)}</Text>
+                    <Text style={styles.emiAmount}>{formatAmount(emi.monthlyAmount, userCurrency)}</Text>
                     <Text style={[
                       styles.emiDue,
                       { color: daysUntilDue <= 3 ? '#EF4444' : colors.textTertiary }
@@ -246,13 +329,31 @@ export default function Dashboard() {
         }}
         activeOpacity={0.8}
       >
-        <Plus size={24} color="#FFFFFF" />
+        <Plus size={24} color="#fff" />
       </TouchableOpacity>
 
       <AddTransactionModal
         visible={showAddModal}
         onClose={handleCloseModal}
         transaction={editingTransaction}
+      />
+
+      <BottomSheet
+        visible={showActionSheet}
+        onClose={handleCloseActionSheet}
+        title="Transaction Actions"
+        actions={actionSheetActions}
+      />
+
+      <CustomAlert
+        visible={showDeleteConfirm}
+        type="warning"
+        title="Delete Transaction"
+        message={`Are you sure you want to delete "${transactionToDelete?.description}"? This action cannot be undone.`}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        confirmText="Delete"
+        cancelText="Cancel"
       />
     </SafeAreaView>
   );

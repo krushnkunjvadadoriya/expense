@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,21 +9,49 @@ import {
   ScrollView,
   Platform,
 } from 'react-native';
-import { X, Check, Calculator } from 'lucide-react-native';
+import { X, Check, Calculator, Calendar, ChevronDown } from 'lucide-react-native';
+import DatePicker from '@/components/DatePicker';
+import { formatAmount } from '@/utils/currency';
 import { useApp } from '@/contexts/AppContext';
+import { EMI } from '@/types';
 
 interface AddEMIModalProps {
   visible: boolean;
   onClose: () => void;
+  emi?: EMI | null;
 }
 
-export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
-  const { addEMI, showGlobalAlert } = useApp();
+export default function AddEMIModal({ visible, onClose, emi }: AddEMIModalProps) {
+  const { addEMI, updateEMI, showToast, state } = useApp();
   const [name, setName] = useState('');
   const [principal, setPrincipal] = useState('');
   const [interestRate, setInterestRate] = useState('');
   const [tenure, setTenure] = useState('');
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  
+  // Error states
+  const [nameError, setNameError] = useState('');
+  const [principalError, setPrincipalError] = useState('');
+  const [interestRateError, setInterestRateError] = useState('');
+  const [tenureError, setTenureError] = useState('');
+
+  const isEditing = !!emi;
+  const userCurrency = state.user?.currency || 'INR';
+
+  // Pre-fill form when editing
+  useEffect(() => {
+    if (emi && visible) {
+      setName(emi.name);
+      setPrincipal(emi.principal.toString());
+      setInterestRate(emi.interestRate.toString());
+      setTenure(emi.tenure.toString());
+      setStartDate(emi.startDate);
+    } else if (!emi && visible) {
+      // Reset form for new EMI
+      resetForm();
+    }
+  }, [emi, visible]);
 
   const calculateEMI = (p: number, r: number, n: number) => {
     const monthlyRate = r / (12 * 100);
@@ -56,24 +84,111 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
     setInterestRate('');
     setTenure('');
     setStartDate(new Date().toISOString().split('T')[0]);
+    setNameError('');
+    setPrincipalError('');
+    setInterestRateError('');
+    setTenureError('');
+  };
+
+  const formatDateForDisplay = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const handleDateSelect = (selectedDate: string) => {
+    setStartDate(selectedDate);
+    setShowDatePicker(false);
+  };
+
+  const generateDateOptions = () => {
+    const dates = [];
+    const today = new Date();
+    
+    // Add today and next 30 days
+    for (let i = 0; i < 31; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      dates.push(date.toISOString().split('T')[0]);
+    }
+    
+    return dates;
+  };
+
+  // Function to validate and format numeric input (allows decimals)
+  const handleNumericChange = (text: string, setter: (value: string) => void, errorSetter: (error: string) => void) => {
+    // Remove any non-numeric characters except decimal point
+    let cleanedText = text.replace(/[^0-9.]/g, '');
+    
+    // Ensure only one decimal point
+    const decimalCount = (cleanedText.match(/\./g) || []).length;
+    if (decimalCount > 1) {
+      const firstDecimalIndex = cleanedText.indexOf('.');
+      cleanedText = cleanedText.substring(0, firstDecimalIndex + 1) + 
+                   cleanedText.substring(firstDecimalIndex + 1).replace(/\./g, '');
+    }
+    
+    // If starts with decimal point, prefix with 0
+    if (cleanedText.startsWith('.')) {
+      cleanedText = '0' + cleanedText;
+    }
+    
+    // Limit to 2 decimal places for principal and interest rate
+    const parts = cleanedText.split('.');
+    if (parts.length === 2 && parts[1].length > 2) {
+      cleanedText = parts[0] + '.' + parts[1].substring(0, 2);
+    }
+    
+    setter(cleanedText);
+    errorSetter('');
+  };
+
+  // Function to validate and format integer input (tenure)
+  const handleIntegerChange = (text: string, setter: (value: string) => void, errorSetter: (error: string) => void) => {
+    // Remove any non-numeric characters
+    const cleanedText = text.replace(/[^0-9]/g, '');
+    setter(cleanedText);
+    errorSetter('');
   };
 
   const handleSubmit = () => {
+    // Reset errors
+    setNameError('');
+    setPrincipalError('');
+    setInterestRateError('');
+    setTenureError('');
+    
+    let hasErrors = false;
+
     if (!name || !principal || !interestRate || !tenure) {
-      showGlobalAlert({
-        type: 'error',
-        title: 'Missing Information',
-        message: 'Please fill in all fields to continue.',
-      });
+      if (!name.trim()) {
+        setNameError('EMI name is required');
+        hasErrors = true;
+      }
+      if (!principal) {
+        setPrincipalError('Principal amount is required');
+        hasErrors = true;
+      }
+      if (!interestRate) {
+        setInterestRateError('Interest rate is required');
+        hasErrors = true;
+      }
+      if (!tenure) {
+        setTenureError('Tenure is required');
+        hasErrors = true;
+      }
       return;
     }
 
     if (!name.trim()) {
-      showGlobalAlert({
-        type: 'error',
-        title: 'Invalid EMI Name',
-        message: 'Please enter a valid name for this EMI.',
-      });
+      setNameError('Please enter a valid EMI name');
+      hasErrors = true;
+    }
+
+    if (hasErrors) {
       return;
     }
 
@@ -82,60 +197,73 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
     const n = parseInt(tenure);
 
     if (isNaN(p) || p <= 0) {
-      showGlobalAlert({
-        type: 'error',
-        title: 'Invalid Principal',
-        message: 'Please enter a valid principal amount greater than zero.',
-      });
+      setPrincipalError('Please enter a valid amount greater than zero');
       return;
     }
 
     if (isNaN(r) || r <= 0) {
-      showGlobalAlert({
-        type: 'error',
-        title: 'Invalid Interest Rate',
-        message: 'Please enter a valid interest rate greater than zero.',
-      });
+      setInterestRateError('Please enter a valid interest rate greater than zero');
       return;
     }
 
     if (isNaN(n) || n <= 0) {
-      showGlobalAlert({
-        type: 'error',
-        title: 'Invalid Tenure',
-        message: 'Please enter a valid tenure in months.',
-      });
+      setTenureError('Please enter a valid tenure in months');
       return;
     }
 
     try {
       const monthlyAmount = calculateEMI(p, r, n);
 
-      addEMI({
-        name: name.trim(),
-        principal: p,
-        interestRate: r,
-        tenure: n,
-        monthlyAmount,
-        startDate,
-        nextDueDate: getNextDueDate(),
-        totalPaid: 0,
-        remainingAmount: p,
-        status: 'active',
-      });
+      if (isEditing && emi) {
+        // Update existing EMI
+        const updatedEMI: EMI = {
+          ...emi,
+          name: name.trim(),
+          principal: p,
+          interestRate: r,
+          tenure: n,
+          monthlyAmount,
+          startDate,
+          nextDueDate: getNextDueDate(),
+          // Keep existing payment data
+          totalPaid: emi.totalPaid,
+          remainingAmount: emi.remainingAmount,
+          status: emi.status,
+        };
+        
+        updateEMI(updatedEMI);
+        showToast({
+          type: 'success',
+          message: 'EMI updated successfully!',
+        });
+      } else {
+        // Add new EMI
+        addEMI({
+          name: name.trim(),
+          principal: p,
+          interestRate: r,
+          tenure: n,
+          monthlyAmount,
+          startDate,
+          nextDueDate: getNextDueDate(),
+          totalPaid: 0,
+          remainingAmount: p,
+          status: 'active',
+        });
+        showToast({
+          type: 'success',
+          message: 'EMI added successfully!',
+        });
+      }
 
-      showGlobalAlert({
-        type: 'success',
-        title: 'EMI Added',
-        message: 'Your EMI has been successfully added.',
-        onConfirm: onClose,
-      });
-      resetForm();
+      if (!isEditing) {
+        resetForm();
+      }
+      onClose();
     } catch (error) {
-      showGlobalAlert({
+      showToast({
         type: 'error',
-        title: 'Error',
-        message: 'Failed to add EMI. Please try again.',
+        message: `Failed to ${isEditing ? 'update' : 'add'} EMI. Please try again.`,
       });
     }
   };
@@ -153,7 +281,7 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <X size={24} color="#6B7280" />
           </TouchableOpacity>
-          <Text style={styles.title}>Add EMI</Text>
+          <Text style={styles.title}>{isEditing ? 'Edit EMI' : 'Add EMI'}</Text>
           <TouchableOpacity onPress={handleSubmit} style={styles.saveButton}>
             <Check size={24} color="#4facfe" />
           </TouchableOpacity>
@@ -164,63 +292,73 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>EMI Name *</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, nameError && styles.inputError]}
               value={name}
-              onChangeText={setName}
+              onChangeText={(text) => {
+                setName(text);
+                if (nameError) setNameError('');
+              }}
               placeholder="e.g., Home Loan, Car Loan"
               placeholderTextColor="#9CA3AF"
             />
+            {nameError ? <Text style={styles.errorText}>{nameError}</Text> : null}
           </View>
 
           {/* Principal Amount */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Principal Amount *</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, principalError && styles.inputError]}
               value={principal}
-              onChangeText={setPrincipal}
+              onChangeText={(text) => handleNumericChange(text, setPrincipal, setPrincipalError)}
               placeholder="0"
               keyboardType="numeric"
               placeholderTextColor="#9CA3AF"
             />
+            {principalError ? <Text style={styles.errorText}>{principalError}</Text> : null}
           </View>
 
           {/* Interest Rate */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Interest Rate (% per annum) *</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, interestRateError && styles.inputError]}
               value={interestRate}
-              onChangeText={setInterestRate}
+              onChangeText={(text) => handleNumericChange(text, setInterestRate, setInterestRateError)}
               placeholder="0.0"
               keyboardType="numeric"
               placeholderTextColor="#9CA3AF"
             />
+            {interestRateError ? <Text style={styles.errorText}>{interestRateError}</Text> : null}
           </View>
 
           {/* Tenure */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Tenure (months) *</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, tenureError && styles.inputError]}
               value={tenure}
-              onChangeText={setTenure}
+              onChangeText={(text) => handleIntegerChange(text, setTenure, setTenureError)}
               placeholder="0"
               keyboardType="numeric"
               placeholderTextColor="#9CA3AF"
             />
+            {tenureError ? <Text style={styles.errorText}>{tenureError}</Text> : null}
           </View>
 
           {/* Start Date */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Start Date</Text>
-            <TextInput
-              style={styles.input}
-              value={startDate}
-              onChangeText={setStartDate}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor="#9CA3AF"
-            />
+            <TouchableOpacity
+              style={styles.dateButton}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <Calendar size={20} color="#6B7280" />
+              <Text style={styles.dateButtonText}>
+                {formatDateForDisplay(startDate)}
+              </Text>
+              <ChevronDown size={20} color="#6B7280" />
+            </TouchableOpacity>
           </View>
 
           {/* EMI Calculator */}
@@ -232,23 +370,38 @@ export default function AddEMIModal({ visible, onClose }: AddEMIModalProps) {
               </View>
               <View style={styles.calculatorRow}>
                 <Text style={styles.calculatorLabel}>Monthly EMI:</Text>
-                <Text style={styles.calculatorValue}>${monthlyAmount.toFixed(2)}</Text>
+                <Text style={styles.calculatorValue}>
+                  {formatAmount(monthlyAmount, userCurrency)}
+                </Text>
               </View>
               <View style={styles.calculatorRow}>
                 <Text style={styles.calculatorLabel}>Total Amount:</Text>
                 <Text style={styles.calculatorValue}>
-                  ${(monthlyAmount * parseInt(tenure || '0')).toFixed(2)}
+                  {formatAmount(monthlyAmount * parseInt(tenure || '0'), userCurrency)}
                 </Text>
               </View>
               <View style={styles.calculatorRow}>
                 <Text style={styles.calculatorLabel}>Total Interest:</Text>
                 <Text style={styles.calculatorValue}>
-                  ${((monthlyAmount * parseInt(tenure || '0')) - parseFloat(principal || '0')).toFixed(2)}
+                  {formatAmount((monthlyAmount * parseInt(tenure || '0')) - parseFloat(principal || '0'), userCurrency)}
                 </Text>
               </View>
             </View>
           )}
         </ScrollView>
+
+        {/* Date Picker */}
+        <DatePicker
+          visible={showDatePicker}
+          onClose={() => setShowDatePicker(false)}
+          selectedDate={startDate}
+          onDateSelect={(selectedDate) => {
+            setStartDate(selectedDate);
+            setShowDatePicker(false);
+          }}
+          title="Select EMI Start Date"
+          minDate={new Date().toISOString().split('T')[0]}
+        />
       </View>
     </Modal>
   );
@@ -301,6 +454,34 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#E5E7EB',
+  },
+  inputError: {
+    borderColor: '#EF4444',
+    backgroundColor: '#FEF2F2',
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#EF4444',
+    marginTop: 8,
+    fontWeight: '500',
+  },
+  dateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    justifyContent: 'space-between',
+  },
+  dateButtonText: {
+    fontSize: 16,
+    color: '#111827',
+    fontWeight: '500',
+    flex: 1,
+    marginLeft: 12,
   },
   calculatorCard: {
     backgroundColor: '#FFFFFF',

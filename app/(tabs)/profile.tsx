@@ -6,38 +6,56 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { User, Settings, Bell, Download, CircleHelp as HelpCircle, Shield, Trash2, CreditCard as Edit3, Check, X, LogOut, Smartphone, Sun, Moon, Monitor } from 'lucide-react-native';
+import { User, Settings, Bell, Download, CircleHelp as HelpCircle, Shield, Trash2, Pencil, Check, X, LogOut, Smartphone, Sun, Moon, Monitor, CreditCard, Tag, DollarSign } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGuest } from '@/contexts/GuestContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { router } from 'expo-router';
+import { formatAmount, formatAmountWithSign, SUPPORTED_CURRENCIES, getCurrencyName } from '@/utils/currency';
 import ChangePinModal from '@/components/ChangePinModal';
+import BottomSheet, { BottomSheetAction } from '@/components/BottomSheet';
+import CustomAlert from '@/components/CustomAlert';
 
 export default function Profile() {
-  const { state, dispatch } = useApp();
+  const { state, dispatch, showToast, calculateStats, updateUserCurrency } = useApp();
   const { logout, state: authState } = useAuth();
   const { isGuest } = useGuest();
   const { state: themeState, setColorScheme, toggleTheme } = useTheme();
   const [editingBudget, setEditingBudget] = useState(false);
   const [budgetInput, setBudgetInput] = useState(state.user?.monthlyBudget.toString() || '');
   const [showChangePinModal, setShowChangePinModal] = useState(false);
+  const [showCurrencySelector, setShowCurrencySelector] = useState(false);
+  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+  const [showLogoutAlert, setShowLogoutAlert] = useState(false);
 
   const { colors } = themeState.theme;
 
   const handleBudgetSave = () => {
     const newBudget = parseFloat(budgetInput);
     if (isNaN(newBudget) || newBudget <= 0) {
-      Alert.alert('Error', 'Please enter a valid budget amount');
+      showToast({
+        type: 'error',
+        message: 'Please enter a valid budget amount',
+      });
       return;
     }
 
     if (state.user) {
       const updatedUser = { ...state.user, monthlyBudget: newBudget };
       dispatch({ type: 'SET_USER', payload: updatedUser });
+      
+      // Recalculate stats with the new budget
+      setTimeout(() => {
+        calculateStats();
+      }, 100);
+      
+      showToast({
+        type: 'success',
+        message: 'Budget updated successfully!',
+      });
     }
     setEditingBudget(false);
   };
@@ -47,65 +65,106 @@ export default function Profile() {
     setEditingBudget(false);
   };
 
+  // Function to validate and format budget input
+  const handleBudgetInputChange = (text: string) => {
+    // Remove any non-numeric characters except decimal point
+    let cleanedText = text.replace(/[^0-9.]/g, '');
+    
+    // Ensure only one decimal point
+    const decimalCount = (cleanedText.match(/\./g) || []).length;
+    if (decimalCount > 1) {
+      const firstDecimalIndex = cleanedText.indexOf('.');
+      cleanedText = cleanedText.substring(0, firstDecimalIndex + 1) + 
+                   cleanedText.substring(firstDecimalIndex + 1).replace(/\./g, '');
+    }
+    
+    // If starts with decimal point, prefix with 0
+    if (cleanedText.startsWith('.')) {
+      cleanedText = '0' + cleanedText;
+    }
+    
+    // Limit to 2 decimal places
+    const parts = cleanedText.split('.');
+    if (parts.length === 2 && parts[1].length > 2) {
+      cleanedText = parts[0] + '.' + parts[1].substring(0, 2);
+    }
+    
+    setBudgetInput(cleanedText);
+  };
   const handleExportData = () => {
-    Alert.alert(
-      'Export Data',
-      'Export functionality will be available in a future update.',
-      [{ text: 'OK' }]
-    );
+    showToast({
+      type: 'info',
+      message: 'Export functionality will be available in a future update.',
+    });
   };
 
   const handleDeleteData = () => {
-    Alert.alert(
-      'Delete All Data',
-      'Are you sure you want to delete all your data? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            // Clear all data
-            dispatch({ type: 'SET_TRANSACTIONS', payload: [] });
-            dispatch({ type: 'SET_EMIS', payload: [] });
-            Alert.alert('Success', 'All data has been deleted');
-          },
-        },
-      ]
-    );
+    setShowDeleteAlert(true);
+  };
+
+  const handleConfirmDeleteData = () => {
+    // Clear all data
+    dispatch({ type: 'SET_TRANSACTIONS', payload: [] });
+    dispatch({ type: 'SET_EMIS', payload: [] });
+    showToast({
+      type: 'success',
+      message: 'All data has been deleted',
+    });
+    setShowDeleteAlert(false);
   };
 
   const handleLogout = () => {
     if (isGuest) {
-      Alert.alert(
-        'Create Account',
-        'You are currently using the app as a guest. Would you like to create an account to save your data?',
-        [
-          { text: 'Continue as Guest', style: 'cancel' },
-          {
-            text: 'Create Account',
-            onPress: () => router.push('/(auth)/email-entry'),
-          },
-        ]
-      );
+      setShowLogoutAlert(true);
     } else {
-      Alert.alert(
-        'Sign Out',
-        'Are you sure you want to sign out?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Sign Out',
-            style: 'destructive',
-            onPress: logout,
-          },
-        ]
-      );
+      setShowLogoutAlert(true);
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+  const handleConfirmLogout = () => {
+    if (isGuest) {
+      router.push('/(auth)/email-entry');
+    } else {
+      logout();
+    }
+    setShowLogoutAlert(false);
+  };
+
+  const handleCurrencyChange = async (currencyCode: string) => {
+    try {
+      await updateUserCurrency(currencyCode);
+      showToast({
+        type: 'success',
+        message: `Currency changed to ${getCurrencyName(currencyCode)}`,
+      });
+      setShowCurrencySelector(false);
+      
+      // Recalculate stats to update display
+      setTimeout(() => {
+        calculateStats();
+      }, 100);
+    } catch (error) {
+      showToast({
+        type: 'error',
+        message: 'Failed to update currency. Please try again.',
+      });
+    }
+  };
+
+  // Function to determine font size based on savings amount
+  const getSavingsFontSize = (amount: number) => {
+    const absAmount = Math.abs(amount);
+    const amountString = absAmount.toString();
+    
+    if (absAmount >= 1000000) {
+      return 16; // Very large amounts (millions)
+    } else if (absAmount >= 100000) {
+      return 18; // Large amounts (hundreds of thousands)
+    } else if (absAmount >= 10000) {
+      return 20; // Medium amounts (tens of thousands)
+    } else {
+      return 22; // Default size for smaller amounts
+    }
   };
 
   const formatMobile = (mobile: string) => {
@@ -124,6 +183,16 @@ export default function Profile() {
 
   const styles = createStyles(colors);
 
+  const userCurrency = state.user?.currency || 'INR';
+
+  const currencyActions: BottomSheetAction[] = SUPPORTED_CURRENCIES.map(currency => ({
+    id: currency.code,
+    title: `${currency.name} (${currency.symbol})`,
+    icon: DollarSign,
+    color: currency.code === userCurrency ? '#4facfe' : colors.text,
+    onPress: () => handleCurrencyChange(currency.code),
+  }));
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -141,7 +210,21 @@ export default function Profile() {
             <User size={32} color="#4facfe" />
           </View>
           <View style={styles.userInfo}>
-            <Text style={styles.userName}>{getUserDisplayName()}</Text>
+            <View style={styles.userNameAndPlan}>
+              <Text style={styles.userName}>{getUserDisplayName()}</Text>
+              {/* Plan Badge */}
+              <View style={[
+                styles.planBadge,
+                { backgroundColor: isGuest ? '#FEF3C7' : '#DBEAFE' }
+              ]}>
+                <Text style={[
+                  styles.planText,
+                  { color: isGuest ? '#92400E' : '#1E40AF' }
+                ]}>
+                  {isGuest ? 'Free Plan' : 'Premium Plan'}
+                </Text>
+              </View>
+            </View>
             {!isGuest && (
               <View style={styles.contactInfo}>
                 {authState.user?.mobile && (
@@ -164,7 +247,7 @@ export default function Profile() {
                 style={styles.createAccountButton}
                 onPress={() => router.push('/(auth)/email-entry')}
               >
-                <Text style={styles.createAccountText}>Create Account to Save Data</Text>
+                <Text style={styles.createAccountText}>Save Your Data</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -187,8 +270,20 @@ export default function Profile() {
               <Text style={styles.statLabel}>Categories</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={[styles.statValue, { color: state.monthlyStats.netSavings >= 0 ? '#4facfe' : '#EF4444' }]}>
-                {formatCurrency(Math.abs(state.monthlyStats.netSavings))}
+              <Text 
+                style={[
+                  styles.statValue, 
+                  { 
+                    color: state.monthlyStats.netSavings >= 0 ? '#4facfe' : '#EF4444',
+                    fontSize: getSavingsFontSize(state.monthlyStats.netSavings),
+                    lineHeight: getSavingsFontSize(state.monthlyStats.netSavings) + 4,
+                  }
+                ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit={true}
+                minimumFontScale={0.6}
+              >
+                {formatAmountWithSign(state.monthlyStats.netSavings, userCurrency)}
               </Text>
               <Text style={styles.statLabel}>
                 {state.monthlyStats.netSavings >= 0 ? 'Savings' : 'Deficit'}
@@ -205,7 +300,7 @@ export default function Profile() {
               <Text style={styles.budgetLabel}>Monthly Budget</Text>
               {!editingBudget && (
                 <TouchableOpacity onPress={() => setEditingBudget(true)}>
-                  <Edit3 size={16} color={colors.textTertiary} />
+                  <Pencil size={16} color={colors.textTertiary} />
                 </TouchableOpacity>
               )}
             </View>
@@ -215,7 +310,7 @@ export default function Profile() {
                 <TextInput
                   style={styles.budgetInput}
                   value={budgetInput}
-                  onChangeText={setBudgetInput}
+                  onChangeText={handleBudgetInputChange}
                   keyboardType="numeric"
                   placeholder="0"
                   placeholderTextColor={colors.textTertiary}
@@ -231,7 +326,7 @@ export default function Profile() {
               </View>
             ) : (
               <Text style={styles.budgetValue}>
-                {formatCurrency(state.user?.monthlyBudget || 0)}
+                {formatAmount(state.user?.monthlyBudget || 0, userCurrency)}
               </Text>
             )}
             
@@ -251,6 +346,25 @@ export default function Profile() {
                 {state.monthlyStats.budgetUsed.toFixed(1)}% used this month
               </Text>
             </View>
+          </View>
+        </View>
+
+        {/* Currency Settings */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Currency Settings</Text>
+          <View style={styles.menuContainer}>
+            <TouchableOpacity 
+              style={styles.menuItem} 
+              onPress={() => setShowCurrencySelector(true)}
+            >
+              <DollarSign size={20} color={colors.textTertiary} />
+              <View style={styles.currencyInfo}>
+                <Text style={styles.menuItemText}>Currency</Text>
+                <Text style={styles.currencyValue}>
+                  {getCurrencyName(userCurrency)} ({SUPPORTED_CURRENCIES.find(c => c.code === userCurrency)?.symbol})
+                </Text>
+              </View>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -336,6 +450,24 @@ export default function Profile() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Settings</Text>
           <View style={styles.menuContainer}>
+            <TouchableOpacity style={styles.menuItem} onPress={() => {
+              router.push('/(tabs)/categories');
+            }}>
+              <Tag size={20} color={colors.textTertiary} />
+              <Text style={styles.menuItemText}>Manage Categories</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.menuItem} onPress={() => {
+              // TODO: Navigate to subscription page
+              showToast({
+                type: 'info',
+                message: 'Subscription page coming soon!',
+              });
+            }}>
+              <CreditCard size={20} color={colors.textTertiary} />
+              <Text style={styles.menuItemText}>Subscription</Text>
+            </TouchableOpacity>
+            
             <TouchableOpacity style={styles.menuItem}>
               <Bell size={20} color={colors.textTertiary} />
               <Text style={styles.menuItemText}>Notifications</Text>
@@ -370,6 +502,41 @@ export default function Profile() {
           onClose={() => setShowChangePinModal(false)}
         />
       )}
+      
+      {/* Delete Data Confirmation */}
+      <CustomAlert
+        visible={showDeleteAlert}
+        type="error"
+        title="Delete All Data"
+        message="Are you sure you want to delete all your data? This action cannot be undone."
+        onClose={() => setShowDeleteAlert(false)}
+        onConfirm={handleConfirmDeleteData}
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
+      
+      {/* Logout Confirmation */}
+      <CustomAlert
+        visible={showLogoutAlert}
+        type={isGuest ? "info" : "warning"}
+        title={isGuest ? "Create Account" : "Sign Out"}
+        message={isGuest 
+          ? "You are currently using the app as a guest. Would you like to create an account to save your data?"
+          : "Are you sure you want to sign out?"
+        }
+        onClose={() => setShowLogoutAlert(false)}
+        onConfirm={handleConfirmLogout}
+        confirmText={isGuest ? "Create Account" : "Sign Out"}
+        cancelText={isGuest ? "Continue as Guest" : "Cancel"}
+      />
+      
+      {/* Currency Selector */}
+      <BottomSheet
+        visible={showCurrencySelector}
+        onClose={() => setShowCurrencySelector(false)}
+        title="Select Currency"
+        actions={currencyActions}
+      />
     </SafeAreaView>
   );
 }
@@ -428,6 +595,11 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     color: colors.text,
+  },
+  userNameAndPlan: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 8,
   },
   contactInfo: {
@@ -445,15 +617,26 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   createAccountButton: {
     backgroundColor: '#4facfe',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    width: '100%',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  createAccountText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  planBadge: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
-    alignSelf: 'flex-start',
   },
-  createAccountText: {
+  planText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#FFFFFF',
   },
   statsContainer: {
     padding: 20,
@@ -483,10 +666,10 @@ const createStyles = (colors: any) => StyleSheet.create({
     elevation: 2,
   },
   statValue: {
-    fontSize: 24,
     fontWeight: '700',
     color: colors.text,
     marginBottom: 4,
+    textAlign: 'left',
   },
   statLabel: {
     fontSize: 14,
@@ -665,5 +848,14 @@ const createStyles = (colors: any) => StyleSheet.create({
   appInfoSubtext: {
     fontSize: 14,
     color: colors.textTertiary,
+  },
+  currencyInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  currencyValue: {
+    fontSize: 14,
+    color: colors.textTertiary,
+    marginTop: 2,
   },
 });

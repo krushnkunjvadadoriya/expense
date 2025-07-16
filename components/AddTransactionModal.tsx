@@ -9,8 +9,9 @@ import {
   ScrollView,
   Platform,
 } from 'react-native';
-import { X, Check, Calendar } from 'lucide-react-native';
+import { X, Check, Calendar, ChevronDown } from 'lucide-react-native';
 import * as Icons from 'lucide-react-native';
+import DatePicker from '@/components/DatePicker';
 import { useApp } from '@/contexts/AppContext';
 import { useGuest } from '@/contexts/GuestContext';
 import { Transaction } from '@/types';
@@ -22,13 +23,19 @@ interface AddTransactionModalProps {
 }
 
 export default function AddTransactionModal({ visible, onClose, transaction }: AddTransactionModalProps) {
-  const { addTransaction, updateTransaction, showGlobalAlert, getCategories } = useApp();
+  const { addTransaction, updateTransaction, showToast, getCategories } = useApp();
   const { incrementTransactionCount } = useGuest();
   const [type, setType] = useState<'expense' | 'income'>('expense');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  
+  // Error states
+  const [amountError, setAmountError] = useState('');
+  const [descriptionError, setDescriptionError] = useState('');
+  const [categoryError, setCategoryError] = useState('');
 
   const isEditing = !!transaction;
   // Use unified categories - all are family scoped now
@@ -61,6 +68,9 @@ export default function AddTransactionModal({ visible, onClose, transaction }: A
     setDescription('');
     setSelectedCategory('');
     setDate(new Date().toISOString().split('T')[0]);
+    setAmountError('');
+    setDescriptionError('');
+    setCategoryError('');
   };
 
   const handleTypeChange = (newType: 'expense' | 'income') => {
@@ -72,43 +82,68 @@ export default function AddTransactionModal({ visible, onClose, transaction }: A
 
   const formatDateForDisplay = (dateString: string) => {
     const date = new Date(dateString);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
   };
 
-  const handleDateChange = (inputDate: string) => {
-    // inputDate comes in YYYY-MM-DD format from the input
-    setDate(inputDate);
+  const handleDateSelect = (selectedDate: string) => {
+    setDate(selectedDate);
+    setShowDatePicker(false);
+  };
+
+  const generateDateOptions = () => {
+    const dates = [];
+    const today = new Date();
+    
+    // Add today and previous 30 days
+    for (let i = 0; i < 31; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      dates.push(date.toISOString().split('T')[0]);
+    }
+    
+    return dates;
   };
 
   const handleSubmit = () => {
+    // Reset errors
+    setAmountError('');
+    setDescriptionError('');
+    setCategoryError('');
+    
+    let hasErrors = false;
+
     if (!amount || !description || !selectedCategory) {
-      showGlobalAlert({
-        type: 'error',
-        title: 'Missing Information',
-        message: 'Please fill in all fields to continue.',
-      });
+      if (!amount) {
+        setAmountError('Amount is required');
+        hasErrors = true;
+      }
+      if (!description.trim()) {
+        setDescriptionError('Description is required');
+        hasErrors = true;
+      }
+      if (!selectedCategory) {
+        setCategoryError('Please select a category');
+        hasErrors = true;
+      }
       return;
     }
 
     if (!description.trim()) {
-      showGlobalAlert({
-        type: 'error',
-        title: 'Invalid Description',
-        message: 'Please enter a valid description for this transaction.',
-      });
+      setDescriptionError('Please enter a valid description');
+      hasErrors = true;
+    }
+
+    if (hasErrors) {
       return;
     }
 
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) {
-      showGlobalAlert({
-        type: 'error',
-        title: 'Invalid Amount',
-        message: 'Please enter a valid amount greater than zero.',
-      });
+      setAmountError('Please enter a valid amount greater than zero');
       return;
     }
 
@@ -126,11 +161,9 @@ export default function AddTransactionModal({ visible, onClose, transaction }: A
         };
         
         updateTransaction(updatedTransaction);
-        showGlobalAlert({
+        showToast({
           type: 'success',
-          title: 'Transaction Updated',
-          message: 'Your transaction has been successfully updated.',
-          onConfirm: onClose,
+          message: 'Transaction updated successfully!',
         });
       } else {
         // Add new transaction
@@ -144,26 +177,51 @@ export default function AddTransactionModal({ visible, onClose, transaction }: A
 
         // Increment transaction count for guest users
         incrementTransactionCount();
-        showGlobalAlert({
+        showToast({
           type: 'success',
-          title: 'Transaction Added',
-          message: 'Your transaction has been successfully added.',
-          onConfirm: onClose,
+          message: 'Transaction added successfully!',
         });
       }
       
       if (!isEditing) {
         resetForm();
       }
+      onClose();
     } catch (error) {
-      showGlobalAlert({
+      showToast({
         type: 'error',
-        title: 'Error',
         message: `Failed to ${isEditing ? 'update' : 'add'} transaction. Please try again.`,
       });
     }
   };
 
+  // Function to validate and format amount input
+  const handleAmountChange = (text: string) => {
+    // Remove any non-numeric characters except decimal point
+    let cleanedText = text.replace(/[^0-9.]/g, '');
+    
+    // Ensure only one decimal point
+    const decimalCount = (cleanedText.match(/\./g) || []).length;
+    if (decimalCount > 1) {
+      const firstDecimalIndex = cleanedText.indexOf('.');
+      cleanedText = cleanedText.substring(0, firstDecimalIndex + 1) + 
+                   cleanedText.substring(firstDecimalIndex + 1).replace(/\./g, '');
+    }
+    
+    // If starts with decimal point, prefix with 0
+    if (cleanedText.startsWith('.')) {
+      cleanedText = '0' + cleanedText;
+    }
+    
+    // Limit to 2 decimal places
+    const parts = cleanedText.split('.');
+    if (parts.length === 2 && parts[1].length > 2) {
+      cleanedText = parts[0] + '.' + parts[1].substring(0, 2);
+    }
+    
+    setAmount(cleanedText);
+    if (amountError) setAmountError('');
+  };
   const getSelectedCategoryInfo = () => {
     return categories.find(c => c.name === selectedCategory);
   };
@@ -217,70 +275,51 @@ export default function AddTransactionModal({ visible, onClose, transaction }: A
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Amount *</Text>
             <TextInput
-              style={styles.amountInput}
+              style={[styles.amountInput, amountError && styles.inputError]}
               value={amount}
-              onChangeText={setAmount}
+              onChangeText={handleAmountChange}
               placeholder="0.00"
               keyboardType="numeric"
               placeholderTextColor="#9CA3AF"
             />
+            {amountError ? <Text style={styles.errorText}>{amountError}</Text> : null}
           </View>
 
           {/* Description */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Description *</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, descriptionError && styles.inputError]}
               value={description}
-              onChangeText={setDescription}
+              onChangeText={(text) => {
+                setDescription(text);
+                if (descriptionError) setDescriptionError('');
+              }}
               placeholder="Enter description"
               placeholderTextColor="#9CA3AF"
             />
+            {descriptionError ? <Text style={styles.errorText}>{descriptionError}</Text> : null}
           </View>
 
           {/* Date */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Date</Text>
-            <View style={styles.dateContainer}>
-              <View style={styles.dateInputWrapper}>
-                <Calendar size={20} color="#6B7280" />
-                <TextInput
-                  style={styles.dateInput}
-                  value={formatDateForDisplay(date)}
-                  onChangeText={(text) => {
-                    // Handle manual text input - convert DD-MM-YYYY to YYYY-MM-DD
-                    const parts = text.split('-');
-                    if (parts.length === 3 && parts[0].length <= 2 && parts[1].length <= 2 && parts[2].length <= 4) {
-                      if (parts[2].length === 4) {
-                        const isoDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-                        setDate(isoDate);
-                      }
-                    }
-                  }}
-                  placeholder="DD-MM-YYYY"
-                  placeholderTextColor="#9CA3AF"
-                />
-              </View>
-              {Platform.OS === 'web' && (
-                <input
-                  type="date"
-                  value={date}
-                  onChange={(e) => handleDateChange(e.target.value)}
-                  style={{
-                    position: 'absolute',
-                    opacity: 0,
-                    width: '100%',
-                    height: '100%',
-                    cursor: 'pointer',
-                  }}
-                />
-              )}
-            </View>
+            <TouchableOpacity
+              style={styles.dateButton}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <Calendar size={20} color="#6B7280" />
+              <Text style={styles.dateButtonText}>
+                {formatDateForDisplay(date)}
+              </Text>
+              <ChevronDown size={20} color="#6B7280" />
+            </TouchableOpacity>
           </View>
 
           {/* Category Selection */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Category *</Text>
+            {categoryError ? <Text style={styles.errorText}>{categoryError}</Text> : null}
             
             {/* Selected Category Display */}
             {selectedCategoryInfo && (
@@ -314,9 +353,12 @@ export default function AddTransactionModal({ visible, onClose, transaction }: A
                     style={[
                       styles.categoryButton,
                       isSelected && styles.categoryButtonActive,
-                      { borderColor: isSelected ? category.color : '#E5E7EB' }
+                      { borderColor: isSelected ? category.color : categoryError ? '#EF4444' : '#E5E7EB' }
                     ]}
-                    onPress={() => setSelectedCategory(category.name)}
+                    onPress={() => {
+                      setSelectedCategory(category.name);
+                      if (categoryError) setCategoryError('');
+                    }}
                     activeOpacity={0.7}
                   >
                     <View style={[
@@ -357,6 +399,19 @@ export default function AddTransactionModal({ visible, onClose, transaction }: A
             )}
           </View>
         </ScrollView>
+
+        {/* Date Picker */}
+        <DatePicker
+          visible={showDatePicker}
+          onClose={() => setShowDatePicker(false)}
+          selectedDate={date}
+          onDateSelect={(selectedDate) => {
+            setDate(selectedDate);
+            setShowDatePicker(false);
+          }}
+          title="Select Transaction Date"
+          maxDate={new Date().toISOString().split('T')[0]}
+        />
       </View>
     </Modal>
   );
@@ -446,10 +501,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
-  dateContainer: {
-    position: 'relative',
+  inputError: {
+    borderColor: '#EF4444',
+    backgroundColor: '#FEF2F2',
   },
-  dateInputWrapper: {
+  errorText: {
+    fontSize: 14,
+    color: '#EF4444',
+    marginTop: 8,
+    fontWeight: '500',
+  },
+  dateButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
@@ -458,13 +520,14 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
     paddingHorizontal: 16,
     paddingVertical: 16,
+    justifyContent: 'space-between',
   },
-  dateInput: {
-    flex: 1,
+  dateButtonText: {
     fontSize: 16,
     color: '#111827',
-    marginLeft: 12,
     fontWeight: '500',
+    flex: 1,
+    marginLeft: 12,
   },
   selectedCategoryContainer: {
     marginBottom: 16,

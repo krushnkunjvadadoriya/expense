@@ -23,23 +23,24 @@ export default function StatCard({
   const { colors } = themeState.theme;
   const styles = createStyles(colors, backgroundColor);
 
-  // Determine font size based on value length
+  // Determine font size based on value length for better fitting
   const getValueFontSize = (value: string) => {
-    const cleanValue = value.replace(/[^0-9.]/g, ''); // Remove currency symbols and commas
-    const numericValue = parseFloat(cleanValue);
+    const valueLength = value.length;
     
-    if (numericValue >= 100000) {
-      return 18; // Smaller font for very large amounts
-    } else if (numericValue >= 10000) {
-      return 20; // Medium font for large amounts
+    if (valueLength > 12) {
+      return 14; // Very small for extremely long values
+    } else if (valueLength > 10) {
+      return 16; // Small for long values
+    } else if (valueLength > 8) {
+      return 18; // Medium-small for medium-long values
     } else {
-      return 24; // Default font size
+      return 20; // Default size for normal values
     }
   };
 
   const dynamicValueStyle = {
     fontSize: getValueFontSize(value),
-    lineHeight: getValueFontSize(value) + 4,
+    lineHeight: getValueFontSize(value) + 2,
   };
 
   return (
@@ -54,7 +55,7 @@ export default function StatCard({
         style={[styles.value, { color }, dynamicValueStyle]} 
         numberOfLines={1}
         adjustsFontSizeToFit={true}
-        minimumFontScale={0.7}
+        minimumFontScale={0.5}
       >
         {value}
       </Text>
@@ -102,7 +103,7 @@ const createStyles = (colors: any, backgroundColor?: string) => StyleSheet.creat
   value: {
     fontWeight: '700',
     marginBottom: 4,
-    flexShrink: 1, // Allow text to shrink if needed
+    textAlign: 'left',
   },
   subtitle: {
     fontSize: 14,

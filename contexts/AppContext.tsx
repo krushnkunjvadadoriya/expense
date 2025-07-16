@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Transaction, Category, EMI, User, MonthlyStats, CategoryStats, GlobalAlert } from '@/types';
+import { Transaction, Category, EMI, User, MonthlyStats, CategoryStats, Toast } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface AppState {
@@ -11,7 +11,7 @@ interface AppState {
   isLoading: boolean;
   monthlyStats: MonthlyStats;
   categoryStats: CategoryStats[];
-  currentAlert: GlobalAlert | null;
+  currentToast: Toast | null;
 }
 
 type AppAction =
@@ -27,10 +27,11 @@ type AppAction =
   | { type: 'SET_EMIS'; payload: EMI[] }
   | { type: 'ADD_EMI'; payload: EMI }
   | { type: 'UPDATE_EMI'; payload: EMI }
+  | { type: 'DELETE_EMI'; payload: string }
   | { type: 'SET_MONTHLY_STATS'; payload: MonthlyStats }
   | { type: 'SET_CATEGORY_STATS'; payload: CategoryStats[] }
-  | { type: 'SHOW_ALERT'; payload: GlobalAlert }
-  | { type: 'HIDE_ALERT' };
+  | { type: 'SHOW_TOAST'; payload: Toast }
+  | { type: 'HIDE_TOAST' };
 
 const initialState: AppState = {
   user: null,
@@ -46,30 +47,30 @@ const initialState: AppState = {
     transactionCount: 0,
   },
   categoryStats: [],
-  currentAlert: null,
+  currentToast: null,
 };
 
 const defaultCategories: Category[] = [
   // Expense Categories
-  { id: '1', name: 'Food & Dining', type: 'expense', color: '#EF4444', icon: 'utensils', scopes: ['family'] },
-  { id: '2', name: 'Transportation', type: 'expense', color: '#3B82F6', icon: 'car', scopes: ['family'] },
-  { id: '3', name: 'Shopping', type: 'expense', color: '#8B5CF6', icon: 'shopping-bag', scopes: ['family'] },
-  { id: '4', name: 'Entertainment', type: 'expense', color: '#F59E0B', icon: 'tv', scopes: ['family'] },
-  { id: '5', name: 'Bills & Utilities', type: 'expense', color: '#4facfe', icon: 'receipt', scopes: ['family'] },
-  { id: '6', name: 'Healthcare', type: 'expense', color: '#EF4444', icon: 'heart', scopes: ['family'] },
-  { id: '7', name: 'Education', type: 'expense', color: '#6366F1', icon: 'book', scopes: ['family'] },
-  { id: '8', name: 'Personal Care', type: 'expense', color: '#EC4899', icon: 'sparkles', scopes: ['family'] },
-  { id: '9', name: 'Travel', type: 'expense', color: '#10B981', icon: 'plane', scopes: ['family'] },
-  { id: '10', name: 'Groceries', type: 'expense', color: '#059669', icon: 'shopping-cart', scopes: ['family'] },
-  { id: '11', name: 'Other', type: 'expense', color: '#6B7280', icon: 'more-horizontal', scopes: ['family'] },
+  { id: '1', name: 'Food & Dining', type: 'expense', color: '#EF4444', icon: 'Utensils', scopes: ['family'], isDefault: true },
+  { id: '2', name: 'Transportation', type: 'expense', color: '#3B82F6', icon: 'Car', scopes: ['family'], isDefault: true },
+  { id: '3', name: 'Shopping', type: 'expense', color: '#8B5CF6', icon: 'ShoppingBag', scopes: ['family'], isDefault: true },
+  { id: '4', name: 'Entertainment', type: 'expense', color: '#F59E0B', icon: 'Tv', scopes: ['family'], isDefault: true },
+  { id: '5', name: 'Bills & Utilities', type: 'expense', color: '#4facfe', icon: 'Receipt', scopes: ['family'], isDefault: true },
+  { id: '6', name: 'Healthcare', type: 'expense', color: '#EF4444', icon: 'Heart', scopes: ['family'], isDefault: true },
+  { id: '7', name: 'Education', type: 'expense', color: '#6366F1', icon: 'Book', scopes: ['family'], isDefault: true },
+  { id: '8', name: 'Personal Care', type: 'expense', color: '#EC4899', icon: 'Sparkles', scopes: ['family'], isDefault: true },
+  { id: '9', name: 'Travel', type: 'expense', color: '#10B981', icon: 'Plane', scopes: ['family'], isDefault: true },
+  { id: '10', name: 'Groceries', type: 'expense', color: '#059669', icon: 'ShoppingCart', scopes: ['family'], isDefault: true },
+  { id: '11', name: 'Other', type: 'expense', color: '#6B7280', icon: 'MoreHorizontal', scopes: ['family'], isDefault: true },
   
   // Income Categories
-  { id: '12', name: 'Salary', type: 'income', color: '#4facfe', icon: 'briefcase', scopes: ['family'] },
-  { id: '13', name: 'Freelance', type: 'income', color: '#2563EB', icon: 'laptop', scopes: ['family'] },
-  { id: '14', name: 'Investment', type: 'income', color: '#1D4ED8', icon: 'trending-up', scopes: ['family'] },
-  { id: '15', name: 'Business', type: 'income', color: '#059669', icon: 'building', scopes: ['family'] },
-  { id: '16', name: 'Bonus', type: 'income', color: '#DC2626', icon: 'gift', scopes: ['family'] },
-  { id: '17', name: 'Other Income', type: 'income', color: '#6B7280', icon: 'more-horizontal', scopes: ['family'] },
+  { id: '12', name: 'Salary', type: 'income', color: '#4facfe', icon: 'Briefcase', scopes: ['family'], isDefault: true },
+  { id: '13', name: 'Freelance', type: 'income', color: '#2563EB', icon: 'Laptop', scopes: ['family'], isDefault: true },
+  { id: '14', name: 'Investment', type: 'income', color: '#1D4ED8', icon: 'TrendingUp', scopes: ['family'], isDefault: true },
+  { id: '15', name: 'Business', type: 'income', color: '#059669', icon: 'Building', scopes: ['family'], isDefault: true },
+  { id: '16', name: 'Bonus', type: 'income', color: '#DC2626', icon: 'Gift', scopes: ['family'], isDefault: true },
+  { id: '17', name: 'Other Income', type: 'income', color: '#6B7280', icon: 'MoreHorizontal', scopes: ['family'], isDefault: true },
 ];
 
 function appReducer(state: AppState, action: AppAction): AppState {
@@ -114,14 +115,19 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         emis: state.emis.map(e => (e.id === action.payload.id ? action.payload : e)),
       };
+    case 'DELETE_EMI':
+      return {
+        ...state,
+        emis: state.emis.filter(e => e.id !== action.payload),
+      };
     case 'SET_MONTHLY_STATS':
       return { ...state, monthlyStats: action.payload };
     case 'SET_CATEGORY_STATS':
       return { ...state, categoryStats: action.payload };
-    case 'SHOW_ALERT':
-      return { ...state, currentAlert: action.payload };
-    case 'HIDE_ALERT':
-      return { ...state, currentAlert: null };
+    case 'SHOW_TOAST':
+      return { ...state, currentToast: action.payload };
+    case 'HIDE_TOAST':
+      return { ...state, currentToast: null };
     default:
       return state;
   }
@@ -137,9 +143,12 @@ const AppContext = createContext<{
   updateCategory: (category: Category) => void;
   addEMI: (emi: Omit<EMI, 'id'>) => void;
   updateEMI: (emi: EMI) => void;
+  deleteEMI: (id: string) => void;
+  deleteCategory: (id: string) => void;
+  updateUserCurrency: (currency: string) => void;
   calculateStats: () => void;
-  showGlobalAlert: (alert: GlobalAlert) => void;
-  hideGlobalAlert: () => void;
+  showToast: (toast: Toast) => void;
+  hideToast: () => void;
   getCategories: (type?: 'expense' | 'income') => Category[];
   getPersonalCategories: (type?: 'expense' | 'income') => Category[];
   getFamilyCategories: (type?: 'expense' | 'income') => Category[];
@@ -179,7 +188,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const defaultUser: User = {
         id: 'guest',
         name: 'Guest User',
-        currency: 'USD',
+        currency: 'INR',
         monthlyBudget: 3000,
         createdAt: new Date().toISOString(),
       };
@@ -205,11 +214,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const migratedCategories = savedCategories.map((cat: any) => ({
           ...cat,
           scopes: ['family'], // Force all categories to use family scope
+          isDefault: cat.isDefault || false, // Ensure isDefault is set
         }));
-        dispatch({ type: 'SET_CATEGORIES', payload: migratedCategories });
+        
+        // Deduplicate categories by ID to prevent React key conflicts
+        const uniqueCategories = migratedCategories.filter((category: Category, index: number, self: Category[]) => 
+          index === self.findIndex(c => c.id === category.id)
+        );
+        
+        dispatch({ type: 'SET_CATEGORIES', payload: uniqueCategories });
         
         // Save migrated categories back to storage
-        await AsyncStorage.setItem('categories', JSON.stringify(migratedCategories));
+        await AsyncStorage.setItem('categories', JSON.stringify(uniqueCategories));
       } else {
         dispatch({ type: 'SET_CATEGORIES', payload: defaultCategories });
         await AsyncStorage.setItem('categories', JSON.stringify(defaultCategories));
@@ -259,8 +275,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const addCategory = async (categoryData: Omit<Category, 'id'>) => {
     const category: Category = {
       ...categoryData,
-      id: Date.now().toString(),
+      id: Date.now().toString() + Math.random().toString(36).substring(2),
       scopes: ['family'], // Always default to family scope
+      isDefault: false, // User-created categories are never default
     };
 
     dispatch({ type: 'ADD_CATEGORY', payload: category });
@@ -270,10 +287,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateCategory = async (category: Category) => {
+    // Prevent updating default categories
+    if (category.isDefault) {
+      throw new Error('Default categories cannot be modified');
+    }
+    
     // Ensure category always has family scope
     const updatedCategory = {
       ...category,
       scopes: ['family'],
+      isDefault: false, // Ensure user categories remain non-default
     };
     
     dispatch({ type: 'UPDATE_CATEGORY', payload: updatedCategory });
@@ -297,9 +320,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateEMI = async (emi: EMI) => {
+    const updatedEMI = { ...emi, updatedAt: new Date().toISOString() };
     dispatch({ type: 'UPDATE_EMI', payload: emi });
     
     const updatedEMIs = state.emis.map(e => (e.id === emi.id ? emi : e));
+    await AsyncStorage.setItem('emis', JSON.stringify(updatedEMIs));
+  };
+
+  const deleteEMI = async (id: string) => {
+    dispatch({ type: 'DELETE_EMI', payload: id });
+    
+    const updatedEMIs = state.emis.filter(e => e.id !== id);
     await AsyncStorage.setItem('emis', JSON.stringify(updatedEMIs));
   };
 
@@ -355,12 +386,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'SET_CATEGORY_STATS', payload: categoryStats });
   };
 
-  const showGlobalAlert = (alert: GlobalAlert) => {
-    dispatch({ type: 'SHOW_ALERT', payload: alert });
+  const showToast = (toast: Toast) => {
+    dispatch({ type: 'SHOW_TOAST', payload: toast });
   };
 
-  const hideGlobalAlert = () => {
-    dispatch({ type: 'HIDE_ALERT' });
+  const hideToast = () => {
+    dispatch({ type: 'HIDE_TOAST' });
   };
 
   // Unified category retrieval - all categories are now family scoped
@@ -381,6 +412,40 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return getCategories(type);
   };
 
+  const deleteCategory = async (id: string) => {
+    const categoryToDelete = state.categories.find(c => c.id === id);
+    
+    // Prevent deleting default categories
+    if (categoryToDelete?.isDefault) {
+      throw new Error('Default categories cannot be deleted');
+    }
+    
+    const updatedCategories = state.categories.filter(c => c.id !== id);
+    dispatch({ type: 'SET_CATEGORIES', payload: updatedCategories });
+    await AsyncStorage.setItem('categories', JSON.stringify(updatedCategories));
+  };
+
+  const updateUserCurrency = async (currency: string) => {
+    if (state.user) {
+      const updatedUser = { ...state.user, currency };
+      dispatch({ type: 'SET_USER', payload: updatedUser });
+      
+      // Save to AsyncStorage if it's a registered user
+      if (authState.user) {
+        try {
+          const userData = await AsyncStorage.getItem('userData');
+          if (userData) {
+            const parsedUserData = JSON.parse(userData);
+            const updatedUserData = { ...parsedUserData, currency };
+            await AsyncStorage.setItem('userData', JSON.stringify(updatedUserData));
+          }
+        } catch (error) {
+          console.error('Error saving currency preference:', error);
+        }
+      }
+    }
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -393,12 +458,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         updateCategory,
         addEMI,
         updateEMI,
+        deleteEMI,
         calculateStats,
-        showGlobalAlert,
-        hideGlobalAlert,
+        showToast,
+        hideToast,
         getCategories,
         getPersonalCategories,
         getFamilyCategories,
+        deleteCategory,
+        updateUserCurrency,
       }}
     >
       {children}

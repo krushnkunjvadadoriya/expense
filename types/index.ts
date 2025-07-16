@@ -17,6 +17,7 @@ export interface Category {
   icon: string;
   budget?: number;
   scopes: ('personal' | 'family')[];
+  isDefault?: boolean;
 }
 
 export interface EMI {
@@ -179,4 +180,18 @@ export interface GlobalAlert {
   confirmText?: string;
   cancelText?: string;
   autoHideDelay?: number;
+}
+
+// Toast types
+export interface Toast {
+  type: 'success' | 'error' | 'info' | 'warning';
+  message: string;
+  duration?: number;
+}
+
+// Toast types
+export interface Toast {
+  type: 'success' | 'error' | 'info' | 'warning';
+  message: string;
+  duration?: number;
 }
