@@ -145,6 +145,7 @@ const AppContext = createContext<{
   updateEMI: (emi: EMI) => void;
   deleteEMI: (id: string) => void;
   deleteCategory: (id: string) => void;
+  updateUserCurrency: (currency: string) => void;
   calculateStats: () => void;
   showToast: (toast: Toast) => void;
   hideToast: () => void;
@@ -187,7 +188,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const defaultUser: User = {
         id: 'guest',
         name: 'Guest User',
-        currency: 'USD',
+        currency: 'INR',
         monthlyBudget: 3000,
         createdAt: new Date().toISOString(),
       };
@@ -424,6 +425,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem('categories', JSON.stringify(updatedCategories));
   };
 
+  const updateUserCurrency = async (currency: string) => {
+    if (state.user) {
+      const updatedUser = { ...state.user, currency };
+      dispatch({ type: 'SET_USER', payload: updatedUser });
+      
+      // Save to AsyncStorage if it's a registered user
+      if (authState.user) {
+        try {
+          const userData = await AsyncStorage.getItem('userData');
+          if (userData) {
+            const parsedUserData = JSON.parse(userData);
+            const updatedUserData = { ...parsedUserData, currency };
+            await AsyncStorage.setItem('userData', JSON.stringify(updatedUserData));
+          }
+        } catch (error) {
+          console.error('Error saving currency preference:', error);
+        }
+      }
+    }
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -444,6 +466,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         getPersonalCategories,
         getFamilyCategories,
         deleteCategory,
+        updateUserCurrency,
       }}
     >
       {children}
