@@ -7,6 +7,8 @@ import {
 } from 'react-native';
 import * as Icons from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
+import { formatAmount } from '@/utils/currency';
+import { useApp } from '@/contexts/AppContext';
 import { Transaction } from '@/types';
 
 interface TransactionItemProps {
@@ -27,19 +29,10 @@ export default function TransactionItem({
   onMorePress,
 }: TransactionItemProps) {
   const { state: themeState } = useTheme();
+  const { state } = useApp();
   const { colors } = themeState.theme;
   const styles = createStyles(colors);
-
-  const formatCurrency = (amount: number) => {
-    // Check if the amount is a whole number
-    const isWholeNumber = amount % 1 === 0;
-    
-    if (isWholeNumber) {
-      return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-    } else {
-      return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    }
-  };
+  const userCurrency = state.user?.currency || 'INR';
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -82,7 +75,7 @@ export default function TransactionItem({
             color: transaction.type === 'income' ? '#10B981' : '#EF4444'
           }
         ]}>
-          {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
+          {transaction.type === 'income' ? '+' : '-'}{formatAmount(transaction.amount, userCurrency)}
         </Text>
       </View>
     </TouchableOpacity>

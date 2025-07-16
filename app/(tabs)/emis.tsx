@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus, Calendar, DollarSign, Clock, CircleAlert as AlertCircle, Trash2, MoveVertical as MoreVertical, CreditCard as Edit3 } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { formatAmount } from '@/utils/currency';
 import { EMI } from '@/types';
 import AddEMIModal from '@/components/AddEMIModal';
 import CustomAlert from '@/components/CustomAlert';
@@ -28,17 +29,7 @@ export default function EMIs() {
 
   const { colors } = themeState.theme;
   const styles = createStyles(colors);
-
-  const formatCurrency = (amount: number) => {
-    // Check if the amount is a whole number
-    const isWholeNumber = amount % 1 === 0;
-    
-    if (isWholeNumber) {
-      return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-    } else {
-      return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    }
-  };
+  const userCurrency = state.user?.currency || 'INR';
 
   const getDaysUntilDue = (dueDate: string) => {
     const today = new Date();
@@ -198,12 +189,12 @@ export default function EMIs() {
       <View style={styles.summaryContainer}>
         <View style={styles.summaryCard}>
           <DollarSign size={24} color="#4facfe" />
-          <Text style={styles.summaryValue}>{formatCurrency(totalMonthlyEMI)}</Text>
+          <Text style={styles.summaryValue}>{formatAmount(totalMonthlyEMI, userCurrency)}</Text>
           <Text style={styles.summaryLabel}>Monthly EMI</Text>
         </View>
         <View style={styles.summaryCard}>
           <Clock size={24} color="#F59E0B" />
-          <Text style={styles.summaryValue}>{formatCurrency(totalOutstanding)}</Text>
+          <Text style={styles.summaryValue}>{formatAmount(totalOutstanding, userCurrency)}</Text>
           <Text style={styles.summaryLabel}>Outstanding</Text>
         </View>
       </View>
@@ -242,7 +233,7 @@ export default function EMIs() {
                   <View style={styles.emiDetails}>
                     <View style={styles.emiDetailRow}>
                       <Text style={styles.emiDetailLabel}>Monthly Amount:</Text>
-                      <Text style={styles.emiDetailValue}>{formatCurrency(emi.monthlyAmount)}</Text>
+                      <Text style={styles.emiDetailValue}>{formatAmount(emi.monthlyAmount, userCurrency)}</Text>
                     </View>
                     <View style={styles.emiDetailRow}>
                       <Text style={styles.emiDetailLabel}>Next Due:</Text>
@@ -255,7 +246,7 @@ export default function EMIs() {
                     </View>
                     <View style={styles.emiDetailRow}>
                       <Text style={styles.emiDetailLabel}>Outstanding:</Text>
-                      <Text style={styles.emiDetailValue}>{formatCurrency(emi.remainingAmount)}</Text>
+                      <Text style={styles.emiDetailValue}>{formatAmount(emi.remainingAmount, userCurrency)}</Text>
                     </View>
                   </View>
 
@@ -290,7 +281,7 @@ export default function EMIs() {
                 <View style={styles.emiDetails}>
                   <View style={styles.emiDetailRow}>
                     <Text style={styles.emiDetailLabel}>Total Paid:</Text>
-                    <Text style={styles.emiDetailValue}>{formatCurrency(emi.totalPaid)}</Text>
+                    <Text style={styles.emiDetailValue}>{formatAmount(emi.totalPaid, userCurrency)}</Text>
                   </View>
                   <View style={styles.emiDetailRow}>
                     <Text style={styles.emiDetailLabel}>Tenure:</Text>

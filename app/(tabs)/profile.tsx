@@ -8,23 +8,26 @@ import {
   TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { User, Settings, Bell, Download, CircleHelp as HelpCircle, Shield, Trash2, Pencil, Check, X, LogOut, Smartphone, Sun, Moon, Monitor, CreditCard, Tag } from 'lucide-react-native';
+import { User, Settings, Bell, Download, CircleHelp as HelpCircle, Shield, Trash2, Pencil, Check, X, LogOut, Smartphone, Sun, Moon, Monitor, CreditCard, Tag, DollarSign } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGuest } from '@/contexts/GuestContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { router } from 'expo-router';
+import { formatAmount, formatAmountWithSign, SUPPORTED_CURRENCIES, getCurrencyName } from '@/utils/currency';
 import ChangePinModal from '@/components/ChangePinModal';
+import BottomSheet, { BottomSheetAction } from '@/components/BottomSheet';
 import CustomAlert from '@/components/CustomAlert';
 
 export default function Profile() {
-  const { state, dispatch, showToast, calculateStats } = useApp();
+  const { state, dispatch, showToast, calculateStats, updateUserCurrency } = useApp();
   const { logout, state: authState } = useAuth();
   const { isGuest } = useGuest();
   const { state: themeState, setColorScheme, toggleTheme } = useTheme();
   const [editingBudget, setEditingBudget] = useState(false);
   const [budgetInput, setBudgetInput] = useState(state.user?.monthlyBudget.toString() || '');
   const [showChangePinModal, setShowChangePinModal] = useState(false);
+  const [showCurrencySelector, setShowCurrencySelector] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [showLogoutAlert, setShowLogoutAlert] = useState(false);
 
@@ -127,14 +130,24 @@ export default function Profile() {
     setShowLogoutAlert(false);
   };
 
-  const formatCurrency = (amount: number) => {
-    // Check if the amount is a whole number
-    const isWholeNumber = amount % 1 === 0;
-    
-    if (isWholeNumber) {
-      return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-    } else {
-      return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const handleCurrencyChange = async (currencyCode: string) => {
+    try {
+      await updateUserCurrency(currencyCode);
+      showToast({
+        type: 'success',
+        message: `Currency changed to ${getCurrencyName(currencyCode)}`,
+      });
+      setShowCurrencySelector(false);
+      
+      // Recalculate stats to update display
+      setTimeout(() => {
+        calculateStats();
+      }, 100);
+    } catch (error) {
+      showToast({
+        type: 'error',
+        message: 'Failed to update currency. Please try again.',
+      });
     }
   };
 
@@ -154,28 +167,6 @@ export default function Profile() {
     }
   };
 
-  // Function to format currency with proper sign handling
-  const formatCurrencyWithSign = (amount: number) => {
-    const isWholeNumber = amount % 1 === 0;
-    const absAmount = Math.abs(amount);
-    
-    let formattedAmount;
-    if (isWholeNumber) {
-      formattedAmount = `$${absAmount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-    } else {
-      formattedAmount = `$${absAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    }
-    
-    // Add sign prefix
-    if (amount > 0) {
-      return `+${formattedAmount}`;
-    } else if (amount < 0) {
-      return `-${formattedAmount}`;
-    } else {
-      return formattedAmount;
-    }
-  };
-
   const formatMobile = (mobile: string) => {
     if (!mobile) return '';
     const cleaned = mobile.replace(/\D/g, '');
@@ -191,6 +182,16 @@ export default function Profile() {
   };
 
   const styles = createStyles(colors);
+
+  const userCurrency = state.user?.currency || 'INR';
+
+  const currencyActions: BottomSheetAction[] = SUPPORTED_CURRENCIES.map(currency => ({
+    id: currency.code,
+    title: `${currency.name} (${currency.symbol})`,
+    icon: DollarSign,
+    color: currency.code === userCurrency ? '#4facfe' : colors.text,
+    onPress: () => handleCurrencyChange(currency.code),
+  }));
 
   return (
     <SafeAreaView style={styles.container}>
@@ -282,7 +283,7 @@ export default function Profile() {
                 adjustsFontSizeToFit={true}
                 minimumFontScale={0.6}
               >
-                {formatCurrencyWithSign(state.monthlyStats.netSavings)}
+                {formatAmountWithSign(state.monthlyStats.netSavings, userCurrency)}
               </Text>
               <Text style={styles.statLabel}>
                 {state.monthlyStats.netSavings >= 0 ? 'Savings' : 'Deficit'}
@@ -325,7 +326,7 @@ export default function Profile() {
               </View>
             ) : (
               <Text style={styles.budgetValue}>
-                {formatCurrency(state.user?.monthlyBudget || 0)}
+                {formatAmount(state.user?.monthlyBudget || 0, userCurrency)}
               </Text>
             )}
             
@@ -345,6 +346,25 @@ export default function Profile() {
                 {state.monthlyStats.budgetUsed.toFixed(1)}% used this month
               </Text>
             </View>
+          </View>
+        </View>
+
+        {/* Currency Settings */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Currency Settings</Text>
+          <View style={styles.menuContainer}>
+            <TouchableOpacity 
+              style={styles.menuItem} 
+              onPress={() => setShowCurrencySelector(true)}
+            >
+              <DollarSign size={20} color={colors.textTertiary} />
+              <View style={styles.currencyInfo}>
+                <Text style={styles.menuItemText}>Currency</Text>
+                <Text style={styles.currencyValue}>
+                  {getCurrencyName(userCurrency)} ({SUPPORTED_CURRENCIES.find(c => c.code === userCurrency)?.symbol})
+                </Text>
+              </View>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -508,6 +528,14 @@ export default function Profile() {
         onConfirm={handleConfirmLogout}
         confirmText={isGuest ? "Create Account" : "Sign Out"}
         cancelText={isGuest ? "Continue as Guest" : "Cancel"}
+      />
+      
+      {/* Currency Selector */}
+      <BottomSheet
+        visible={showCurrencySelector}
+        onClose={() => setShowCurrencySelector(false)}
+        title="Select Currency"
+        actions={currencyActions}
       />
     </SafeAreaView>
   );
@@ -820,5 +848,14 @@ const createStyles = (colors: any) => StyleSheet.create({
   appInfoSubtext: {
     fontSize: 14,
     color: colors.textTertiary,
+  },
+  currencyInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  currencyValue: {
+    fontSize: 14,
+    color: colors.textTertiary,
+    marginTop: 2,
   },
 });

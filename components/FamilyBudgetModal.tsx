@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { X, Check, DollarSign, Plus, Minus } from 'lucide-react-native';
 import { FamilyBudget, FamilyBudgetCategory } from '@/types';
+import { formatAmount } from '@/utils/currency';
 import { useApp } from '@/contexts/AppContext';
 
 interface FamilyBudgetModalProps {
@@ -20,7 +21,7 @@ interface FamilyBudgetModalProps {
 }
 
 export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: FamilyBudgetModalProps) {
-  const { showToast, getCategories, addCategory } = useApp();
+  const { showToast, getCategories, addCategory, state } = useApp();
   const [monthlyBudget, setMonthlyBudget] = useState(budget.monthly.toString());
   const [categories, setCategories] = useState<FamilyBudgetCategory[]>(budget.categories);
   
@@ -31,6 +32,7 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
 
   // Get available categories from the unified system (all are family scoped now)
   const availableCategories = getCategories('expense');
+  const userCurrency = state.user?.currency || 'INR';
 
   // Update local state when budget prop changes
   useEffect(() => {
@@ -219,17 +221,6 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
   const totalCategoryBudget = categories.reduce((sum, cat) => sum + cat.budget, 0);
   const remainingBudget = parseFloat(monthlyBudget || '0') - totalCategoryBudget;
 
-  const formatCurrency = (amount: number) => {
-    // Check if the amount is a whole number
-    const isWholeNumber = amount % 1 === 0;
-    
-    if (isWholeNumber) {
-      return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-    } else {
-      return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    }
-  };
-
   // Get categories that are not yet added to the budget
   const availableToAdd = availableCategories.filter(
     globalCat => !categories.some(budgetCat => budgetCat.categoryId === globalCat.id)
@@ -284,11 +275,11 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
           <View style={styles.summaryCard}>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Total Budget:</Text>
-              <Text style={styles.summaryValue}>{formatCurrency(parseFloat(monthlyBudget || '0'))}</Text>
+              <Text style={styles.summaryValue}>{formatAmount(parseFloat(monthlyBudget || '0'), userCurrency)}</Text>
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Category Total:</Text>
-              <Text style={styles.summaryValue}>{formatCurrency(totalCategoryBudget)}</Text>
+              <Text style={styles.summaryValue}>{formatAmount(totalCategoryBudget, userCurrency)}</Text>
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Remaining:</Text>
@@ -296,7 +287,7 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
                 styles.summaryValue,
                 { color: remainingBudget >= 0 ? '#4facfe' : '#EF4444' }
               ]}>
-                {formatCurrency(Math.abs(remainingBudget))}
+                {formatAmount(Math.abs(remainingBudget), userCurrency)}
               </Text>
             </View>
           </View>
@@ -371,10 +362,10 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
                 
                 <View style={styles.categoryStats}>
                   <Text style={styles.categorySpent}>
-                    Spent: {formatCurrency(category.spent)}
+                    Spent: {formatAmount(category.spent, userCurrency)}
                   </Text>
                   <Text style={styles.categoryRemaining}>
-                    Remaining: {formatCurrency(Math.abs(category.budget - category.spent))}
+                    Remaining: {formatAmount(Math.abs(category.budget - category.spent), userCurrency)}
                   </Text>
                 </View>
               </View>

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { X, Check, Calculator, Calendar, ChevronDown } from 'lucide-react-native';
 import DatePicker from '@/components/DatePicker';
+import { formatAmount } from '@/utils/currency';
 import { useApp } from '@/contexts/AppContext';
 import { EMI } from '@/types';
 
@@ -21,7 +22,7 @@ interface AddEMIModalProps {
 }
 
 export default function AddEMIModal({ visible, onClose, emi }: AddEMIModalProps) {
-  const { addEMI, updateEMI, showToast } = useApp();
+  const { addEMI, updateEMI, showToast, state } = useApp();
   const [name, setName] = useState('');
   const [principal, setPrincipal] = useState('');
   const [interestRate, setInterestRate] = useState('');
@@ -36,6 +37,7 @@ export default function AddEMIModal({ visible, onClose, emi }: AddEMIModalProps)
   const [tenureError, setTenureError] = useState('');
 
   const isEditing = !!emi;
+  const userCurrency = state.user?.currency || 'INR';
 
   // Pre-fill form when editing
   useEffect(() => {
@@ -369,23 +371,19 @@ export default function AddEMIModal({ visible, onClose, emi }: AddEMIModalProps)
               <View style={styles.calculatorRow}>
                 <Text style={styles.calculatorLabel}>Monthly EMI:</Text>
                 <Text style={styles.calculatorValue}>
-                  ${monthlyAmount % 1 === 0 ? monthlyAmount.toLocaleString('en-US', { minimumFractionDigits: 0 }) : monthlyAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {formatAmount(monthlyAmount, userCurrency)}
                 </Text>
               </View>
               <View style={styles.calculatorRow}>
                 <Text style={styles.calculatorLabel}>Total Amount:</Text>
                 <Text style={styles.calculatorValue}>
-                  ${((monthlyAmount * parseInt(tenure || '0')) % 1 === 0) ? 
-                    (monthlyAmount * parseInt(tenure || '0')).toLocaleString('en-US', { minimumFractionDigits: 0 }) : 
-                    (monthlyAmount * parseInt(tenure || '0')).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {formatAmount(monthlyAmount * parseInt(tenure || '0'), userCurrency)}
                 </Text>
               </View>
               <View style={styles.calculatorRow}>
                 <Text style={styles.calculatorLabel}>Total Interest:</Text>
                 <Text style={styles.calculatorValue}>
-                  ${(((monthlyAmount * parseInt(tenure || '0')) - parseFloat(principal || '0')) % 1 === 0) ? 
-                    ((monthlyAmount * parseInt(tenure || '0')) - parseFloat(principal || '0')).toLocaleString('en-US', { minimumFractionDigits: 0 }) : 
-                    ((monthlyAmount * parseInt(tenure || '0')) - parseFloat(principal || '0')).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {formatAmount((monthlyAmount * parseInt(tenure || '0')) - parseFloat(principal || '0'), userCurrency)}
                 </Text>
               </View>
             </View>

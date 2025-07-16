@@ -14,6 +14,7 @@ import { useApp } from '@/contexts/AppContext';
 import { useGuest } from '@/contexts/GuestContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { formatAmount } from '@/utils/currency';
 import { Transaction } from '@/types';
 import StatCard from '@/components/StatCard';
 import TransactionItem from '@/components/TransactionItem';
@@ -39,6 +40,7 @@ export default function Dashboard() {
   const styles = createStyles(colors);
 
   const recentTransactions = state.transactions.slice(0, 5);
+  const userCurrency = state.user?.currency || 'INR';
   
   // Get only the next upcoming EMI for each unique loan
   const getUpcomingEMIs = () => {
@@ -77,17 +79,6 @@ export default function Dashboard() {
     setRefreshing(true);
     calculateStats();
     setTimeout(() => setRefreshing(false), 1000);
-  };
-
-  const formatCurrency = (amount: number) => {
-    // Check if the amount is a whole number
-    const isWholeNumber = amount % 1 === 0;
-    
-    if (isWholeNumber) {
-      return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-    } else {
-      return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    }
   };
 
   const getDaysUntilDue = (dueDate: string) => {
@@ -224,7 +215,7 @@ export default function Dashboard() {
         <View style={styles.statsContainer}>
           <StatCard
             title="Total Balance"
-            value={formatCurrency(state.monthlyStats.netSavings)}
+            value={formatAmount(state.monthlyStats.netSavings, userCurrency)}
             subtitle="This month"
             icon={DollarSign}
             color="#4facfe"
@@ -235,7 +226,7 @@ export default function Dashboard() {
             <View style={styles.statCardHalf}>
               <StatCard
                 title="Income"
-                value={formatCurrency(state.monthlyStats.totalIncome)}
+                value={formatAmount(state.monthlyStats.totalIncome, userCurrency)}
                 icon={TrendingUp}
                 color="#4facfe"
                 backgroundColor={colors.surface}
@@ -244,7 +235,7 @@ export default function Dashboard() {
             <View style={styles.statCardHalf}>
               <StatCard
                 title="Expenses"
-                value={formatCurrency(state.monthlyStats.totalExpenses)}
+                value={formatAmount(state.monthlyStats.totalExpenses, userCurrency)}
                 icon={TrendingDown}
                 color="#EF4444"
                 backgroundColor={colors.surface}
@@ -255,7 +246,7 @@ export default function Dashboard() {
           <StatCard
             title="Budget Used"
             value={`${state.monthlyStats.budgetUsed.toFixed(2)}%`}
-            subtitle={`${formatCurrency(state.monthlyStats.totalExpenses)} of ${formatCurrency(state.user?.monthlyBudget || 0)}`}
+           subtitle={`${formatAmount(state.monthlyStats.totalExpenses, userCurrency)} of ${formatAmount(state.user?.monthlyBudget || 0, userCurrency)}`}
             icon={PiggyBank}
             color={state.monthlyStats.budgetUsed > 80 ? '#EF4444' : '#4facfe'}
             backgroundColor={colors.surface}
@@ -311,7 +302,7 @@ export default function Dashboard() {
                     <Text style={styles.emiName}>{emi.name}</Text>
                   </View>
                   <View style={styles.emiDetails}>
-                    <Text style={styles.emiAmount}>{formatCurrency(emi.monthlyAmount)}</Text>
+                    <Text style={styles.emiAmount}>{formatAmount(emi.monthlyAmount, userCurrency)}</Text>
                     <Text style={[
                       styles.emiDue,
                       { color: daysUntilDue <= 3 ? '#EF4444' : colors.textTertiary }

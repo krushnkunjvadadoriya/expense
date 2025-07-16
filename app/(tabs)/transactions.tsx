@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Search, Filter, Plus, CreditCard as Edit3, Trash2 } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { formatAmount } from '@/utils/currency';
 import { Transaction } from '@/types';
 import TransactionItem from '@/components/TransactionItem';
 import AddTransactionModal from '@/components/AddTransactionModal';
@@ -31,6 +32,7 @@ export default function Transactions() {
 
   const { colors } = themeState.theme;
   const styles = createStyles(colors);
+  const userCurrency = state.user?.currency || 'INR';
 
   const filteredTransactions = state.transactions.filter(transaction => {
     const matchesSearch = transaction.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -77,17 +79,6 @@ export default function Transactions() {
     const income = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
     const expenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
     return { income, expenses, net: income - expenses };
-  };
-
-  const formatCurrency = (amount: number) => {
-    // Check if the amount is a whole number
-    const isWholeNumber = amount % 1 === 0;
-    
-    if (isWholeNumber) {
-      return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-    } else {
-      return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    }
   };
 
   const handleEditTransaction = (transaction: Transaction) => {
@@ -233,10 +224,10 @@ export default function Transactions() {
                   <Text style={styles.dateText}>{formatDateGroup(date)}</Text>
                   <View style={styles.dayTotalContainer}>
                     {dayTotal.income > 0 && (
-                      <Text style={styles.dayIncome}>+{formatCurrency(dayTotal.income)}</Text>
+                      <Text style={styles.dayIncome}>+{formatAmount(dayTotal.income, userCurrency)}</Text>
                     )}
                     {dayTotal.expenses > 0 && (
-                      <Text style={styles.dayExpenses}>-{formatCurrency(dayTotal.expenses)}</Text>
+                      <Text style={styles.dayExpenses}>-{formatAmount(dayTotal.expenses, userCurrency)}</Text>
                     )}
                   </View>
                 </View>
