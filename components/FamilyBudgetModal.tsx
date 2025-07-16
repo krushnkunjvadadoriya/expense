@@ -11,7 +11,6 @@ import {
 import { X, Check, DollarSign, Plus, Minus } from 'lucide-react-native';
 import { FamilyBudget, FamilyBudgetCategory } from '@/types';
 import { useApp } from '@/contexts/AppContext';
-import CustomAlert from '@/components/CustomAlert';
 
 interface FamilyBudgetModalProps {
   visible: boolean;
@@ -25,14 +24,10 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
   const [monthlyBudget, setMonthlyBudget] = useState(budget.monthly.toString());
   const [categories, setCategories] = useState<FamilyBudgetCategory[]>(budget.categories);
   
-  // Local alert state
-  const [showAlert, setShowAlert] = useState(false);
-  const [alertTitle, setAlertTitle] = useState('');
-  const [alertMessage, setAlertMessage] = useState('');
-  const [alertType, setAlertType] = useState<'error' | 'success' | 'info' | 'warning'>('error');
-  
   // Error states
   const [monthlyBudgetError, setMonthlyBudgetError] = useState('');
+  const [categoryError, setCategoryError] = useState('');
+  const [budgetError, setBudgetError] = useState('');
 
   // Get available categories from the unified system (all are family scoped now)
   const availableCategories = getCategories('expense');
@@ -42,7 +37,8 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
     setMonthlyBudget(budget.monthly.toString());
     setCategories(budget.categories);
     setMonthlyBudgetError('');
-    setShowAlert(false);
+    setCategoryError('');
+    setBudgetError('');
   }, [budget]);
 
   // Function to validate and format numeric input
@@ -177,6 +173,8 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
   const handleSubmit = () => {
     // Reset errors
     setMonthlyBudgetError('');
+    setCategoryError('');
+    setBudgetError('');
 
     if (!monthlyBudget) {
       setMonthlyBudgetError('Please enter a monthly budget amount');
@@ -192,19 +190,13 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
     // Validate category names
     const invalidCategories = categories.filter(cat => !cat.name.trim());
     if (invalidCategories.length > 0) {
-      setAlertTitle('Validation Error');
-      setAlertMessage('Please provide names for all categories.');
-      setAlertType('error');
-      setShowAlert(true);
+      setCategoryError('Please provide names for all categories.');
       return;
     }
 
     const categoryTotal = categories.reduce((sum, cat) => sum + cat.budget, 0);
     if (categoryTotal > totalBudget) {
-      setAlertTitle('Budget Error');
-      setAlertMessage('Category budgets exceed the total monthly budget.');
-      setAlertType('error');
-      setShowAlert(true);
+      setBudgetError('Category budgets exceed the total monthly budget.');
       return;
     }
 
@@ -255,6 +247,20 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
             <Check size={24} color="#4facfe" />
           </TouchableOpacity>
         </View>
+
+        {/* Category Error */}
+        {categoryError ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{categoryError}</Text>
+          </View>
+        ) : null}
+
+        {/* Budget Error */}
+        {budgetError ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{budgetError}</Text>
+          </View>
+        ) : null}
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {/* Monthly Budget */}
@@ -398,15 +404,6 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
         </ScrollView>
       </View>
 
-      {/* Local Alert */}
-      <CustomAlert
-        visible={showAlert}
-        type={alertType}
-        title={alertTitle}
-        message={alertMessage}
-        onClose={() => setShowAlert(false)}
-        confirmText="OK"
-      />
     </Modal>
   );
 }
@@ -498,6 +495,14 @@ const styles = StyleSheet.create({
     color: '#EF4444',
     marginTop: 8,
     fontWeight: '500',
+  },
+  errorContainer: {
+    backgroundColor: '#FEF2F2',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#FECACA',
   },
   summaryCard: {
     backgroundColor: '#FFFFFF',
