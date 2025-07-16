@@ -236,7 +236,7 @@ export default function FamilyBudgetModal({ visible, onClose, budget, onSave }: 
   );
 
   return (
-    <Modal visible={visible} animationType="slide">
+    <Modal visible={visible} animationType="slide" transparent={true}>
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
