@@ -458,11 +458,7 @@ export default function Profile() {
             </TouchableOpacity>
             
             <TouchableOpacity style={styles.menuItem} onPress={() => {
-              // TODO: Navigate to subscription page
-              showToast({
-                type: 'info',
-                message: 'Subscription page coming soon!',
-              });
+              router.push('/(tabs)/subscription');
             }}>
               <CreditCard size={20} color={colors.textTertiary} />
               <Text style={styles.menuItemText}>Subscription</Text>
