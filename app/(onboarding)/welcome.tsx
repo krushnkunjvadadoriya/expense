@@ -153,7 +153,7 @@ export default function Welcome() {
             const IconComponent = feature.icon;
             return (
               <View key={index} style={styles.featureCard}>
-                <View style={[styles.featureIcon, { backgroundColor: '#e6e9f0' }]}>
+                <View style={[styles.featureIcon, { backgroundColor: '#e6e9f0' + '10' }]}>
                   <IconComponent size={28} color={feature.color} />
                 </View>
                 <View style={styles.featureContent}>
