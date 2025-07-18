@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
   featureCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.30)',
+    backgroundColor: 'rgba(255, 255, 255, 0.20)',
     padding: 24,
     borderRadius: 20,
     marginBottom: 16,
