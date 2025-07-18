@@ -203,7 +203,7 @@ export default function Welcome() {
           </LinearGradient>
         </TouchableOpacity>
         
-        <Text style={styles.freeText}>Free forever • No credit card required</Text>
+        <Text style={styles.freeText}>No credit card needed to get starte</Text>
       </Animated.View>
     </SafeAreaView>
   );
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 15,
+    marginRight: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
