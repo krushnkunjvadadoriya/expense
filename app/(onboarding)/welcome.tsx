@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   statsPreview: {
-    backgroundColor: 'rgba(0, 0, 0, 0.20)',
+    backgroundColor: 'rgba(0, 0, 0, 0.50)',
     borderRadius: 24,
     padding: 24,
     marginVertical: 20,
