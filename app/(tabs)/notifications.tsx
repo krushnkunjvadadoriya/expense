@@ -8,7 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Bell, Users, Crown, CreditCard, TrendingUp, Calendar, CircleCheck as CheckCircle, Circle as XCircle, Clock, TriangleAlert as AlertTriangle, Gift, Shield } from 'lucide-react-native';
+import { ArrowLeft, Bell, Users, Crown, CreditCard, TrendingUp, Calendar, CircleCheck as CheckCircle, X, Clock } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useApp } from '@/contexts/AppContext';
@@ -21,6 +21,8 @@ export default function Notifications() {
   const { colors } = themeState.theme;
   const styles = createStyles(colors);
   const userCurrency = state.user?.currency || 'INR';
+
+  const [selectedTab, setSelectedTab] = useState<'pending' | 'all'>('pending');
 
   // Mock notifications data
   const [notifications, setNotifications] = useState<Notification[]>([
@@ -41,6 +43,21 @@ export default function Notifications() {
     },
     {
       id: '2',
+      type: 'invitation',
+      title: 'Family Budget Invitation',
+      message: 'Sarah Wilson invited you to join "Wilson Household" budget group',
+      timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
+      isRead: false,
+      status: 'pending',
+      data: {
+        familyGroupId: 'family-2',
+        familyGroupName: 'Wilson Household',
+        invitedBy: 'Sarah Wilson',
+        actionRequired: true,
+      },
+    },
+    {
+      id: '3',
       type: 'subscription',
       title: 'Subscription Expired',
       message: 'Your Premium subscription has expired. Renew now to continue enjoying premium features.',
@@ -52,7 +69,7 @@ export default function Notifications() {
       },
     },
     {
-      id: '3',
+      id: '4',
       type: 'payment',
       title: 'Payment Successful',
       message: 'Your subscription payment has been processed successfully.',
@@ -65,7 +82,7 @@ export default function Notifications() {
       },
     },
     {
-      id: '4',
+      id: '5',
       type: 'budget',
       title: 'Budget Limit Exceeded',
       message: 'You have exceeded 90% of your Food & Dining budget for this month.',
@@ -78,7 +95,7 @@ export default function Notifications() {
       },
     },
     {
-      id: '5',
+      id: '6',
       type: 'reminder',
       title: 'EMI Due Tomorrow',
       message: 'Your Home Loan EMI of ₹25,000 is due tomorrow. Don\'t forget to make the payment.',
@@ -90,13 +107,28 @@ export default function Notifications() {
       },
     },
     {
-      id: '6',
+      id: '7',
       type: 'system',
       title: 'New Feature Available',
       message: 'Check out our new Investment Tracking feature to monitor your portfolio performance.',
       timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
       isRead: true,
       data: {
+        actionRequired: false,
+      },
+    },
+    {
+      id: '8',
+      type: 'invitation',
+      title: 'Family Budget Invitation',
+      message: 'Mike Johnson invited you to join "Johnson Family" budget group',
+      timestamp: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(), // 4 days ago
+      isRead: true,
+      status: 'accepted',
+      data: {
+        familyGroupId: 'family-3',
+        familyGroupName: 'Johnson Family',
+        invitedBy: 'Mike Johnson',
         actionRequired: false,
       },
     },
@@ -258,8 +290,13 @@ export default function Notifications() {
     }
   };
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  // Filter notifications based on selected tab
   const pendingInvitations = notifications.filter(n => n.type === 'invitation' && n.status === 'pending');
+  const allNotifications = notifications;
+  const displayedNotifications = selectedTab === 'pending' ? pendingInvitations : allNotifications;
+  
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const pendingCount = pendingInvitations.length;
 
   const renderNotificationItem = (notification: Notification) => {
     const IconComponent = getNotificationIcon(notification.type);
@@ -304,7 +341,9 @@ export default function Notifications() {
               )}
               {notification.status === 'rejected' && (
                 <View style={[styles.statusBadge, styles.rejectedBadge]}>
-                  <XCircle size={12} color="#EF4444" />
+                  <View style={styles.rejectedIcon}>
+                    <X size={12} color="#EF4444" />
+                  </View>
                   <Text style={styles.rejectedText}>Rejected</Text>
                 </View>
               )}
@@ -325,7 +364,9 @@ export default function Notifications() {
                 onPress={() => handleRejectInvitation(notification)}
                 activeOpacity={0.8}
               >
-                <XCircle size={16} color="#EF4444" />
+                <View style={styles.rejectIconContainer}>
+                  <X size={16} color="#FFFFFF" />
+                </View>
                 <Text style={styles.rejectButtonText}>Reject</Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -380,59 +421,62 @@ export default function Notifications() {
         )}
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Pending Invitations Section */}
-        {pendingInvitations.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Users size={20} color="#4facfe" />
-              <Text style={styles.sectionTitle}>Pending Invitations</Text>
-              <View style={styles.pendingCount}>
-                <Text style={styles.pendingCountText}>{pendingInvitations.length}</Text>
-              </View>
-            </View>
-            {pendingInvitations.map(renderNotificationItem)}
-          </View>
-        )}
-
-        {/* All Notifications */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>All Notifications</Text>
-          {notifications.length > 0 ? (
-            notifications.map(renderNotificationItem)
-          ) : (
-            <View style={styles.emptyState}>
-              <Bell size={48} color={colors.textTertiary} />
-              <Text style={styles.emptyStateText}>No notifications yet</Text>
-              <Text style={styles.emptyStateSubtext}>
-                You'll see important updates and alerts here
-              </Text>
+      {/* Tab Navigation */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[styles.tab, selectedTab === 'pending' && styles.activeTab]}
+          onPress={() => setSelectedTab('pending')}
+        >
+          <Text style={[styles.tabText, selectedTab === 'pending' && styles.activeTabText]}>
+            Pending Invitations
+          </Text>
+          {pendingCount > 0 && (
+            <View style={styles.tabBadge}>
+              <Text style={styles.tabBadgeText}>{pendingCount}</Text>
             </View>
           )}
-        </View>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, selectedTab === 'all' && styles.activeTab]}
+          onPress={() => setSelectedTab('all')}
+        >
+          <Text style={[styles.tabText, selectedTab === 'all' && styles.activeTabText]}>
+            All Notifications
+          </Text>
+          {selectedTab === 'all' && unreadCount > 0 && (
+            <View style={styles.tabBadge}>
+              <Text style={styles.tabBadgeText}>{unreadCount}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
 
-        {/* Notification Settings */}
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Notifications List */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notification Settings</Text>
-          <TouchableOpacity style={styles.settingsItem}>
-            <View style={styles.settingsIcon}>
-              <Bell size={20} color={colors.textTertiary} />
+          {displayedNotifications.length > 0 ? (
+            displayedNotifications.map(renderNotificationItem)
+          ) : (
+            <View style={styles.emptyState}>
+              {selectedTab === 'pending' ? (
+                <>
+                  <Users size={48} color={colors.textTertiary} />
+                  <Text style={styles.emptyStateText}>No pending invitations</Text>
+                  <Text style={styles.emptyStateSubtext}>
+                    Family budget invitations will appear here
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Bell size={48} color={colors.textTertiary} />
+                  <Text style={styles.emptyStateText}>No notifications yet</Text>
+                  <Text style={styles.emptyStateSubtext}>
+                    You'll see important updates and alerts here
+                  </Text>
+                </>
+              )}
             </View>
-            <View style={styles.settingsContent}>
-              <Text style={styles.settingsTitle}>Push Notifications</Text>
-              <Text style={styles.settingsSubtitle}>Manage your notification preferences</Text>
-            </View>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.settingsItem}>
-            <View style={styles.settingsIcon}>
-              <Shield size={20} color={colors.textTertiary} />
-            </View>
-            <View style={styles.settingsContent}>
-              <Text style={styles.settingsTitle}>Privacy Settings</Text>
-              <Text style={styles.settingsSubtitle}>Control what notifications you receive</Text>
-            </View>
-          </TouchableOpacity>
+          )}
         </View>
 
         {/* Bottom padding */}
@@ -501,35 +545,53 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
   },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    gap: 12,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: colors.borderLight,
+    gap: 8,
+  },
+  activeTab: {
+    backgroundColor: '#4facfe',
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textTertiary,
+  },
+  activeTabText: {
+    color: '#FFFFFF',
+  },
+  tabBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    minWidth: 18,
+    alignItems: 'center',
+  },
+  tabBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
   scrollView: {
     flex: 1,
   },
   section: {
     padding: 20,
-    paddingBottom: 0,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.text,
-    marginLeft: 8,
-    flex: 1,
-  },
-  pendingCount: {
-    backgroundColor: '#FEF3C7',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  pendingCountText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#92400E',
   },
   notificationItem: {
     backgroundColor: colors.surface,
@@ -629,6 +691,14 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontWeight: '600',
     color: '#EF4444',
   },
+  rejectedIcon: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#FEE2E2',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   pendingText: {
     fontSize: 12,
     fontWeight: '600',
@@ -644,7 +714,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#4facfe',
+    backgroundColor: '#10B981',
     paddingVertical: 12,
     borderRadius: 12,
     gap: 6,
@@ -654,12 +724,18 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.borderLight,
+    backgroundColor: '#EF4444',
     paddingVertical: 12,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#EF4444',
     gap: 6,
+  },
+  rejectIconContainer: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   acceptButtonText: {
     fontSize: 14,
@@ -669,7 +745,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   rejectButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#EF4444',
+    color: '#FFFFFF',
   },
   paymentInfo: {
     backgroundColor: '#D1FAE5',
@@ -682,41 +758,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#10B981',
-  },
-  settingsItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 8,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  settingsIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.borderLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  settingsContent: {
-    flex: 1,
-  },
-  settingsTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 2,
-  },
-  settingsSubtitle: {
-    fontSize: 14,
-    color: colors.textTertiary,
   },
   emptyState: {
     alignItems: 'center',
