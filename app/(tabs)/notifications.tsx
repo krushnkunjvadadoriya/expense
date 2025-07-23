@@ -8,7 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Bell, Users, Crown, CreditCard, TrendingUp, Calendar, CheckCircle, XCircle, Clock, AlertTriangle, Gift, Shield } from 'lucide-react-native';
+import { ArrowLeft, Bell, Users, Crown, CreditCard, TrendingUp, Calendar, CircleCheck as CheckCircle, Circle as XCircle, Clock, TriangleAlert as AlertTriangle, Gift, Shield } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useApp } from '@/contexts/AppContext';
