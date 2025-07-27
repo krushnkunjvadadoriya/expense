@@ -72,7 +72,7 @@ export default function Notifications() {
       id: '4',
       type: 'payment',
       title: 'Payment Successful',
-      message: 'Your subscription payment has been processed successfully.',
+      message: 'Your subscription payment of ₹369 has been processed successfully.',
       timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
       isRead: true,
       data: {
@@ -331,7 +331,7 @@ export default function Notifications() {
           </View>
 
           {/* Status Badge */}
-          {notification.status && notification.type === 'invitation' && (
+          {notification.status && notification.type === 'invitation' && notification.status !== 'pending' && (
             <View style={styles.statusContainer}>
               {notification.status === 'accepted' && (
                 <View style={[styles.statusBadge, styles.acceptedBadge]}>
@@ -345,12 +345,6 @@ export default function Notifications() {
                     <X size={12} color="#EF4444" />
                   </View>
                   <Text style={styles.rejectedText}>Rejected</Text>
-                </View>
-              )}
-              {notification.status === 'pending' && (
-                <View style={[styles.statusBadge, styles.pendingBadge]}>
-                  <Clock size={12} color="#F59E0B" />
-                  <Text style={styles.pendingText}>Pending</Text>
                 </View>
               )}
             </View>
@@ -377,15 +371,6 @@ export default function Notifications() {
                 <CheckCircle size={16} color="#FFFFFF" />
                 <Text style={styles.acceptButtonText}>Accept</Text>
               </TouchableOpacity>
-            </View>
-          )}
-
-          {/* Additional Info for specific notification types */}
-          {notification.type === 'payment' && notification.data?.amount && (
-            <View style={styles.paymentInfo}>
-              <Text style={styles.paymentAmount}>
-                {formatAmount(notification.data.amount, notification.data.currency || userCurrency)}
-              </Text>
             </View>
           )}
         </View>
@@ -715,7 +700,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#10B981',
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderRadius: 12,
     gap: 6,
   },
@@ -725,7 +710,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#EF4444',
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderRadius: 12,
     gap: 6,
   },
@@ -746,18 +731,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#FFFFFF',
-  },
-  paymentInfo: {
-    backgroundColor: '#D1FAE5',
-    padding: 12,
-    borderRadius: 12,
-    marginTop: 8,
-    alignItems: 'center',
-  },
-  paymentAmount: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#10B981',
   },
   emptyState: {
     alignItems: 'center',
